@@ -77,6 +77,7 @@ class MakeAllDataPlots
 
   int _nChannels;
   vector<TString> _treeNames;
+  vector<int> _channelToHodoscope;
   
   // standard per channel
   vector<TH1D> hCharge;

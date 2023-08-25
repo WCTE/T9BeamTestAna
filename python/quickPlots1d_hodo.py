@@ -40,6 +40,8 @@ def main(argv):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
 
+    ChNames = ChNamesHodo
+    
     pngdir = 'png_results/'
     pdfdir = 'pdf_results/'
     os.system(f'mkdir {pngdir}')
@@ -102,7 +104,7 @@ def main(argv):
         'hRef_nPeaks' : ROOT.kYellow,
     }
     
-    nChannels = 30;
+    nChannels = 31;
     Hs = []
     Txts = []
   

@@ -46,6 +46,8 @@ def main(argv):
     os.system(f'mkdir {pdfdir}')
 
     opt2d = 'colz'
+
+    ChNames = ChNamesCharged
     
     ### https://www.tutorialspoint.com/python/python_command_line_arguments.htm
     ### https://pymotw.com/2/getopt/

@@ -19,6 +19,14 @@ MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodosco
 
   _debug = 0;
 
+  cout << "MakeAllDataPlots::MakeAllDataPlot: Configured as:" << endl;
+  cout << " fileName: " << _fileName.c_str() << endl 
+       << " momentum: " << _momentum << endl 
+       << " peakMode: " << _peakMode << endl 
+       << " isHodoscopeRun: " << _isHodoscopeRun << endl 
+       << endl;
+
+
   
 }
 // ______________________________________________________________
@@ -84,7 +92,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 
 void MakeAllDataPlots::InitReaders()
 {
-
+  cout << "In InitReaders" << endl;
   _eventInfo = new EventInfo(_infile, "EventInfo");
 
   for (int ich = 0; ich < _nChannels; ++ich) {
@@ -147,12 +155,16 @@ void MakeAllDataPlots::InitGeneralHistos() {
 // ______________________________________________________________
 
 void MakeAllDataPlots::InitHodoscopeHistos() {
-  cout << "InitHodoscopeHistos" << endl;
-  _nChannels = 30; 
+  cout << "In initHodoscopeHistos" << endl;
+  _channelToHodoscope = {8, 9, 10, 11, 12, 13, 14, 0, 1, 2, 3, 4, 5, 6, 7};
+  _nChannels = 31;
+  // the order here is not directly translatable to channel number
+  // due to the missing channel 7 in digi0
   _treeNames = {
     "ACT0L",    "ACT0R",
     "ACT1L",    "ACT1R",
     "ACT3L", 	"ACT3R",
+    "TriggerScint",
     "TOF00", 	"TOF01", 	"TOF02", 	"TOF03",
     "TOF10", 	"TOF11", 	"TOF12", 	"TOF13",
     "PbGlass",
@@ -165,11 +177,11 @@ void MakeAllDataPlots::InitHodoscopeHistos() {
   // jiri on shift 28.7.2023
   TString name = "LeadGlassPhotonAVsPositronHodoOcc";
   TString title = name + ";HD Channel ID;A^{#gamma}_{Pb}";
-  _histos2d[name] = new TH2D(name, title, 15, 0, 15, 125, 0, 5);
+  _histos2d[name] = new TH2D(name, title, 15, 0, 15, 125, 0, 0.12);
 
   name = "LeadGlassPhotonAVsPositronMaxHodoOcc";
   title = name + ";HD Max. Channel ID;A^{#gamma}_{Pb}";
-  _histos2d[name] = new TH2D(name, title, 15, 0, 15, 125, 0, 5);
+  _histos2d[name] = new TH2D(name, title, 15, 0, 15, 125, 0, 0.12);
 
   name = "HodoOccScatter";
   title = name + ";HD channel;HD channel;entries";
@@ -190,7 +202,7 @@ void MakeAllDataPlots::InitHodoscopeHistos() {
 
 void MakeAllDataPlots::InitTofHistos()
 {
-
+  cout << "In InitTofHistos" << endl;
   // TOF 1D
   _histos1d["hTOFAll"] = new TH1D("hTOFAll", ";t_{TOF}^{All} [ns]", 120, tofmin, tofmax);
   _histos1d["hTOFAllWide"] = new TH1D("hTOFAllWide", ";t_{TOF}^{All} [ns]", 2*ntofbins, tofmin, 2*tofmax);
@@ -787,7 +799,7 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
     hits[j] = false;
   for(int j = 0; j < _nChannels; j++) {
     TString chname = _treeNames[j];
-    if (j < 17)
+    if (! chname.Contains("HD"))
       continue;
     int hdchid = -1;
     double Aj = Amplitudes[chname];
@@ -795,7 +807,7 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
       hdchid = j - 9;
     else
       hdchid = j - 24;
-    if (Aj > 1.5) {
+    if (Aj > 0.12) {
       hits[hdchid] = true;
       _histos2d["LeadGlassPhotonAVsPositronHodoOcc"] -> Fill(hdchid, pbanew);
       if (Aj > maxA) {
@@ -816,16 +828,16 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
   
   
   // Alie:
-  // JK: data to be moved elsewhere;)
-  std::vector<int> channelToHodoscope = {8, 9, 10, 11, 12, 13, 14, 0, 1, 2, 3, 4, 5, 6, 7};
-  double threshHodoscopeHit = 1.5; //Threshold estimated by hand using the online hist as reference 
+  // JK: the cut to check!
+  double threshHodoscopeHit = 0.12; //Threshold estimated by hand using the online hist as reference 
   //each channel has a different 1pe peak (in particular ch11 has a low one) 
   // the online analysis threshold of 400mV corresponds to 1.9 in these units but we are cutting a lot of hits especially in channel 11, using 1.5 is better there  
   //careful ! position of the detectors on the digitiser have moved!!!
-  for (int i=0; i < 15; i++){
-    // TO CHECK
-    if (Amplitudes[15+i] >= threshHodoscopeHit){
-      _histos1d["hnHitsHodoscope"] -> Fill(channelToHodoscope[i]);
+  for (int i = 0; i < 15; i++){
+    TString hdname = Form("HD%i", i);
+    if (Amplitudes[hdname] >= threshHodoscopeHit){
+      _histos1d["hnHitsHodoscope"] -> Fill(i);
+      //_histos1d["hnHitsHodoscope"] -> Fill(_channelToHodoscope[i]);
     }
   }
   
@@ -841,7 +853,7 @@ void MakeAllDataPlots::Terminate()
 {
 
   cout << "End of event loop!" << endl;
-
+  // normalization of the fraction 2D occupancy map
   if (_isHodoscopeRun) {
     for(int j = 0; j < 15; ++j) {
       double diag = _histos2d["HodoOccScatter"] -> GetBinContent(j,j);
@@ -852,7 +864,7 @@ void MakeAllDataPlots::Terminate()
       } // k
     } // j
     _histos2d["HodoOccScatterFrac"] -> Scale(1.);
-    _histos2d["HodoOccScatter"] -> Scale(1.);
+    //    _histos2d["HodoOccScatter"] -> Scale(1.);
   }
   
   _outFile -> Write();
