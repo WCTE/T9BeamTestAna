@@ -299,6 +299,7 @@ void MakeDataPlots(string fileName, int momentum, double x0_cut = 4.9, double y0
         onePeakInAllToFs = onePeakInAllToFs && (nPeaks[j] == 1);
         moreThanOnePeakInAllToFs = moreThanOnePeakInAllToFs && (nPeaks[j] > 1);
       }
+      
       //dirty add-on to select electrons
       if (j==18){
         PbGlassAboveElectronLevel = PbGlassAboveElectronLevel && (peakVoltage[j][0] > PbGlassElectronThreshA);

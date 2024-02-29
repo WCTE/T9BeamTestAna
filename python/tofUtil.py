@@ -5,7 +5,7 @@ import ROOT
 from collections import OrderedDict
 
 momentaMeV = [200 + i*20 for i in range(1,9)]
-momentaMeV.extend([500, 600, 700, 800, 900, 1000])
+momentaMeV.extend([500, 540, 600, 660, 860, 900, 940, 1000, 1060, 1120, 1200])
 print(momentaMeV)
 
 ms = OrderedDict()
@@ -19,27 +19,47 @@ ms['d'] = 1876.
 pcols = OrderedDict()
 pcols['e'] = ROOT.kRed
 pcols['mu'] = ROOT.kBlue 
-pcols['pi'] = ROOT.kGreen+1
+pcols['pi'] = ROOT.kGreen+2
 pcols['p'] = ROOT.kBlack
 pcols['d'] = ROOT.kGray
 
 
-conv = 1.e9
+conv = 1.e9 # to ns
 #TB2022 l = 2.90 # m
-#TB2023
+#TB2023:
 l = 3.49 # m
-c = 299792458 # m/c
+c = 299792458 # m/s
 
 print('*** The Time of Flight times for L = {} m as function of particles momenta ***'.format(l))
 
 ############################################################
 def getTof(m, momentum):
-    return l/(c*sqrt(1.+pow(m/momentum,2)))*conv
+    # bug fixed 14.2.2024
+    return l/c*sqrt(1.+pow(m/momentum,2))*conv
+
 ############################################################
 def TofToMomentum(tof, m):
     #the tof needs to be the absolute flying time
     p = m/sqrt(pow((tof) * c / (conv * l), 2) - 1)
     return p
+
+############################################################
+# input: tofdiff, i.e. time of flight difference of a particle and tof of electrons!
+# then also mass of the particle and uncertainties in the emasured times of the particle and of electrons (not the tof resolution or fitted leaks widths!)
+def TofDiffToMomentum(tofdiff, m, sigmate = 0., sigmatParticle = 0.):
+    #the tof needs to be the tof subtracted by the electrons TOF
+    coL = c / (conv * l) # c over L ;) [s^{-1}]
+    val = pow((tofdiff) * coL + 1, 2) - 1
+    p = 0.
+    perr = 0.
+    if val > 0.:
+        p = m/sqrt(val)
+        if sigmate > 0. or sigmatParticle > 0.:
+            sigmatSq = pow(sigmate,2) + pow(sigmatParticle,2)
+            if sigmatSq > 0.:
+                sigmat = sqrt(sigmatSq)
+                perr = pow(p,3) / pow(m,2) * ( tofdiff*coL + 1) * coL * sigmat
+    return p, perr
 
 
 

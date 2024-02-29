@@ -2,6 +2,7 @@
 #include "MakeAllDataPlots.h"
 #include "Tools.C"
 
+// jiri kvita 2023--2024
 
 // new
 using namespace std;
@@ -10,20 +11,21 @@ using namespace std;
 // ______________________________________________________________
 
 
-MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode) {
+MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode, bool useWindowIntCharge ) {
 
   _fileName = fileName;
   _momentum = momentum;
   _peakMode = peakMode;
   _isHodoscopeRun = isHodoscopeRun;
-
+  _useWindowIntCharge = useWindowIntCharge;
   _debug = 0;
 
   cout << "MakeAllDataPlots::MakeAllDataPlot: Configured as:" << endl;
   cout << " fileName: " << _fileName.c_str() << endl 
        << " momentum: " << _momentum << endl 
        << " peakMode: " << _peakMode << endl 
-       << " isHodoscopeRun: " << _isHodoscopeRun << endl 
+       << " isHodoscopeRun: " << _isHodoscopeRun << endl
+       << " useWindowIntCharge: " << useWindowIntCharge << endl
        << endl;
 
 
@@ -50,15 +52,19 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 
   tofminlow = 10.;
   tofmaxlow = 20.;
-  ntofbinslow = 100;
+  ntofbinslow = 150;
 
   ntofbins2d = 400;
 
   actChargeMin = -0.04;
-  actChargeMax = 2.0;
-  actAmplitudeMax =  2;
-  
+  actChargeMax = 1.1; // 2.
+  actAmplitudeMax =  0.8; // 2.
 
+  PbGAmplitudeMin =  0.; // 2.
+  PbGAmplitudeMax =  1.5; // 2.
+  
+  PbGChargeMin =  0.; // 2.
+  PbGChargeMax =  1.1; // 2.
   
   gSystem->Exec("mkdir -p histos/");
 
@@ -69,7 +75,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   if (_peakMode != "")
     peakModeTag = "_" + _peakMode;
   TString outFileName = TString(_fileName.substr(0, _fileName.size()-5).c_str()) + "_plots" + peakModeTag + ".root";
-  outFileName = outFileName.ReplaceAll("output/", "histos/").ReplaceAll("ntuple_files/","histos/");
+  outFileName = outFileName.ReplaceAll("output/", "histos/").ReplaceAll("ntuple_files/","histos/").ReplaceAll("windowpe_analyzed/","histos/windowpe_analyzed/");
   outFileName = outFileName.ReplaceAll("data", "histos");
 
   _outFile = new TFile(outFileName.Data(), "RECREATE");
@@ -83,6 +89,9 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 		      { "pb_min", 0.1}, 
 		      { "actThresh", 0.5},
   };
+
+  cout << "Initialized with: " << endl;
+  cout << " _noAct1Cuts: " << _noAct1Cuts << endl;
     
 }
 
@@ -94,15 +103,24 @@ void MakeAllDataPlots::InitReaders()
 {
   cout << "In InitReaders" << endl;
   _eventInfo = new EventInfo(_infile, "EventInfo");
-
+  cout << "Initializing the tree readers..." << endl;
   for (int ich = 0; ich < _nChannels; ++ich) {
-    cout << "Initializing " <<  _treeNames[ich] << endl;
-    _reader[ich] = new channelReadClass(_infile, _treeNames[ich]);
+    //cout << "Initializing " <<  _treeNames[ich] << endl;
+    _reader[ich] = new channelReadClass(_infile, _treeNames[ich], _useWindowIntCharge);
     _trees[ich] = _reader[ich] -> fChain;
     _ent[ich] = _trees[ich] -> GetEntries();
     _readerMap[_treeNames[ich]] = _reader[ich];
+    cout << "  ...reader for " << _treeNames[ich].Data() << ": " << _ent[ich] << " entries." << endl;
   }
   cout << "done Init" << endl;
+
+  // jk 16.11.2023
+  _Nmin = 999999999;
+  for (int ich = 0; ich < _nChannels; ++ich) {
+    if (_ent[ich] < _Nmin)
+      _Nmin = _ent[ich];
+  }
+  cout << "Minimal entries over trees: " << _Nmin << endl;
 
   
 }
@@ -208,10 +226,13 @@ void MakeAllDataPlots::InitTofHistos()
   _histos1d["hTOFAllWide"] = new TH1D("hTOFAllWide", ";t_{TOF}^{All} [ns]", 2*ntofbins, tofmin, 2*tofmax);
   _histos1d["hTOFEl"] = new TH1D("hTOFEl", ";t_{TOF}^{e} [ns]", ntofbins, tofmin, tofmax);
   _histos1d["hTOFOther"] = new TH1D("hTOFOther", ";t_{TOF}^{non-e} [ns]", ntofbins, tofmin, tofmax);
-
+  _histos1d["hTOFOther_act1cuts"] = new TH1D("hTOFOther_act1cuts", ";t_{TOF}^{non-e} [ns]", ntofbins, tofmin, tofmax);
+  
+  
   _histos1d["hTOFAllLow"] = new TH1D("hTOFAllLow", ";t_{TOF}^{All} [ns]", ntofbinslow, tofminlow, tofmaxlow);
   _histos1d["hTOFElLow"] = new TH1D("hTOFElLow", ";t_{TOF}^{e} [ns]", ntofbinslow, tofminlow, tofmaxlow);
   _histos1d["hTOFOtherLow"] = new TH1D("hTOFOtherLow", ";t_{TOF}^{non-e} [ns]", ntofbinslow, tofminlow, tofmaxlow);
+  _histos1d["hTOFOtherLow_act1cuts"] = new TH1D("hTOFOtherLow_act1cuts", ";t_{TOF}^{non-e} [ns]", ntofbinslow, tofminlow, tofmaxlow);
 
   _histos1d["hT0"] = new TH1D("hRef_T0", "", 270, 50, 320);
   _histos1d["hT1"] = new TH1D("hRef_T1", "", 270, 50, 320);
@@ -261,33 +282,53 @@ void MakeAllDataPlots::InitChargedHistos()
     "Hole0", 	"Hole1", 	"PbGlass"
   };
 
+  double ACT0Gain = 5.;
+  
   //lead glass vs act 2 and 3 - identify particles
-  _histos2d["hRef_pbA_act3A"] = new TH2D("hRef_pbA_act23A", "; Pb-glass Amplitude ; (ACT2+ACT3)/2 Amplitude", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
-  _histos2d["hRef_pbC_act3C"] = new TH2D("hRef_pbC_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Charge)", 200,actChargeMin, actChargeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_pbA_act23A"] = new TH2D("hRef_pbA_act23A", "; Pb-glass Amplitude ; (ACT2+ACT3)/2 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., 2*actAmplitudeMax);
+  _histos2d["hRef_pbC_act23C"] = new TH2D("hRef_pbC_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Charge)", 200, actChargeMin, actChargeMax, 400, 0., 2*actAmplitudeMax);
 
-  _histos2d["hRef_pbA_act0A"] = new TH2D("hRef_pbA_act0A", "; Pb-glass Amplitude ; ACT0 Amplitude", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
-  _histos2d["hRef_pbC_act0C"] = new TH2D("hRef_pbC_act0C", "; Pb-glass Charge ; ACT1 Charge)", 200,actChargeMin, actChargeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_pbC_act23A"] = new TH2D("hRef_pbC_act23A", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, 0., actAmplitudeMax, 400, 0., 2*actAmplitudeMax);
+  _histos2d["hRef_pbA_act23C"] = new TH2D("hRef_pbA_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude)", 200, PbGChargeMin, PbGChargeMax, 400, 0., 2*actAmplitudeMax);
+
+  _histos2d["hRef_pbA_act0A"] = new TH2D("hRef_pbA_act0A", "; Pb-glass Amplitude ; ACT0 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., ACT0Gain*actAmplitudeMax);
+  _histos2d["hRef_pbC_act0C"] = new TH2D("hRef_pbC_act0C", "; Pb-glass Charge ; ACT1 Charge)", 200, PbGChargeMin, PbGChargeMax, 400, 0., ACT0Gain*actAmplitudeMax);
   _histos2d["hRef_pbA_act1A"] = new TH2D("hRef_pbA_act1A", "; Pb-glass Amplitude ; ACT1 Amplitude", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
-  _histos2d["hRef_pbC_act1C"] = new TH2D("hRef_pbC_act1C", "; Pb-glass Charge ; ACT1 Charge)", 200,actChargeMin, actChargeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_pbC_act1C"] = new TH2D("hRef_pbC_act1C", "; Pb-glass Charge ; ACT1 Charge)", 200, actChargeMin, actChargeMax, 400, 0., actAmplitudeMax);
   _histos2d["hRef_pbA_act1C"] = new TH2D("hRef_pbA_act1C", "; Pb-glass Amplitude ; ACT1 Charge)", 200, 0., actAmplitudeMax, 400,actChargeMin, actChargeMax);
 
+  // act1cuts
+  _histos2d["hRef_pbA_act1A_act1cuts"] = new TH2D("hRef_pbA_act1A_act1cuts", "; Pb-glass Amplitude ; ACT1 Amplitude", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+
+  
+  // L-R studies:
+  // 17.11.2023
+  _histos2d["hRef_act0LA_act0RA_noneZero"] = new TH2D("hRef_act0LA_act0RA_nonZero", "; ACT0L Amplitude;ACT0R Amplitude)", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_act1LA_act1RA_noneZero"] = new TH2D("hRef_act1LA_act1RA_nonZero", "; ACT1L Amplitude;ACT1R Amplitude)", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_act2LA_act2RA_noneZero"] = new TH2D("hRef_act2LA_act2RA_nonZero", "; ACT2L Amplitude;ACT2R Amplitude)", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_act3LA_act3RA_noneZero"] = new TH2D("hRef_act3LA_act3RA_nonZero", "; ACT3L Amplitude;ACT3R Amplitude)", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+
+  _histos2d["hRef_act0LA_act1LA_noneZero"] = new TH2D("hRef_act0LA_act1LA_nonZero", "; ACT0L Amplitude;ACT1L Amplitude)", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_act0RA_act1RA_noneZero"] = new TH2D("hRef_act0RA_act1RA_nonZero", "; ACT0R Amplitude;ACT1R Amplitude)", 200, 0., actAmplitudeMax, 400, 0., actAmplitudeMax);
+
+  
 
   // (ACT2+ACT3)/2 vs TOF plots
-  _histos2d["hRef_TOFACT23A"] = new TH2D("hRef_TOFACT23A", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT23C"] = new TH2D("hRef_TOFACT23C", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT23A"] = new TH2D("hRef_TOFACT23A", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., 2*actAmplitudeMax);
+  _histos2d["hRef_TOFACT23C"] = new TH2D("hRef_TOFACT23C", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, 2*actChargeMax);
 
   // also ACT 0 and 1, separately:
   /* seems they were already defined below...
   _histos2d["hRef_TOFACT0A"] = new TH2D("hRef_TOFACT0A", "; t_{1}-t_{0} [ns]; ACT0 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
   _histos2d["hRef_TOFACT1A"] = new TH2D("hRef_TOFACT1A", "; t_{1}-t_{0} [ns]; ACT1 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
   */
 
   //TOF vs Pb-glass plots
-  _histos2d["hRef_PbATOF"] = new TH2D("hRef_PbATOF", "; Pb-glass Amplitude; t_{1}-t_{0} [ns]", 200, 0., actAmplitudeMax/2, ntofbins2d, tofmin, tofmax);
-  _histos2d["hRef_PbCTOF"] = new TH2D("hRef_PbCTOF", "; Pb-glass Charge; t_{1}-t_{0} [ns]", 200,actChargeMin, actChargeMax, ntofbins2d, tofmin, tofmax);
-  _histos2d["hRef_TOFPbA"] = new TH2D("hRef_TOFPbA", "; t_{1}-t_{0} [ns]; Pb-glass Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax/2);
+  _histos2d["hRef_PbATOF"] = new TH2D("hRef_PbATOF", "; Pb-glass Amplitude; t_{1}-t_{0} [ns]", 200, 0., PbGAmplitudeMax, ntofbins2d, tofmin, tofmax);
+  _histos2d["hRef_PbCTOF"] = new TH2D("hRef_PbCTOF", "; Pb-glass Charge; t_{1}-t_{0} [ns]", 200, PbGChargeMin, PbGChargeMax, ntofbins2d, tofmin, tofmax);
+  _histos2d["hRef_TOFPbA"] = new TH2D("hRef_TOFPbA", "; t_{1}-t_{0} [ns]; Pb-glass Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., PbGAmplitudeMax);
   
   //acraplet - investigate "weird electrons"
   _histos2d["hHC0AHC1A"] = new TH2D("hweirdE_HC0AHC1A", "; Hole Counter 0 Amplitude; Hole Counter 1 Amplitude", 200, 0., 1000, 200, 0., 1000.);
@@ -299,19 +340,19 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hRef_TOFACT2A"] = new TH2D("hRef_TOFACT2A", "; t_{1}-t_{0} [ns]; ACT2 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
   _histos2d["hRef_TOFACT3A"] = new TH2D("hRef_TOFACT3A", "; t_{1}-t_{0} [ns]; ACT3 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
 
-  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT2C"] = new TH2D("hRef_TOFACT2C", "; t_{1}-t_{0} [ns]; ACT2 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT3C"] = new TH2D("hRef_TOFACT3C", "; t_{1}-t_{0} [ns]; ACT3 Charge", ntofbins2d, tofmin, tofmax, 200,actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT2C"] = new TH2D("hRef_TOFACT2C", "; t_{1}-t_{0} [ns]; ACT2 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT3C"] = new TH2D("hRef_TOFACT3C", "; t_{1}-t_{0} [ns]; ACT3 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
 
 
   // ACT2+ACT3 cut
   _histos1d["hTOF_act2act3cut"] = new TH1D("hTOF_act2act3cut", "; t_{1}-t_{0} [ns];", 120, tofmin, tofmax);
 
   // 2D ACT charges
-  _histos2d["hACT2CACT1C"] = new TH2D("hRef_ACT2CACT1C", "; ACT2 Charge; ACT1 Charge", 200,actChargeMin, actChargeMax, 200,actChargeMin, actChargeMax);
-  _histos2d["hACT3CACT2C"] = new TH2D("hRef_ACT3CACT2C", "; ACT3 Charge; ACT2 Charge", 200,actChargeMin, actChargeMax, 200,actChargeMin, actChargeMax);
-  _histos2d["hACT1CACT3C"] = new TH2D("hRef_ACT1CACT3C", "; ACT1 Charge; ACT3 Charge", 200,actChargeMin, actChargeMax, 200,actChargeMin, actChargeMax);
+  _histos2d["hACT2CACT1C"] = new TH2D("hRef_ACT2CACT1C", "; ACT2 Charge; ACT1 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
+  _histos2d["hACT3CACT2C"] = new TH2D("hRef_ACT3CACT2C", "; ACT3 Charge; ACT2 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
+  _histos2d["hACT1CACT3C"] = new TH2D("hRef_ACT1CACT3C", "; ACT1 Charge; ACT3 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
 
   // nPeak 2D plots;)
   int nbn = 16.;
@@ -358,7 +399,7 @@ int MakeAllDataPlots::getHighestPeakIndex(channelReadClass *reader)
  }
 
 // ______________________________________________________________
-// peakMode: "", a, b, c, d, e, f, g, h
+// peakMode: "", a, b, c, d, e, f, g, h, i
 
 void MakeAllDataPlots::Loop(int verbose, int debug) {
 
@@ -371,13 +412,15 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
   
   // TODO:
   // check also the number of entries in the trees?
+
   
-  for(int ientry = 0; ientry < _ent[0]; ientry++) {
+  // for(int ientry = 0; ientry < _ent[0]; ientry++) {
+  for(int ientry = 0; ientry < _Nmin; ientry++) {
 
     if (ientry % verbose == 0) {
       cout << "processing " << ientry << " / " << _ent[0] << endl;
     }
-
+    _eventInfo -> LoadTree(ientry);
     _eventInfo -> GetEntry(ientry);
     Long64_t  RunNumber = _eventInfo->RunNumber;
     Int_t EventNumber = _eventInfo -> EventNumber;
@@ -386,18 +429,23 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
     
     for (int ich = 0; ich < _nChannels; ++ich) {
       if (_debug)	cout << "getting entry for " <<  _treeNames[ich] << endl;
+      _reader[ich] -> LoadTree(ientry);
       _reader[ich] -> GetEntry(ientry);
     }
     if (_debug)      cout << "done" << endl;
 
 
+    this -> ReadChannels();
+    
     // peak cuts on demand
     if (!_isHodoscopeRun) {
       if (! this -> PassedPeakCuts())
 	continue;
     } // not hodoscope run
 
-    this -> ReadChannels();
+    this -> FillChannels();
+    
+
     this -> FillTofHistos();
     if (_debug) cout << "filled tof" << endl;
     if (!_isHodoscopeRun) {
@@ -458,6 +506,7 @@ bool MakeAllDataPlots::PassedPeakCuts()
       _onePeakInAllToFs = _onePeakInAllToFs && (_reader[j] -> nPeaks == 1);
       _moreThanOnePeakInAllToFs = _moreThanOnePeakInAllToFs && (_reader[j] -> nPeaks > 1);
     }
+    
     // dirty add-on to select electrons
     if (j == 18) {
       _PbGlassAboveElectronLevel = _PbGlassAboveElectronLevel && (_reader[j] -> PeakVoltage[0] > PbGlassElectronThreshA);
@@ -488,6 +537,11 @@ bool MakeAllDataPlots::PassedPeakCuts()
   if (_peakMode == "h" && ( ! (_onePeakInAllToFs && _onePeakInPbGlass)) )
     return false;
 
+  if (_peakMode == "i" && (  (Charges["TOF10"] < 0.04 && Charges["TOF10"] > 0.03) || (Amplitudes["TOF00"] > 1.43 && Amplitudes["TOF00"] < 1.435) ) )
+    return false;
+
+
+  
   return true;
 
 }
@@ -496,35 +550,65 @@ bool MakeAllDataPlots::PassedPeakCuts()
 void MakeAllDataPlots::ReadChannels()
 {
 
-// read all channels information for all waveforms!
+  // +-------------------------------------------------------+
+  // |   read all channels information for all waveforms!    |
+  // +-------------------------------------------------------+
 
     for (int ich = 0; ich < _nChannels; ++ich) {
       TString chname = _treeNames[ich];
       if (_debug)      cout << "point c, " << chname.Data() << endl;
-
       PeakID[chname] = getHighestPeakIndex(_readerMap[chname]);
       int ipeak = PeakID[chname];
+      int iwindowpeak = 0; // !!!
+      NPeaks[chname] = _readerMap[chname] -> nPeaks;
       if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
-	Amplitudes[chname] = _readerMap[chname] -> PeakVoltage[ipeak];
-	Charges[chname] = _readerMap[chname] -> IntCharge[ipeak];
+	Amplitudes[chname]  = _readerMap[chname] -> PeakVoltage[ipeak];
+	if (_useWindowIntCharge) // && !chname.Contains("TOF"))
+	  Charges[chname]     = _readerMap[chname] -> WindowIntCharge[iwindowpeak];
+	else
+	  Charges[chname]     = _readerMap[chname] -> IntCharge[ipeak];
 	SignalTimes[chname] = _readerMap[chname] -> SignalTime[ipeak];
-	NPeaks[chname] = _readerMap[chname] -> nPeaks;
-	
-	// histograms over all channels
+      } else {
+	Amplitudes[chname]  = 0.;
+	Charges[chname]     = 0.;
+	SignalTimes[chname] = 0.;
+      }
+      if (_debug)      cout << "point d" << endl;
+
+    } // channels
+}
+
+
+
+// ______________________________________________________________
+void MakeAllDataPlots::FillChannels()
+{
+
+  for (int ich = 0; ich < _nChannels; ++ich) {
+      TString chname = _treeNames[ich];
+      if (_debug)      cout << "point c, " << chname.Data() << endl;
+      int ipeak = PeakID[chname];
+      if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
+
 	// can be simplified using the above maps
-    	hCharge.at(ich).Fill(_reader[ich] -> IntCharge[ipeak]);
+	
+	hCharge.at(ich).Fill(Charges[chname]);
+	hVoltage.at(ich).Fill(Amplitudes[chname]);
+	hTime.at(ich).Fill(SignalTimes[chname]);
+	hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
+	hnPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
+
+	/*
+	// histograms over all channels
+	hCharge.at(ich).Fill(_reader[ich] -> IntCharge[ipeak]);
 	hVoltage.at(ich).Fill(_reader[ich] -> PeakVoltage[ipeak]);
 	hTime.at(ich).Fill(_reader[ich] -> SignalTime[ipeak]);
 	//hNbPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
 	hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
 	hnPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
-      } else {
-	Amplitudes[chname] = 0.;
-	Charges[chname] = 0.;
-	SignalTimes[chname] = 0.;
-      }
-      if (_debug)      cout << "point d" << endl;
-
+	*/
+	
+      } 
     } // channels
 }
 // ______________________________________________________________
@@ -623,7 +707,29 @@ void MakeAllDataPlots::FillChargedHistos()
     // HACK!
     //    pba = _readerMap["PbGlass"] -> PeakVoltage[0];
 
+    // 17.11.2023:
+    // A's are zero if no peaks;)
+    if (Amplitudes["ACT0L"] > 0.05 &&  Amplitudes["ACT0R"] > 0.05) {
+      _histos2d["hRef_act0LA_act0RA_noneZero"]->Fill(Amplitudes["ACT0L"], Amplitudes["ACT0R"] );
+    }
+    if (Amplitudes["ACT1L"] > 0.01 &&  Amplitudes["ACT1R"] > 0.01) {
+      _histos2d["hRef_act1LA_act1RA_noneZero"]->Fill(Amplitudes["ACT1L"], Amplitudes["ACT1R"] );
+    }
+    if (Amplitudes["ACT2L"] > 0.01 &&  Amplitudes["ACT2R"] > 0.01) {
+      _histos2d["hRef_act2LA_act2RA_noneZero"]->Fill(Amplitudes["ACT2L"], Amplitudes["ACT2R"] );
+    }
+    if (Amplitudes["ACT3L"] > 0.01 &&  Amplitudes["ACT3R"] > 0.01) {
+      _histos2d["hRef_act3LA_act3RA_noneZero"]->Fill(Amplitudes["ACT3L"], Amplitudes["ACT3R"] );
+    }
 
+    if (Amplitudes["ACT0L"] > 0.05 &&  Amplitudes["ACT1L"] > 0.01) {
+      _histos2d["hRef_act0LA_act1LA_noneZero"]->Fill(Amplitudes["ACT0L"], Amplitudes["ACT1L"] );
+    }
+    if (Amplitudes["ACT0R"] > 0.05 &&  Amplitudes["ACT1R"] > 0.01) {
+      _histos2d["hRef_act0RA_act1RA_noneZero"]->Fill(Amplitudes["ACT0R"], Amplitudes["ACT1R"] );
+    }
+
+    
     if (_debug)      cout << "charged b" << endl;
     
     // amplitudes vs tof
@@ -634,7 +740,8 @@ void MakeAllDataPlots::FillChargedHistos()
 
     // lead glass vs acts and tof
     
-    _histos2d["hRef_pbA_act3A"]->Fill(pba, act23aAver);
+    _histos2d["hRef_pbA_act23A"]->Fill(pba, act23aAver);
+    _histos2d["hRef_pbC_act23A"]->Fill(pbc, act23aAver);
     _histos2d["hRef_TOFACT23A"]->Fill(_tof, act23aAver);
 
     _histos2d["hRef_pbA_act0A"]->Fill(pba, act0a);
@@ -652,7 +759,8 @@ void MakeAllDataPlots::FillChargedHistos()
     _histos2d["hRef_TOFACT3C"]->Fill(_tof, act3c);
 
     // lead glass vs acts and tof
-    _histos2d["hRef_pbC_act3C"]->Fill(pbc, act23cAver);
+    _histos2d["hRef_pbC_act23C"]->Fill(pbc, act23cAver);
+    _histos2d["hRef_pbA_act23C"]->Fill(pba, act23cAver);
     _histos2d["hRef_TOFACT23C"]->Fill(_tof, act23cAver);
     
     _histos2d["hRef_pbC_act0C"]->Fill(pbc, act0c);
@@ -672,10 +780,6 @@ void MakeAllDataPlots::FillChargedHistos()
       _histos2d["hHC0AHC1A"]->Fill(hc0a, hc1a);
       _histos2d["hHC0CHC1C"]->Fill(hc0c, hc1c);
     }
-
-    // acraplet
-    _histos1d["hTOFAll"]->Fill(_tof);
-    _histos1d["hTOFAllLow"]->Fill(_tof);
 
     _histos1d["hT0"]->Fill(_t0);
     _histos1d["hT1"]->Fill(_t1);
@@ -719,6 +823,7 @@ void MakeAllDataPlots::FillChargedHistos()
     if (_noAct1Cuts) {
       // originally designed on 900 MeV/c
       // Alie:
+      /*
       if (_tof >= _cutsMap[900]["tof_t1_cut"] && _onePeakInAllToFs) {
 	_isdACT23pb = true;
       } else if (_tof >= _cutsMap[900]["tof_t0_cut"] && _onePeakInAllToFs){
@@ -728,7 +833,10 @@ void MakeAllDataPlots::FillChargedHistos()
       } else if ((act2a+act3a)/2 > _cutsMap[900]["act23_pi_minA"] && _tof <= _cutsMap[900]["tof_t0_cut"] && _onePeakInAllToFs) {
 	_isElACT23pb = true;
       }
+      */
       
+
+   
     } else {
 
       // TODO
@@ -753,6 +861,27 @@ void MakeAllDataPlots::FillChargedHistos()
 	ispACT23pb = true;
       }
       */
+
+      // JK looing at histos/windowpe_analyzed/windowPE_-16ns_45ns_run000352_plots_f.root
+      //if (act1a < 0.15 && pba < 0.25) {
+
+      // cuts III
+      //if (act1a < 0.15 && pba < 0.27 && act23aAver < 0.55) {
+      // cuts II
+      //if (act1a < 0.15 && pba < 0.27) {
+      // cuts I
+      if (act1a < 0.15) {
+	// this cut is too destructive:  act0a < 0.15
+	//also too destructive: pba < 0.15
+	passed_act1a_cuts = true;
+	_histos2d["hRef_pbA_act1A_act1cuts"]->Fill(pba, act1a);
+	_histos1d["hTOFOther_act1cuts"]->Fill(_tof);
+	_histos1d["hTOFOtherLow_act1cuts"]->Fill(_tof);
+      
+	
+      }
+      
+      
 
     }
 
@@ -781,6 +910,7 @@ void MakeAllDataPlots::FillChargedHistos()
 
     _histos1d["hTOFAll"]->Fill(_tof);
     _histos1d["hTOFAllWide"]->Fill(_tof);
+    _histos1d["hTOFAllLow"]->Fill(_tof);
 
     if (_debug)      cout << "done charged" << endl;
     

@@ -34,7 +34,9 @@ public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
 
-// Fixed size dimensions of array or collections stored in the TTree if any.
+   bool m_isExtendedWindowAnalysis;
+  
+  // Fixed size dimensions of array or collections stored in the TTree if any.
 
    // Declaration of leaf types
    Double_t        Pedestal;
@@ -45,6 +47,16 @@ public :
    Double_t        SignalTime[maxnPeaks];   //[nSignalTime]
    Double_t        IntCharge[maxnPeaks];   //[nIntCharge]
 
+   // Alie's branches: // 8.2.2024
+   Double_t        IntPE[maxnPeaks];   //[nPeaks]
+   Int_t           nWindowPeaks;
+   Double_t        WindowIntCharge[maxnPeaks];   //[nWindowPeaks]
+   Double_t        WindowIntPE[maxnPeaks];   //[nWindowPeaks]
+   UInt_t          timeStamp;
+   UInt_t          triggerTime;
+   UInt_t          spillNumber;
+
+  
    // List of branches
    TBranch        *b_Pedestal;   //!
    TBranch        *b_PedestalSigma;   //!
@@ -54,7 +66,16 @@ public :
    TBranch        *b_SignalTime;   //!
    TBranch        *b_IntCharge;   //!
 
-   channelReadClass(TFile *infile, TString treeName);
+  // Alie's branches: // 8.2.2024
+   TBranch        *b_IntPE;   //!
+   TBranch        *b_nWindowPeaks;   //!
+   TBranch        *b_WindowIntCharge;   //!
+   TBranch        *b_WindowIntPE;   //!
+   TBranch        *b_timeStamp;   //!
+   TBranch        *b_triggerTime;   //!
+   TBranch        *b_spillNumber;   //!
+  
+  channelReadClass(TFile *infile, TString treeName, bool isExtendedWindowAnalysis = false);
    virtual ~channelReadClass();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -66,9 +87,10 @@ public :
 };
 
 // ______________________________________________________________
-channelReadClass::channelReadClass(TFile *infile, TString treeName) : fChain(0) 
+channelReadClass::channelReadClass(TFile *infile, TString treeName, bool isExtendedWindowAnalysis) : fChain(0) 
 {
-
+  m_isExtendedWindowAnalysis = isExtendedWindowAnalysis;
+  
   if (!infile || infile -> IsZombie()) {
     cout << "ERROR, got null TFile pointer!" << endl;
       return;
@@ -135,6 +157,18 @@ void channelReadClass::Init(TTree *tree)
    fChain->SetBranchAddress("PeakTime", PeakTime, &b_PeakTime);
    fChain->SetBranchAddress("SignalTime", SignalTime, &b_SignalTime);
    fChain->SetBranchAddress("IntCharge", IntCharge, &b_IntCharge);
+
+   // Alie's branches  // 8.2.2024
+   if (m_isExtendedWindowAnalysis) {
+     fChain->SetBranchAddress("IntPE", IntPE, &b_IntPE);
+     fChain->SetBranchAddress("nWindowPeaks", &nWindowPeaks, &b_nWindowPeaks);
+     fChain->SetBranchAddress("WindowIntCharge", WindowIntCharge, &b_WindowIntCharge);
+     fChain->SetBranchAddress("WindowIntPE", WindowIntPE, &b_WindowIntPE);
+     fChain->SetBranchAddress("timeStamp", &timeStamp, &b_timeStamp);
+     fChain->SetBranchAddress("triggerTime", &triggerTime, &b_triggerTime);
+     fChain->SetBranchAddress("spillNumber", &spillNumber, &b_spillNumber);
+   }
+     
    Notify();
 }
 

@@ -1,0 +1,60 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass{article}
+
+% \usepackage[utf8]{inputenc}
+% \usepackage[latin2,utf8]{inputenc}
+
+
+\newcommand{\ttof}{\ensuremath{t_\mathrm{TOF}}}
+
+\usepackage{graphicx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{ToF calculation}
+
+\subsection{Tof and beam momentum}
+
+%\includegraphics[width=0.33\textwidth]{} &
+
+$$ p = mc \frac{\beta}{\left[  1 - \beta^2 \right]^{1/2}}$$
+$$ \beta = \left[  1 + \left( \frac{mc}{p} \right)^2 \right]^{-1/2}$$
+
+
+Momentum measurement using the time of flight (TOF) of muons or pions $\ttof^{\mu/\pi}$ can be performed by measuring TOF across the finite distance between the TOF scintillators $L=349\,\mathrm{cm}$ using the peak arrival times.
+
+$$ t_\mathrm{TOF} = \frac{L}{c} \left[ 1 + \left( \frac{mc}{p}  \right)^2   \right]^{1/2}$$
+
+\begin{eqnarray}
+  \Delta t_\mathrm{TOF}^{\mu/\pi} &\equiv&  t^{\mu/\pi}_\mathrm{TOF} - t^e_\mathrm{TOF} \\
+    &=& \frac{L}{c}  \left\{  \left[ 1 + \left( \frac{m_{\mu/\pi} c}{p}  \right)^2   \right]^{1/2} -  \left[ 1 + \left( \frac{m_e c}{p}  \right)^2   \right]^{1/2}   \right\} \\
+     &\approx& \frac{L}{c}  \left\{  \left[ 1 + \left( \frac{m_{\mu/\pi} c}{p}  \right)^2   \right]^{1/2} - 1  \right\} 
+\end{eqnarray}
+
+    Given the beam momenta provided by the setup, electrons can be safely regarded as ultrarelativistic particles, with $1-\beta < 10^{-5}$.
+From the measured fitted TOF mean of muons or pions $\Delta\ttof^{\mu/\pi}$ subtracted by the TOF observed in the electron peak the mean measured momentum of muons or pions 
+can be inferred as 
+$$p_{\mu/\pi}^\mathrm{meas} = m_{\mu/\pi} \, c \left[ \left( \frac{c}{L} \Delta\ttof^{\mu/\pi} + 1 \right)^2  - 1\right]^{-1/2}\,.$$
+The measured momentum bias $\Delta p^\mathrm{bias}_{\mu/\pi}$ w.r.t. the TOF of electrons is then the difference between the extracted mean momentum, for each particle type, and of the nominal beam momentum reported by the T9 setup
+$\Delta p^\mathrm{bias}_{\mu/\pi} =  p_{\mu/\pi}^\mathrm{meas} -  p^\mathrm{T9}$. 
+
+Uncertainties propagation:
+$$ \sigma_p = \frac{ \left( p_{\mu/\pi}^\mathrm{meas} \right)^3}{ \left(  m_{\mu/\pi} \, c \right)^2} \left( \frac{c}{L} \,\Delta\ttof^{\mu/\pi} + 1  \right)  \frac{c}{L} \sqrt{\sigma^2_{t,\mu/\pi} + \sigma^2_{t,e}}$$
+
+N.b.
+$$ \frac{L}{c} = \left( \frac{c}{L} \right)^{-1} \doteq 11.64\,\mathrm{ns}$$
+$$ L = 3.49\, \mathrm{m}\,, \quad c = 299792458\, \mathrm{m}\,\mathrm{s}^{-1}$$
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%

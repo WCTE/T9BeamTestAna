@@ -1,7 +1,8 @@
 #!/bin/bash
 
 mkdir -p lists
-path=data/
+path=/media/qitek/T7/WCTE/data/2023/root_files/
+#data/
 
 for i in `cd $path ; ls root_run_*.root` ; do
     j=`basename $i .root`

@@ -32,6 +32,7 @@ class MakeAllDataPlots
 
   bool _isHodoscopeRun;
   bool _noAct1Cuts; // for ToF fits
+  bool _useWindowIntCharge;
   
   Double_t peakVoltage[nMaxChannels][1];
   Double_t peakTime[nMaxChannels][1];
@@ -62,6 +63,12 @@ class MakeAllDataPlots
   double actChargeMax;
   double actAmplitudeMax;
 
+  double PbGChargeMin;
+  double PbGChargeMax;
+
+  double PbGAmplitudeMin;
+  double PbGAmplitudeMax;
+
   
   // cuts
   map<int, map<TString,double > > _cutsMap;
@@ -89,6 +96,7 @@ class MakeAllDataPlots
   map<TString,TH1D*> _histos1d;
   map<TString,TH2D*> _histos2d;
 
+  int _Nmin;
   int _ent[nMaxChannels];
   channelReadClass *_reader[nMaxChannels];
   TTree *_trees[nMaxChannels];
@@ -120,7 +128,7 @@ class MakeAllDataPlots
   
  public:
   
-  MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode = "");
+  MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode = "", bool useWindowIntCharge = false);
   ~MakeAllDataPlots();
 
   int getHighestPeakIndex(channelReadClass *reader);
@@ -133,6 +141,7 @@ class MakeAllDataPlots
 
   void ReadChannels();
   bool PassedPeakCuts();
+  void FillChannels();
   void FillTofHistos();
   void FillChargedHistos();
   void FillHodoscopeHistos();
@@ -140,19 +149,6 @@ class MakeAllDataPlots
   
   void Loop( int verbose = 10000, int debug = 0);
   void Terminate();
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 };
 

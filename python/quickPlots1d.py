@@ -125,12 +125,13 @@ def main(argv):
             hname = hbasename + str(ich)
             h = rfile.Get(hname)
             try:
-                print('ok, got ', h.GetName())
+                #print('ok, got ', h.GetName())
+                tmp = h.GetName()
             except:
                 print('ERROR getting histo {}!'.format(hname))
                 continue
 
-            print('Pushing ', ich, hname)
+            #print('Pushing ', ich, hname)
             hs.append(h)
         Hs.append(hs)
 
@@ -141,7 +142,8 @@ def main(argv):
         #can.Divide(8,4)
         for h in hs:
             try:
-                print('ok, got ', h.GetName())
+                #print('ok, got ', h.GetName())
+                tmp = h.GetName()
             except:
                 print('ERROR getting histo!')
                 continue
@@ -182,10 +184,16 @@ def main(argv):
 
     srun = ''
     tokens = filename.split('_')
-    for token in tokens:
-        if '00' in token:
-            srun = token.replace('000','')
-    pnote = makeMomentumLabel(srun)
+
+    momentum = None
+    runindex = filename.index('run')
+    srun = filename[runindex+6:runindex+9]
+    if momentum == None:
+        momentum = getMomentum(srun)
+    if momentum == None:
+        momentum = getMergedMomentum(srun)
+
+    pnote = makeMomentumLabel(srun, momentum)
     stuff.append(pnote)
     
     for can in cans:

@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
   int debug = 0; //1;
     // for saving waveform pngs:
-    int verbose_png = 5000;
+    int verbose_png = 1000;
     
     gSystem->Exec("mkdir -p png");
   
@@ -296,6 +296,10 @@ int main(int argc, char **argv) {
         for(int j = 0; j < cfg.GetNumberOfChannels(); j++){
 
             if(cfg.IsActive(j)){
+	      if (! waveforms.at(j)) {
+		cout << "ERROR getting waveform " << j << "!" << endl;
+		continue;
+	      }
                 int nsamples = waveforms.at(j)->size();
                 TH1D *wavef = new TH1D("waveform","waveform",nsamples,0,nsamples*nanosecsPerSample);
                 wavef->SetDirectory(0);
@@ -334,6 +338,7 @@ int main(int argc, char **argv) {
 		  //gSystem->Exec(Form("mkdir -p png/evt_%i", i));
 		  //can -> Print(Form("png/evt_%i/waveform_%i_%i.png", i, i, j));
 		  can -> Print(Form("png/waveform_evt%i_%i_%i.png", i, idigi, ich));
+		  can -> Print(Form("png/waveform_evt%i_%i_%i.C", i, idigi, ich));
 		}
 		delete wavef;
 

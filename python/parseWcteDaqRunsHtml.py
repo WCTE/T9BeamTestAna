@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-# considering the split into both the same momentum and same index of ACTs 2 and 3
 pnrunsDict = {}
 
 momentasDict = {}
@@ -15,6 +14,9 @@ verbose = 0
     
 # saved html page
 infile = open('share/wcte-daq_end_of_Run1_working.html') # wcte-daq.html
+# NOT:
+#infile = open('share/wcte-daq.html')
+
 line = ''
 for xline in infile.readlines():
 
@@ -32,15 +34,15 @@ for xline in infile.readlines():
     if not 'True' in line:
         continue
 
-    #if verbose: print(line)
+    if verbose: print(line)
 
     line = line.replace('<td>','&').replace('</td>','')
-    #print(line)
+    if verbose: print(line)
     tokens = line.split('&')
-    #print(tokens)
+    if verbose: print('// ** tokens!: ', tokens)
     srun = tokens[1]
     smomentum = tokens[7]
-    #print(srun, smomentum)
+    if verbose: print("// **** ", srun, smomentum)
     
     run = int(srun)
     momentum = int(round(float(smomentum)*1000))

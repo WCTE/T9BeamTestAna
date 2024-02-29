@@ -22,7 +22,7 @@ if not dryrun:
 print("===> Waveforms analysis:")
 
 #for xlistname in  os.popen('cd lists/ ; ls list*.txt'):
-for xlistname in  os.popen('cd data/ ; ls root_run_*.root'):
+for xlistname in  os.popen('cd /media/qitek/T7/WCTE/data/2023/root_files/ ; ls root_run_*.root'):
     
     print('######################################################')
 
@@ -49,10 +49,13 @@ for xlistname in  os.popen('cd data/ ; ls root_run_*.root'):
     momentum = getMomentum(srun)
 
     # C++ verision depricated:
-    #cmd = "./bin/waveform_analysis.app -i lists/{} -o output/output_{}.root -c config/config.json".format(rfilename,base)
-
+    
+    cmd = "./bin/waveform_analysis.app -i lists/{} -o output/root_files/output_{}.root -c config/config.json".format(rfilename,base)
+    
     # python version by Nick:
-    cmd = 'python ./python/new_analysis/process_waveform_analysis.py data/{} config/config.json output/output_{}.root'.format(rfilename, base)
+    # NEW
+    # HACKED OUT
+    #cmd = 'python ./python/new_analysis/process_waveform_analysis.py data/{} config/config.json output/output_{}.root'.format(rfilename, base)
     
     print(cmd)
     if not dryrun:

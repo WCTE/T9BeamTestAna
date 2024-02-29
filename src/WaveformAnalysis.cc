@@ -200,7 +200,7 @@ void WaveformAnalysis::FindPeaks(){
 //                }
 
 
-            }
+	// }
 
             // {
             //     if(voltage>thisPeakVoltage){
@@ -228,7 +228,7 @@ void WaveformAnalysis::FindPeaks(){
             //std::cout << "In WaveformAnalysis.cc: peakFinder info: " << nbPeaks << std::endl;
             //previousVoltage = voltage;
 
-        }
+    //}
         
 
         fPeakBins.push_back(maxbin);

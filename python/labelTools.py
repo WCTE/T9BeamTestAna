@@ -22,8 +22,41 @@ ChNamesHodo =  {    0 : "ACT0L",    1: "ACT0R",
             }
 
 
-def makeMomentumLabel(srun, x = 0.12, y = 0.86, size = 0.04, addn = True, addSlit = True):
-    momentum = getMomentum(srun)
+def makePaperLabel(srun, momentum, x = 0.12, y = 0.86, size = 0.04, addn = True, addSlit = True, dx = 0.45):
+    #momentum = getMomentum(srun)
+    tag = '+'
+    if momentum < 0:
+        tag = '-'
+    ctxt = f'WCTE Collaboration'
+    txt = f'p={tag}{abs(momentum)} MeV/c'
+    if addn:
+        n = -1
+        try:
+            n = runsRefractionIndexDict[int(srun)]
+        except:
+            print('ERROR getting the ACT n info for run {}'.format(srun))
+        if n > 0:
+            txt = txt + f' n={n}'
+    if addSlit:
+        slit = ''
+        slitperc = -1
+        try:
+            slitperc = runsSlitDict[int(srun)]
+        except:
+            print('ERROR getting the slit information for run {}'.format(srun))
+        if slitperc > 0:
+            slit = f' slit {slitperc}%'
+            txt = txt + slit
+    pnote = ROOT.TLatex(x + dx, y, txt)
+    pnote.SetTextSize(size)
+    pnote.SetNDC()
+    cnote = ROOT.TLatex(x, y, ctxt)
+    cnote.SetTextSize(size)
+    cnote.SetNDC()
+    return cnote, pnote
+
+def makeMomentumLabel(srun, momentum, x = 0.12, y = 0.86, size = 0.04, addn = True, addSlit = True):
+    #momentum = getMomentum(srun)
     tag = '+'
     if momentum < 0:
         tag = '-'

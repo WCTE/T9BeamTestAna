@@ -70,6 +70,7 @@ void AnalysisConfig::ReadConfig(){
 		exit(EXIT_FAILURE);
 	}
 	for(int i = 3; i < r; i++){
+	  //cout << t[i] << " " << JSMN_STRING << endl;
 		CheckJSMNType(t[i], JSMN_STRING, __LINE__, __func__, __FILE__);
 		string optName = contents.substr(t[i].start, t[i].end-t[i].start);
 

@@ -7,7 +7,7 @@ from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.style.use(["science", "notebook", "grid"]) #for pretty plot
+#plt.style.use(["science", "notebook", "grid"]) #for pretty plot
 
 momentaMeV = [100 + i*10 for i in range(1,100)]
 #momentaMeV.extend([500, 600, 700, 800, 900, 940, 1000])
@@ -15,8 +15,8 @@ print(momentaMeV)
 
 ms = OrderedDict()
 ms['e'] = 0.511
-ms['mu'] = 135.6
-ms['pi'] = 139.6
+ms['mu'] = 105.66
+ms['pi'] = 139.57
 ms['p'] = 938.3
 ms['d'] = 1876.
 
