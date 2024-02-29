@@ -2,6 +2,7 @@
 
 # was: #!/usr/bin/python3
 # Pá 14. července 2023, 18:39:38 CEST
+# devel: II/2024
 
 from data_runs import *
 from tofUtil import *
@@ -29,7 +30,7 @@ def makeLines(h, eoff, parts, momentum):
     #y1 = h.GetYaxis().GetXmin()
     #y2 = h.GetYaxis().GetXmax()
     print("LINE MOMENTUM: ", momentum)
-    y1 = h.GetMaximum()
+    y1 = 1.05*h.GetMaximum()
     y2 = h.GetMinimum()
     te = getTof(ms['e'], momentum) + eoff
     for part in parts:
@@ -37,6 +38,25 @@ def makeLines(h, eoff, parts, momentum):
         print(f'makeLines {part}: dt={dt} ns')
         print('line coors: ', te + dt, y1, te + dt, y2)
         line = ROOT.TLine(te + dt, y1, te + dt, y2)
+        line.SetLineStyle(1)
+        line.SetLineWidth(1)
+        line.SetLineColor(pcols[part])
+        line.Draw()
+        lines.append(line)
+    return lines
+
+##########################################
+def makeFitLines(h, parts, times):
+    lines = []
+    #y1 = h.GetYaxis().GetXmin()
+    #y2 = h.GetYaxis().GetXmax()
+    #print("LINE MOMENTUM: ", momentum)
+    y1 = 1.05*h.GetMaximum()
+    y2 = h.GetMinimum()
+    for part,time in zip(parts,times):
+        print(f'makeFitLines {part}: time={time} ns')
+        print('line coors: ', time, y1, time, y2)
+        line = ROOT.TLine(time, y1, time, y2)
         line.SetLineStyle(2)
         line.SetLineWidth(2)
         line.SetLineColor(pcols[part])
@@ -131,6 +151,8 @@ def MultiFit(h, tag, momentum, cts, ws, t1, t2, peaksfs = [1., 1., 1.]):
     for ifit in range(0,len(cts)):
         fit.SetParameter(ifit*ngpars+1, ampl / peaksfs[ifit])
         fit.SetParameter(ifit*ngpars+1, cts[ifit])
+        # constrain mu to mu \pm 3*sigma:
+        fit.SetParLimits(ifit*ngpars+1, cts[ifit] - 3*ws[ifit],  cts[ifit] + 3*ws[ifit])
         # if ifit == len(cts)-1:
         fit.SetParameter(ifit*ngpars+2, ws[ifit])
         # this line effectively fixes the width parameters;)
@@ -147,8 +169,6 @@ def MultiFit(h, tag, momentum, cts, ws, t1, t2, peaksfs = [1., 1., 1.]):
     #fit.SetLineColor(h.GetLineColor())
     fit.SetLineStyle(2)
     fit.Draw('same')
-
-    eoff = fit.GetParameter(1)
 
     fits = [fit]
     for ifit in range(0,len(cts)):
@@ -168,11 +188,22 @@ def MultiFit(h, tag, momentum, cts, ws, t1, t2, peaksfs = [1., 1., 1.]):
 
     te = getTof(ms['e'], momentum)
     print("TE", te, momentum, fit.GetParameter(1))
-    eoff = 0 #te - fit.GetParameter(1)
 
+    # electrons tof offset, but for drawing, we want to draw
+    # theoretical lines
+    # and then fit lines
+    # so we kep this ZERO!
+    eoff = 0.
+
+    fit_te = fit.GetParameter(1)
+    fit_tmu = fit.GetParameter(4)
+    fit_tpi = fit.GetParameter(7)
+    
     parts = ['e', 'mu', 'pi']
     lines = makeLines(h, eoff, parts, momentum)
+    fitlines = makeFitLines(h, parts, [fit_te, fit_tmu, fit_tpi])
     stuff.append(lines)
+    stuff.append(fitlines)
     #makeOneLine()
     
     return fits
@@ -280,20 +311,26 @@ def main(argv):
         print('Assuming low momentum run, will try to fit e/mu/pi')
 
         sigmat = 0.23
-        tce = 11.63 # = l/c*conv, see tofUtil
+        tce = l/c*conv # see tofUtil
+
+        # generic fit function arguments:
+        fa = [tce, tce + tofDiff_e_mu, tce + tofDiff_e_pi,
+              sigmat, sigmat, sigmat,
+              1.0, 10.0, 30.,
+              tce - 4*sigmat,  tce + tofDiff_e_pi + 3*sigmat]
         
-        #fa = [tce, 12.6, 13.9, 0.22, 0.22, 0.22, 1.0, 4.0, 100.0, 10.5, 15]
-        #fa = [tce, 12.6, 13.9, 0.22, 0.22, 0.22, 1.0, 4.0, 100.0, 10.5, 15]
-        #[tce, 12.6, 13.5, sigmat, sigmat, sigmat, 1.0, 4.0, 10.0, 10.5, 15]
-        #[tce, 12.6, 13.5, sigmat, sigmat, sigmat, 1.0, 4.0, 10.0, 10.5, 15]
-        #[tce, 13, 14, sigmat, sigmat, sigmat, 1.0, 1.0, 50.0, 10.5, 15.5]
-        ###fa = [tce, 13, 14, sigmat, sigmat, sigmat, 1.0, 1.0, 50.0, 10.5, 15.5]
-        #[tce, 12.6, 14.5, sigmat, sigmat, sigmat, 1.0, 4.0, 100.0, 10.5, 15]
-        #[tce, 12.9, 13.9, sigmat, sigmat, 0.22, 1., 2., 10., 10.5, 15]
-
         # -280:
-        fa = [tce, 12.6, 13.1, sigmat, sigmat, sigmat, 1.0, 10.0, 30., 10.5, 14.5]
+        #if abs(momentum + 280) < 0.1:
+        #    fa = [tce, 12.6, 13.1, sigmat, sigmat, sigmat, 1.0, 10.0, 30., 10.5, 14.5]
 
+        if abs(abs(momentum) - 200) < 41:
+            # smaller pion peak at low momenta:
+            fa[7] = 50
+            fa[8] = 200
+            # and wider:
+            #fa[5] = 0.24
+            #fa[6] = 0.25
+        
         # central times
         tcs = [fa[0], fa[1], fa[2]]
         # widths

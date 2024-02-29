@@ -8,6 +8,8 @@ momentaMeV = [200 + i*20 for i in range(1,9)]
 momentaMeV.extend([500, 540, 600, 660, 860, 900, 940, 1000, 1060, 1120, 1200])
 print(momentaMeV)
 
+
+
 ms = OrderedDict()
 ms['e'] = 0.511
 ms['mu'] = 105.66
@@ -22,7 +24,6 @@ pcols['mu'] = ROOT.kBlue
 pcols['pi'] = ROOT.kGreen+2
 pcols['p'] = ROOT.kBlack
 pcols['d'] = ROOT.kGray
-
 
 conv = 1.e9 # to ns
 #TB2022 l = 2.90 # m
