@@ -20,49 +20,47 @@ psymb = { 'e' : 'e', 'mu' : '#mu', 'pi' : '#pi', 'p' : 'p', 'mu+pi' : '#mu+#pi'}
 
 ####################################################################################
 
-def getFittedResults(infilename):
+
+def getMomentumBiasResults(infilename):
     infile = open(infilename)
     results = {}
+    p = 0
     for xline in infile.readlines():
         line = xline[:-1]
-        if not 'Momentum' in line:
+        if not ('Fitted momentum' in line or 'T9 beam momentum' in line):
             continue
-        tokens = line.split(',')
-        sp = tokens[0].replace('Momentum','').replace('MeV/c','').replace(' ','')
-        p = int(sp)
+        if 'T9 beam moment' in line:
+            p = int(line.split(':')[-1])
+            continue
+        tokens = line.replace('Fitted momentum using:','').split(',')
+        part = tokens[0]
+        #p = int(sp)
+        # HACK!
+        target = 'T1 Be+W'
+        
+        #target = tokens[1].split(':')[1].replace(' ','')
+        #itarget = -1
+        #if target == 'Alu':
+        #    target = 'T3 Al'
+        #    itarget = 3
+        #elif target == 'Tun':
+        #    target = 'T1 Be+W'
+        #    itarget = 1
+        
+        pmeasured = float(tokens[1].split(':')[1])
+        ep = float(tokens[2].split(':')[1])
 
-        target = tokens[1].split(':')[1].replace(' ','')
-        itarget = -1
-        if target == 'Alu':
-            target = 'T3 Al'
-            itarget = 3
-        elif target == 'Tun':
-            target = 'T1 Be+W'
-            itarget = 1
-
-        nSpills = float(tokens[6].split(':')[1].replace(' ',''))
-        print(f'nSpills: {nSpills}')
-        nmus = tokens[4].split(':')
-        nmu = int(nmus[1]) / nSpills
-        enmu = int(nmus[2]) / nSpills
-        Nmu = [nmu, enmu]
-
-        npis = tokens[5].split(':')
-        npi = int(npis[1]) / nSpills
-        enpi = int(npis[2]) / nSpills
-        Npi = [npi, enpi]
-
-        result = {}
-        result['mu'] = Nmu
-        result['pi'] = Npi
-
-        print(result)
-        results[target] = result
-
+        dp = pmeasured - p
+        if p < 0:
+            dp = pmeasured + p
+        
+        try:
+            results[target][part] = [dp, ep]
+        except:
+            results[target] = {}
+            results[target][part] = [dp, ep]
+        
     return p,results
-    
-####################################################################################
-
 
 ####################################################################################
 
@@ -125,7 +123,7 @@ def main(argv):
     
     Results = {}
     for infilename in infilenames:
-        p,result = getFittedResults(infilename)
+        p,result = getMomentumBiasResults(infilename)
         results[p] = result
 
         print(p, result)
@@ -138,7 +136,7 @@ def main(argv):
                 ngr = len(Grs[target])
             except:
                 Grs[target] = {}
-                
+            print(ndict)    
             for part, nums in ndict.items():
                 try:
                     ngr = len(Grs[target][part])
@@ -157,21 +155,22 @@ def main(argv):
                     Grs[target][part][sgnp].SetLineStyle(lst[sgnp]) # by signum
                     Grs[target][part][sgnp].SetLineWidth(2)
                 ip = Grs[target][part][sgnp].GetN()
-                Grs[target][part][sgnp].SetPoint(ip, abs(p), nums[0])
+                Grs[target][part][sgnp].SetPoint(ip, p, nums[0])
                 Grs[target][part][sgnp].SetPointError(ip, 0, nums[1])
         
     print(Grs)
-    canname = 'can_partsPerSpill'
+    canname = 'can_momentumBias'
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 600)
-    can.Divide(2,1)
+    #can.Divide(2,1)
     cans.append(can)
 
 
-    pmin = 180.*MeV
+
     pmax = 400.*MeV
-    y0, y1 = 0., 15000.
+    pmin = -pmax #180.*MeV
+    y0, y1 = -60., 60.
     
-    h2 = ROOT.TH2D("tmp", "tmp;|p| [MeV/c];N / spill", 100, pmin, pmax, 100, y0, y1)
+    h2 = ROOT.TH2D("tmp", "tmp;p [MeV/c]; #hat{p}-p [MeV/c]", 100, pmin, pmax, 100, y0, y1)
     h2.SetStats(0)
     stuff.append(h2)
 
@@ -187,7 +186,7 @@ def main(argv):
         leg.SetNColumns(2)
         leg.SetBorderSize(0)
         print(f'...plotting target {target}')
-        can.cd(ican)
+        ###can.cd(ican)
         ROOT.gPad.SetGridy(1)
         ROOT.gPad.SetGridx(1)
         h2.DrawCopy()

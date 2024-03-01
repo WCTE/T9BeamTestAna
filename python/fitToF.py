@@ -227,7 +227,8 @@ def main(argv):
     ### https://www.tutorialspoint.com/python/python_command_line_arguments.htm
     ### https://pymotw.com/2/getopt/
     ### https://docs.python.org/3.1/library/getopt.html
-    gBatch = False
+    #gBatch = False
+    gBatch = True
     momentum = None
     n_spill = 1
     target = 'tun'
@@ -429,10 +430,12 @@ def main(argv):
         os.system(f'mkdir -p {outdir}')
         outfile = open(f'{outdir}/fitres_{momentum}.txt', 'a')
         outfile.write('Momentum {:1.0f}MeV/c, Target: {}, Run:{}, Ne: {:1.0f}:{:1.0f}, Nmu:{:1.0f}:{:1.0f}, Npi:{:1.0f}:{:1.0f}, n_spill:{:1.0f}, sig_e:{:.2f}, sig_mu:{:.2f}, sig_pi:{:.2f}'.format(momentum,target, srun,n_e, err_e*n_e, n_mu, err_mu*n_mu, n_pi, err_pi*n_pi, n_spill, sig_e, sig_mu, sig_pi) + '\n')
-        outfile.write('Fit parameters:{}'.format(fa)+ '\n'+ '\n')
+        outfile.write('Fit parameters:{}'.format(fa)+ '\n')
+        
         # print also the mmentum bias etc
-        outfile.write('Fitted momentum using mu, with an error:{:3.2f}, sigmap:{:3.2f}'.format(mom_pred_mu, mom_pred_mu_err) + '\n')
-        outfile.write('Fitted momentum using pi, with an error:{:3.2f}, sigmap:{:3.2f}'.format(mom_pred_pi, mom_pred_pi_err) + '\n')
+        outfile.write('T9 beam momentum:{:}'.format(momentum) + '\n')
+        outfile.write('Fitted momentum using:mu,p:{:3.2f},sigmap:{:3.2f}'.format(mom_pred_mu, mom_pred_mu_err) + '\n')
+        outfile.write('Fitted momentum using:pi,p:{:3.2f},sigmap:{:3.2f}'.format(mom_pred_pi, mom_pred_pi_err) + '\n')
         outfile.close()
 
     elif abs(momentum) <= 500:
