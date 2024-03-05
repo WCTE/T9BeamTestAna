@@ -169,7 +169,7 @@ def main(argv):
 
     pmin = 180.*MeV
     pmax = 400.*MeV
-    y0, y1 = 0., 15000.
+    y0, y1 = 0., 20.
     
     h2 = ROOT.TH2D("tmp", "tmp;|p| [MeV/c];N / spill", 100, pmin, pmax, 100, y0, y1)
     h2.SetStats(0)
