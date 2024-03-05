@@ -42,6 +42,9 @@ class MakeAllDataPlots
   Double_t pedestalSigma[nMaxChannels];
   Double_t nPeaks[nMaxChannels];
 
+  Int_t _lastSpillNumber;
+  Int_t _nSpills;
+  
   map<TString,int> PeakID;
   map<TString,double> Amplitudes; // amplitude
   map<TString,double> Charges; // charge
@@ -68,6 +71,12 @@ class MakeAllDataPlots
 
   double PbGAmplitudeMin;
   double PbGAmplitudeMax;
+
+  double trigScintChargeMin;
+  double trigScintChargeMax;
+  double trigScintAmplitudeMin;
+  double trigScintAmplitudeMax;
+
 
   
   // cuts

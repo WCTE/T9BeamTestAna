@@ -25,57 +25,6 @@ def PrintUsage(argv):
     return
 
 ##########################################
-def makeLines(h, eoff, parts, momentum):
-    lines = []
-    #y1 = h.GetYaxis().GetXmin()
-    #y2 = h.GetYaxis().GetXmax()
-    print("LINE MOMENTUM: ", momentum)
-    y1 = 1.05*h.GetMaximum()
-    y2 = h.GetMinimum()
-    te = getTof(ms['e'], momentum) + eoff
-    for part in parts:
-        dt = getTofDiff('e', part, momentum)
-        print(f'makeLines {part}: dt={dt} ns')
-        print('line coors: ', te + dt, y1, te + dt, y2)
-        line = ROOT.TLine(te + dt, y1, te + dt, y2)
-        line.SetLineStyle(1)
-        line.SetLineWidth(1)
-        line.SetLineColor(pcols[part])
-        line.Draw()
-        lines.append(line)
-    return lines
-
-##########################################
-def makeFitLines(h, parts, times):
-    lines = []
-    #y1 = h.GetYaxis().GetXmin()
-    #y2 = h.GetYaxis().GetXmax()
-    #print("LINE MOMENTUM: ", momentum)
-    y1 = 1.05*h.GetMaximum()
-    y2 = h.GetMinimum()
-    for part,time in zip(parts,times):
-        print(f'makeFitLines {part}: time={time} ns')
-        print('line coors: ', time, y1, time, y2)
-        line = ROOT.TLine(time, y1, time, y2)
-        line.SetLineStyle(2)
-        line.SetLineWidth(2)
-        line.SetLineColor(pcols[part])
-        line.Draw()
-        lines.append(line)
-    return lines
-
-##########################################
-def makeOneLine(h, value, part):
-    y1 = h.GetMaximum()
-    y2 = h.GetMinimum()
-    line = ROOT.TLine(value, y1, value, y2)
-    line.SetLineStyle(2)
-    line.SetLineWidth(2)
-    line.SetLineColor(pcols[part])
-    line.Draw()
-    return line
-
-##########################################
 # cts     ...  central peak time of assumed gauss
 # w       ... width
 # t1, t2: ... fit window
@@ -112,7 +61,7 @@ def Fit(h, tag, momentum, ct, w, t1, t2, peaksf = 1.):
     te = getTof(ms['e'], momentum)
     eoff = fit.GetParameter(1) - te
     
-    parts = ['p', 'd']
+    parts = ['p', 'D']
     lines = makeLines(h, eoff, parts, momentum)
     stuff.append(lines)    
     
@@ -227,8 +176,8 @@ def main(argv):
     ### https://www.tutorialspoint.com/python/python_command_line_arguments.htm
     ### https://pymotw.com/2/getopt/
     ### https://docs.python.org/3.1/library/getopt.html
-    #gBatch = False
-    gBatch = True
+    gBatch = False
+    #gBatch = True
     momentum = None
     n_spill = 1
     target = 'tun'
@@ -251,6 +200,13 @@ def main(argv):
     print(f'Opening input file "{fileName}"')
     inFile = ROOT.TFile(fileName, "READ")
 
+    try:
+        nspills_h = inFile.Get('nspills')
+        n_spill = nspills_h.GetBinContent(1)
+    except:
+        print('ERROR getting the number of spills from histogram!')
+    print('Extracted nspills={}'.format(n_spill))
+    
     momentum = None
     runindex = fileName.index('run')
     srun = fileName[runindex+6:runindex+9]
@@ -302,7 +258,7 @@ def main(argv):
     tofDiff_e_mu = getTofDiff('e','mu', momentum)
     tofDiff_e_pi = getTofDiff('e','pi', momentum)
     tofDiff_e_p = getTofDiff('e','p', momentum)
-    tofDiff_e_d = getTofDiff('e','d', momentum)
+    tofDiff_e_d = getTofDiff('e','D', momentum)
     tofDiff_mu_pi = getTofDiff('mu','pi', momentum)
 
     print(f'ToF diffs for momentum {momentum}: mu-e: {tofDiff_e_mu:2.2f}, pi-e: {tofDiff_e_pi:2.2f}, p-e: {tofDiff_e_p:2.2f}, d-e: {tofDiff_e_d:2.2f}, mu-pi: {tofDiff_mu_pi:2.2f}')

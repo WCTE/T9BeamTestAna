@@ -14,16 +14,20 @@ ms = OrderedDict()
 ms['e'] = 0.511
 ms['mu'] = 105.66
 ms['pi'] = 139.57
+ms['K'] = 493.7
 ms['p'] = 938.3
-ms['d'] = 1876.
+ms['D'] = 1876.
+ms['T'] = 3.01604928*931.494 # isotope mass in Da
 
 
 pcols = OrderedDict()
 pcols['e'] = ROOT.kRed
 pcols['mu'] = ROOT.kBlue 
 pcols['pi'] = ROOT.kGreen+2
+pcols['K'] = ROOT.kGray+1
 pcols['p'] = ROOT.kBlack
-pcols['d'] = ROOT.kGray
+pcols['D'] = ROOT.kViolet
+pcols['T'] = ROOT.kCyan+2
 
 conv = 1.e9 # to ns
 #TB2022 l = 2.90 # m

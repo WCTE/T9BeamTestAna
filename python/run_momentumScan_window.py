@@ -5,8 +5,8 @@ import data_runs
 
 import os
 
-isDryRun = False
-#isDryRun = True
+#isDryRun = False
+isDryRun = True
 
 runs=[ '514_515_516',
        '517_518_520',
@@ -58,7 +58,6 @@ for srun in runs:
         
     #cmd = './python/quickPlots1d.py histos/' + outfile
     cmd = './python/slowPlots1d.py histos/windowpe_analyzed/' + outfile
-
     print(cmd)
     #if not isDryRun:
     #   os.system(cmd)

@@ -8,6 +8,8 @@ import ROOT
 from math import sqrt, pow, log, exp
 import os, sys, getopt
 
+from labelTools import *
+
 from collections import OrderedDict
 
 MeV = 1.
@@ -160,7 +162,7 @@ def main(argv):
         
     print(Grs)
     canname = 'can_momentumBias'
-    can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 600)
+    can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     #can.Divide(2,1)
     cans.append(can)
 
@@ -168,7 +170,7 @@ def main(argv):
 
     pmax = 400.*MeV
     pmin = -pmax #180.*MeV
-    y0, y1 = -60., 60.
+    y0, y1 = -30., 30.
     
     h2 = ROOT.TH2D("tmp", "tmp;p [MeV/c]; #hat{p}-p [MeV/c]", 100, pmin, pmax, 100, y0, y1)
     h2.SetStats(0)
@@ -179,9 +181,11 @@ def main(argv):
     
     ican = 1
     for target,PartsGr in Grs.items():
-        txt = ROOT.TLatex(0.12, 0.92, f'Target: {target}')
+        cnote, pnote = makePaperLabel('', 0, 0.12, 0.92)
+        txt = ROOT.TLatex(0.62, 0.92, f'Target: {target}')
         txt.SetNDC()
-        legs[target] = ROOT.TLegend(0.16, 0.75, 0.75, 0.88)
+        txt.SetTextSize(0.04)
+        legs[target] = ROOT.TLegend(0.38, 0.75, 0.75, 0.88)
         leg = legs[target]
         leg.SetNColumns(2)
         leg.SetBorderSize(0)
@@ -190,6 +194,9 @@ def main(argv):
         ROOT.gPad.SetGridy(1)
         ROOT.gPad.SetGridx(1)
         h2.DrawCopy()
+        line0 = ROOT.TLine(pmin, 0., pmax, 0.)
+        stuff.append([line0, cnote, pnote, txt])
+        line0.Draw()
         for part, partsGr in PartsGr.items():
             for sgnp,gr in partsGr.items():
                 sgnstr = '+'
@@ -200,6 +207,7 @@ def main(argv):
                 leg.AddEntry(gr, f'{psymb[part]} {sgnstr}', 'PL')
         leg.Draw()
         txt.Draw()
+        cnote.Draw()
         stuff.append([txt, leg])
         ican = ican + 1
 
