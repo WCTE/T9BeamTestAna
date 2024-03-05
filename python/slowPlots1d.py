@@ -49,8 +49,11 @@ def main(argv, plotChargeVsToF = True):
     os.system(f'mkdir {pngdir}')
     os.system(f'mkdir {pdfdir}')
 
-
-    #TODO! changestis gfor hodoscope runs!!
+    # gDirectories in read file
+    basedir = 'Charged/'
+    basetofdir = 'TOF/'
+    
+    #TODO! change this for hodoscope runs!!
     ChNames = ChNamesCharged
     
     opt2d = 'colz'
@@ -119,7 +122,7 @@ def main(argv, plotChargeVsToF = True):
     }
     
     os.system('mkdir -p pdf png')
-    
+    gbasedir = 'General/'
     for hbasename in hbasenames:
 
         hs = []
@@ -130,7 +133,7 @@ def main(argv, plotChargeVsToF = True):
             #if not ( ich >= 8 and ich <= 15):
             #    continue
             hname = hbasename + str(ich)
-            h = rfile.Get(hname)
+            h = rfile.Get(gbasedir + hname)
             try:
                 #print('ok, got ', h.GetName())
                 tmp = h.GetName()
@@ -253,7 +256,7 @@ def main(argv, plotChargeVsToF = True):
         for itch in range(1,4):
             hname = base + str(itof) + str(itch)
             htdiffnames.append(hname)
-            h = rfile.Get(hname)
+            h = rfile.Get(basetofdir + hname)
             htofdiffs[itof].append(h)
 
             
@@ -297,7 +300,7 @@ def main(argv, plotChargeVsToF = True):
     for itch in range(0,4):
         hname = base + str(itch)
         htTOFnames.append(hname)
-        h = rfile.Get(hname)
+        h = rfile.Get(basetofdir + hname)
         htofTOFs[0].append(h)
     
     canname = 'AbsoluteTof_{}'.format(ftag[10:])
@@ -357,7 +360,7 @@ def main(argv, plotChargeVsToF = True):
     # interest
     canname = 'ACT2_3vsLeadGlass_{}'.format(ftag[10:])
     hname = 'hRef_pbA_act23' + VarName
-    hact23vsPbA = rfile.Get(hname)
+    hact23vsPbA = rfile.Get(basedir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -394,7 +397,7 @@ def main(argv, plotChargeVsToF = True):
 
     canname = 'TOFvsACT3_{}'.format(ftag[10:])
     hname = 'hRef_TOFACT3' + VarName
-    h = rfile.Get(hname)
+    h = rfile.Get(basedir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -408,7 +411,7 @@ def main(argv, plotChargeVsToF = True):
     # interest
     canname = 'TOFvsACT23_{}'.format(ftag[10:])
     hname = 'hRef_TOFACT23' + VarName
-    hTOFvsACT23 = rfile.Get(hname)
+    hTOFvsACT23 = rfile.Get(basedir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -421,7 +424,7 @@ def main(argv, plotChargeVsToF = True):
 
     canname = 'TOFvsPb_{}'.format(ftag[10:])
     hname = 'hRef_PbATOF'
-    hPbATOF = rfile.Get(hname)
+    hPbATOF = rfile.Get(basedir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -434,7 +437,7 @@ def main(argv, plotChargeVsToF = True):
     # interest
     canname = 'PbvsTOF_{}'.format(ftag[10:])
     hname = 'hRef_TOFPbA'
-    hTOFPbA = rfile.Get(hname)
+    hTOFPbA = rfile.Get(basedir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -447,7 +450,7 @@ def main(argv, plotChargeVsToF = True):
 
     canname = 'PbvsACT1_{}'.format(ftag[10:])
     hname = 'hRef_pbA_act1C'
-    h = rfile.Get(hname)
+    h = rfile.Get(basedir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -461,7 +464,7 @@ def main(argv, plotChargeVsToF = True):
 
     canname = 'TOFall_{}'.format(ftag[10:])
     hname = 'hTOFAll'
-    h = rfile.Get(hname)
+    h = rfile.Get(basetofdir + hname)
     can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     cans.append(can)
     can.cd()
@@ -491,7 +494,7 @@ def main(argv, plotChargeVsToF = True):
     #
     #    canname = 'hHC0CHC1C_weirdE{}'.format(ftag[10:])
     #    hname = 'hweirdE_HC0AHC1' + VarName
-    #    h = rfile.Get(hname)
+    #    h = rfile.Get(basedir + hname)
     #    can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
     #    cans.append(can)
     #    can.cd()
@@ -506,11 +509,16 @@ def main(argv, plotChargeVsToF = True):
 
     print(tofmeans)
 
-    srun = ''
     tokens = filename.split('_')
     momentum = None
-    runindex = filename.index('run')
-    srun = filename[runindex+6:runindex+9]
+    runindex = -1;
+    srun = ''
+    try:
+        runindex = filename.index('run')
+        srun = filename[runindex+6:runindex+9]
+    except:
+        runindex = filename.index('000')
+        srun = filename[runindex+3:runindex+6]
     if momentum == None:
         momentum = getMomentum(srun)
     if momentum == None:

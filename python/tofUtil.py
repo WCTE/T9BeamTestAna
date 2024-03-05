@@ -39,13 +39,16 @@ print('*** The Time of Flight times for L = {} m as function of particles moment
 
 ############################################################
 def getTof(m, momentum):
-    # bug fixed 14.2.2024
+    # bug fixed 14.2.2024!
     return l/c*sqrt(1.+pow(m/momentum,2))*conv
 
 ############################################################
 def TofToMomentum(tof, m):
     #the tof needs to be the absolute flying time
-    p = m/sqrt(pow((tof) * c / (conv * l), 2) - 1)
+    p = 0.
+    val = pow((tof) * c / (conv * l), 2) - 1
+    if val > 0.:
+        p = m/sqrt(val)
     return p
 
 ############################################################

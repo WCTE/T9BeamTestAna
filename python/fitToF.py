@@ -176,8 +176,8 @@ def main(argv):
     ### https://www.tutorialspoint.com/python/python_command_line_arguments.htm
     ### https://pymotw.com/2/getopt/
     ### https://docs.python.org/3.1/library/getopt.html
-    gBatch = False
-    #gBatch = True
+    #gBatch = False
+    gBatch = True
     momentum = None
     n_spill = 1
     target = 'tun'
@@ -196,9 +196,9 @@ def main(argv):
         return
 
 
-    fileName = argv[1]
-    print(f'Opening input file "{fileName}"')
-    inFile = ROOT.TFile(fileName, "READ")
+    filename = argv[1]
+    print(f'Opening input file "{filename}"')
+    inFile = ROOT.TFile(filename, "READ")
 
     try:
         nspills_h = inFile.Get('nspills')
@@ -208,8 +208,13 @@ def main(argv):
     print('Extracted nspills={}'.format(n_spill))
     
     momentum = None
-    runindex = fileName.index('run')
-    srun = fileName[runindex+6:runindex+9]
+    srun = ''
+    try:
+        runindex = filename.index('run')
+        srun = filename[runindex+6:runindex+9]
+    except:
+        runindex = filename.index('000')
+        srun = filename[runindex+3:runindex+6]
     if momentum == None:
         momentum = getMomentum(srun)
     if momentum == None:
@@ -217,12 +222,14 @@ def main(argv):
 
     print(f'Assuming run {srun} and momentum {momentum}')
 
+    basetofdir = 'TOF/'
+    
     suff = ''
     if abs(momentum) < 500:
         suff = 'Low_act1cuts'
         print('Low momentum run, looking at zoomed version of tof histos!')
-    hTOFOther = inFile.Get("hTOFOther" + suff)
-    hTOFEl = inFile.Get("hTOFEl" + suff)
+    hTOFOther = inFile.Get(basetofdir + "hTOFOther" + suff)
+    hTOFEl = inFile.Get(basetofdir + "hTOFEl" + suff)
 
 
     signedmomentum = str(abs(momentum))

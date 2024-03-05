@@ -121,6 +121,7 @@ def main(argv):
     os.system('mkdir -p pdf png')
     hs = []
     txts = []
+    basedir = 'TrigScint/'
     hnames2d = [ 'hRef_TOFPbA',
                  'hRef_TOFPbC',
                  
@@ -140,7 +141,7 @@ def main(argv):
                 ]
     
     for hname in hnames2d:
-        h = rfile.Get(hname)
+        h = rfile.Get(basedir + hname)
         try:
             #print('ok, got ', h.GetName())
             tmp = h.GetName()

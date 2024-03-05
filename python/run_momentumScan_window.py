@@ -5,8 +5,8 @@ import data_runs
 
 import os
 
-#isDryRun = False
-isDryRun = True
+isDryRun = False
+#isDryRun = True
 
 runs=[ '514_515_516',
        '517_518_520',
@@ -48,8 +48,8 @@ for srun in runs:
     cmd = 'root -l -b -q "macros/runMakeAllDataPlots.C(\\"{}{}000{}.root\\", {}, false, {}, \\"{}\\", {})"'.format(dirname, prefix, srun, p, noAct1Cuts, selection, useWindowIntCharge)
 
     print(cmd)
-    #if not isDryRun:
-    #       os.system(cmd)
+    if not isDryRun:
+           os.system(cmd)
     
     outfile = 'windowPE_-16ns_45ns_run000{}_plots.root'.format(srun)
     

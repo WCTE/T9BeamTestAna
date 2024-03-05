@@ -92,7 +92,8 @@ def main(argv):
 
 
     ROOT.gStyle.SetPalette(ROOT.kSolar)
-    
+
+    basedir = 'General/'
     
     #filename = 'output_300n_plots.root'
     filename = argv[1]
@@ -123,7 +124,7 @@ def main(argv):
             #if not ( ich >= 8 and ich <= 15):
             #    continue
             hname = hbasename + str(ich)
-            h = rfile.Get(hname)
+            h = rfile.Get(basedir + hname)
             try:
                 #print('ok, got ', h.GetName())
                 tmp = h.GetName()
@@ -186,8 +187,13 @@ def main(argv):
     tokens = filename.split('_')
 
     momentum = None
-    runindex = filename.index('run')
-    srun = filename[runindex+6:runindex+9]
+    srun = ''
+    try:
+        runindex = filename.index('run')
+        srun = filename[runindex+6:runindex+9]
+    except:
+        runindex = filename.index('000')
+        srun = filename[runindex+3:runindex+6]
     if momentum == None:
         momentum = getMomentum(srun)
     if momentum == None:

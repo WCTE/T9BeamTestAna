@@ -136,6 +136,10 @@ void MakeAllDataPlots::InitGeneralHistos() {
   
   _nChannels = 32;
   cout << "InitGeneralHistos" << endl;
+  
+  _outFile -> mkdir("General");
+  _outFile -> cd("General");
+  
  for(int i = 0; i < _nChannels; i++) {
     string name1 = "hRef_Charge" + to_string(i);
     string name2 = "hRef_Voltage" + to_string(i);
@@ -170,7 +174,7 @@ void MakeAllDataPlots::InitGeneralHistos() {
     hTime.push_back(temp5);
     hnPeaks.push_back(temp6);
   }
-
+ _outFile -> cd("../");
  cout << "done" << endl;
  
 }
@@ -194,7 +198,9 @@ void MakeAllDataPlots::InitHodoscopeHistos() {
     "HD8",   "HD9",   "HD10",   "HD11",   "HD12", "HD13",   "HD14",
     "HD0",   "HD1",   "HD2",  "HD3",  "HD4",  "HD5",  "HD6",  "HD7"
   };
-
+  _outFile -> mkdir("Hodoscope");
+  _outFile -> cd("Hodoscope");
+  
   // lead glass A vs hodoscope occupancy with some amplitude cuts
   // subject to mV callibration!!
   // jiri on shift 28.7.2023
@@ -215,7 +221,7 @@ void MakeAllDataPlots::InitHodoscopeHistos() {
   _histos2d[name] = new TH2D(name, title, 15, 0, 15, 15, 0, 15);
   _histos1d["hnHitsHodoscope"] = new TH1D("hnHitsHodoscope", ";Hodoscope channel; Number of hits", 15, 0, 15);
   
-  
+  _outFile -> cd("../");
   cout << "done" << endl;
 
 }
@@ -226,6 +232,9 @@ void MakeAllDataPlots::InitHodoscopeHistos() {
 void MakeAllDataPlots::InitTofHistos()
 {
   cout << "In InitTofHistos" << endl;
+
+  _outFile -> mkdir("TOF");
+  _outFile -> cd("TOF");
   // TOF 1D
   _histos1d["hTOFAll"] = new TH1D("hTOFAll", ";t_{TOF}^{All} [ns]", 120, tofmin, tofmax);
   _histos1d["hTOFAllWide"] = new TH1D("hTOFAllWide", ";t_{TOF}^{All} [ns]", 2*ntofbins, tofmin, 2*tofmax);
@@ -264,6 +273,8 @@ void MakeAllDataPlots::InitTofHistos()
   _histos1d["hTimeTOF2"] = new TH1D("hTimeTOF2", "; hTimeTOF2", 100, 0.,50.);
   _histos1d["hTimeTOF3"] = new TH1D("hTimeTOF3", "; hTimeTOF3", 100, 0.,50.);
 
+  _outFile -> cd("../");
+
 }
 
 // ______________________________________________________________
@@ -288,6 +299,9 @@ void MakeAllDataPlots::InitChargedHistos()
   };
 
   double ACT0Gain = 5.;
+
+  _outFile -> mkdir("Charged");
+  _outFile -> cd("Charged");
   
   //lead glass vs act 2 and 3 - identify particles
   _histos2d["hRef_pbA_act23A"] = new TH2D("hRef_pbA_act23A", "; Pb-glass Amplitude ; (ACT2+ACT3)/2 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., 2*actAmplitudeMax);
@@ -311,6 +325,10 @@ void MakeAllDataPlots::InitChargedHistos()
   // Trigger scintillators (unfortunatelly labelled as TOF all through out the code;-)
   // amplitude and charge vs tof:
 
+  _outFile -> cd("../");
+
+  _outFile -> mkdir("TrigScint");
+  _outFile -> cd("TrigScint");
   // both trig scintil.:
   _histos2d["hRef_pbC_TrigScintC"] = new TH2D("hRef_pbC_TrigScintC", "; Pb-glass Charge ; Trig. scint. Charge", 200, PbGChargeMin, PbGChargeMax, 400, trigScintChargeMin, trigScintChargeMax);
   _histos2d["hRef_pbA_TrigScintC"] = new TH2D("hRef_pbA_TrigScintC", "; Pb-glass Amplitude ; Trig. scint. Charge", 200, 0., PbGAmplitudeMax, 400,trigScintChargeMin, trigScintChargeMax);
@@ -338,7 +356,6 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hRef_TOF_TrigScint001C"] = new TH2D("hRef_TOF_TrigScint001C", "; t_{1}-t_{0} [ns] ; Trig. scint. 0 0+1 Charge", ntofbins2d, tofmin, tofmax, 400, trigScintChargeMin, trigScintChargeMax/4.);
   _histos2d["hRef_TOF_TrigScint001A"] = new TH2D("hRef_TOF_TrigScint001A", "; t_{1}-t_{0} [ns] ; Trig. scint. 0 0+1 Amplitude", ntofbins2d, tofmin, tofmax, 400, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
 
-
    // TOF0 2+3
   _histos2d["hRef_pbC_TrigScint023C"] = new TH2D("hRef_pbC_TrigScint023C", "; Pb-glass Charge ; Trig. scint. 0 2+3 Charge", 200, PbGChargeMin, PbGChargeMax, 400, trigScintChargeMin, trigScintChargeMax/4.);
   _histos2d["hRef_pbA_TrigScint023C"] = new TH2D("hRef_pbA_TrigScint023C", "; Pb-glass Amplitude ; Trig. scint. 0 2+3 Charge", 200, 0., PbGAmplitudeMax, 400,trigScintChargeMin, trigScintChargeMax/4.);
@@ -348,7 +365,6 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hRef_TOF_TrigScint023C"] = new TH2D("hRef_TOF_TrigScint023C", "; t_{1}-t_{0} [ns] ; Trig. scint. 0 2+3 Charge", ntofbins2d, tofmin, tofmax, 400, trigScintChargeMin, trigScintChargeMax/4.);
   _histos2d["hRef_TOF_TrigScint023A"] = new TH2D("hRef_TOF_TrigScint023A", "; t_{1}-t_{0} [ns] ; Trig. scint. 0 2+3 Amplitude", ntofbins2d, tofmin, tofmax, 400, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
 
-  
   // TOF1X
   _histos2d["hRef_pbC_TrigScint1C"] = new TH2D("hRef_pbC_TrigScint1C", "; Pb-glass Charge ; Trig. scint. 1 Charge", 200, PbGChargeMin, PbGChargeMax, 400, trigScintChargeMin, trigScintChargeMax/2.);
   _histos2d["hRef_pbA_TrigScint1C"] = new TH2D("hRef_pbA_TrigScint1C", "; Pb-glass Amplitude ; Trig. scint. 1 Charge", 200, 0., PbGAmplitudeMax, 400,trigScintChargeMin, trigScintChargeMax/2.);
@@ -376,9 +392,10 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hRef_TOF_TrigScint123C"] = new TH2D("hRef_TOF_TrigScint123C", "; t_{1}-t_{0} [ns] ; Trig. scint.1 2+3 Charge", ntofbins2d, tofmin, tofmax, 400, trigScintChargeMin, trigScintChargeMax/4.);
   _histos2d["hRef_TOF_TrigScint123A"] = new TH2D("hRef_TOF_TrigScint123A", "; t_{1}-t_{0} [ns] ; Trig. scint.1 2+3 Amplitude", ntofbins2d, tofmin, tofmax, 400, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
   
+  _outFile -> cd("../");
 
 
-
+  _outFile -> cd("Charged");
 
   // L-R studies:
   // 17.11.2023
@@ -433,10 +450,15 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hACT3CACT2C"] = new TH2D("hRef_ACT3CACT2C", "; ACT3 Charge; ACT2 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
   _histos2d["hACT1CACT3C"] = new TH2D("hRef_ACT1CACT3C", "; ACT1 Charge; ACT3 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
 
+  _outFile -> cd("../");
+
   // nPeak 2D plots;)
   int nbn = 16.;
   double n1 = 0.;
   double n2 = 4.;
+
+  _outFile -> mkdir("nPeaks");
+  _outFile -> cd("nPeaks");
 
   _histos2d["hnPeaksACT23vsnPeaksToF"] = new TH2D("hnPeaksACT23vsnPeaksToF", "hnPeaksACT23vsnPeaksToF;<n_{Peaks}^{ToF}>;<n_{Peaks}^{ACT23}>", nbn, n1, n2, nbn, n1, n2);
   _histos2d["hnPeaksToF1vsnPeaksToF0"] = new TH2D("hnPeaksToF1vsnPeaksToF0", "hnPeaksToF1vsnPeaksToF0;<n_{Peaks}^{ToF0}>;<n_{Peaks}^{ToF1}>", nbn, n1, n2, nbn, n1, n2);
@@ -451,6 +473,7 @@ void MakeAllDataPlots::InitChargedHistos()
   n1 = 0.;
   n2 = 10.;
   _histos2d["hnPeaksLeadGlassvsLeadGlassA"] = new TH2D("hnPeaksLeadGlassvsLeadGlassA", "hnPeaksLeadGlassvsLeadGlassA;lead glass A;n_{Peaks}^{Pb}", 100,  0., actAmplitudeMax/2., int(n2-n1), n1, n2);
+  _outFile -> cd("../");
   
   cout << "done" << endl;
   
@@ -956,7 +979,6 @@ void MakeAllDataPlots::FillChargedHistos()
     _histos2d["hRef_TOF_TrigScint123C"]->Fill(_tof, trigScint123C);
     _histos2d["hRef_TOF_TrigScint123A"]->Fill(_tof, trigScint123A);
 
-    
 
     // times
     _histos1d["hT0"]->Fill(_t0);
