@@ -529,8 +529,10 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
     Long64_t  RunNumber = _eventInfo->RunNumber;
     Int_t EventNumber = _eventInfo -> EventNumber;
     Int_t SpillNumber = _eventInfo -> SpillNumber;
-    if (_lastSpillNumber != SpillNumber)
+    if (_lastSpillNumber != SpillNumber) {
       _nSpills++;
+      _lastSpillNumber = SpillNumber;
+    }
     
     //    cout << " RunNumber=" << RunNumber << " EventNumber=" << EventNumber << " SpillNumber=" << SpillNumber << endl;
     
