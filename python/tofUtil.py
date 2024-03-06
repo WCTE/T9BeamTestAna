@@ -38,6 +38,18 @@ c = 299792458 # m/s
 print('*** The Time of Flight times for L = {} m as function of particles momenta ***'.format(l))
 
 ############################################################
+def getBetaGamma(m, p):
+    # beta*gamma:
+    bg = p/m
+    return bg
+############################################################
+def getBeta(m, p):
+    # beta*gamma:
+    bg = p/m
+    beta = sqrt(bg*bg/(1+bg*bg))
+    return beta
+
+############################################################
 def getTof(m, momentum):
     # bug fixed 14.2.2024!
     return l/c*sqrt(1.+pow(m/momentum,2))*conv

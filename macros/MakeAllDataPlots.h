@@ -17,6 +17,8 @@
 #include "EventInfo.h"
 #include "channelReadClass.h"
 
+#include "tofUtil.C"
+
 #include <string>
 
 using namespace std;
@@ -134,6 +136,51 @@ class MakeAllDataPlots
   bool _ispACT23pb;
   bool _isMuACT23pb;
   bool _isElACT23pb;
+
+  tofUtil* _tofutil;
+
+
+  // ACTs
+  double _act0c;
+  double _act1c;
+  double _act2c;
+  double _act3c;
+  
+  double _act0a;
+  double _act1a;
+  double _act2a;
+  double _act3a;
+  
+  double _act23aAver;
+  double _act23cAver;
+  
+  // hole counters and lead glass
+  
+  double _hc0c;
+  double _hc0a;
+  
+  double _hc1c;
+  double _hc1a;
+  
+  double _pbc;
+  double _pba;
+  
+  double _trigScintA;
+  double _trigScintC;
+  
+  double _trigScint0A;
+  double _trigScint0C;
+  double _trigScint001A;
+  double _trigScint001C;
+  double _trigScint023A;
+  double _trigScint023C;
+  
+  double _trigScint1A;
+  double _trigScint1C;
+  double _trigScint101A;
+  double _trigScint101C;
+  double _trigScint123A;
+  double _trigScint123C;
   
  public:
   
@@ -145,12 +192,15 @@ class MakeAllDataPlots
   void InitReaders();
   void InitTofHistos();
   void InitGeneralHistos();
+  void InitTrigScintHistos(TString dirname, TString selTag, TString selTit);
   void InitChargedHistos();
   void InitHodoscopeHistos();
 
   void ReadChannels();
   bool PassedPeakCuts();
   void FillChannels();
+  void ComputeChargesAndAmplitudes();
+  void FillTrigScintHistos(TString selTag);
   void FillTofHistos();
   void FillChargedHistos();
   void FillHodoscopeHistos();

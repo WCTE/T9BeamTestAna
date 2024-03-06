@@ -122,6 +122,7 @@ def main(argv):
     hs = []
     txts = []
     basedir = 'TrigScint/'
+    pbasedir = 'TrigScint_p/'
     hnames2d = [ 'hRef_TOFPbA',
                  'hRef_TOFPbC',
                  
@@ -158,7 +159,7 @@ def main(argv):
         cans.append(can)
         #can.Divide(8,4)
         h.SetStats(0)
-        h.Rebin2D(2,2)
+        #h.Rebin2D(2,2)
         h.Draw('colz')
         #adjustStats(h)
         #ROOT.gPad.Update()
