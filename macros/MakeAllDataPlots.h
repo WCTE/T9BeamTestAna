@@ -1,6 +1,7 @@
 #ifndef MakeAllDataPlots_h
 #define MakeAllDataPlots_h
 
+// JK 2023--2024
 
 #include "TTree.h"
 #include "TFile.h"
@@ -47,39 +48,55 @@ class MakeAllDataPlots
   Int_t _lastSpillNumber;
   Int_t _nSpills;
   
-  map<TString,int> PeakID;
-  map<TString,double> Amplitudes; // amplitude
-  map<TString,double> Charges; // charge
-  map<TString,double> SignalTimes; // time
-  map<TString,double> NPeaks; // time
+  map<TString,int> _PeakID;
+  map<TString,double> _Amplitudes; // amplitude
+  map<TString,double> _Charges; // charge
+  map<TString,double> _SignalTimes; // time
+  map<TString,double> _NPeaks; // time
 
   // ranges
-  double tofmin;
-  double tofmax;
-  int ntofbins;
+  double _tofmin;
+  double _tofmax;
+  int    _ntofbins;
 
-  double tofminlow;
-  double tofmaxlow;
-  int ntofbinslow;
+  double _tofminlow;
+  double _tofmaxlow;
+  int    _ntofbinslow;
 
-  int ntofbins2d;
+  int _ntofbins2d;
 
-  double actChargeMin;
-  double actChargeMax;
-  double actAmplitudeMax;
+  double _actChargeMin;
+  double _actChargeMax;
 
-  double PbGChargeMin;
-  double PbGChargeMax;
+  double _actAmplitudeMin;
+  double _actAmplitudeMax;
 
-  double PbGAmplitudeMin;
-  double PbGAmplitudeMax;
+  double _PbGChargeMin;
+  double _PbGChargeMax;
 
-  double trigScintChargeMin;
-  double trigScintChargeMax;
-  double trigScintAmplitudeMin;
-  double trigScintAmplitudeMax;
+  double _PbGAmplitudeMin;
+  double _PbGAmplitudeMax;
 
+  double _trigScintChargeMin;
+  double _trigScintChargeMax;
+  double _trigScintAmplitudeMin;
+  double _trigScintAmplitudeMax;
 
+  double _trigScint0_CweightedX;
+  double _trigScint0_CweightedY;
+  double _trigScint1_CweightedX;
+  double _trigScint1_CweightedY;
+
+  double _trigScint0_TweightedX;
+  double _trigScint0_TweightedY;
+  double _trigScint1_TweightedX;
+  double _trigScint1_TweightedY;
+
+  double _xL;
+  double _xR;
+  double _yD;
+  double _yU;
+ 
   
   // cuts
   map<int, map<TString,double > > _cutsMap;
@@ -98,11 +115,11 @@ class MakeAllDataPlots
   vector<int> _channelToHodoscope;
   
   // standard per channel
-  vector<TH1D> hCharge;
-  vector<TH1D> hVoltage;
-  vector<TH1D> hPedestalSigma;
-  vector<TH1D> hTime;
-  vector<TH1D> hnPeaks;
+  vector<TH1D> _hCharge;
+  vector<TH1D> _hVoltage;
+  vector<TH1D> _hPedestalSigma;
+  vector<TH1D> _hTime;
+  vector<TH1D> _hnPeaks;
   
   map<TString,TH1D*> _histos1d;
   map<TString,TH2D*> _histos2d;
@@ -170,17 +187,17 @@ class MakeAllDataPlots
   
   double _trigScint0A;
   double _trigScint0C;
-  double _trigScint001A;
-  double _trigScint001C;
-  double _trigScint023A;
-  double _trigScint023C;
+  double _trigScint0LA;
+  double _trigScint0LC;
+  double _trigScint0RA;
+  double _trigScint0RC;
   
   double _trigScint1A;
   double _trigScint1C;
-  double _trigScint101A;
-  double _trigScint101C;
-  double _trigScint123A;
-  double _trigScint123C;
+  double _trigScint1LA;
+  double _trigScint1LC;
+  double _trigScint1RA;
+  double _trigScint1RC;
   
  public:
   

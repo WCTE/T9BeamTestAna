@@ -109,18 +109,26 @@ def main(argv):
     #ROOT.gStyle.SetPalette(1)
 
 
+    scint1 = 4.
+    scint2 = 22.
+    t1 = 13.
+    t2 = 30.
+
     dirname = 'histos/'
-    filenames = [ 'ntuple_000396_plots.root ',
-                  'ntuple_000394_plots.root ',
-                  'ntuple_000393_plots.root ',
-                  'ntuple_000392_plots.root ',
-                  'ntuple_000398_plots.root ',
-                  'ntuple_000399_plots.root ',
-                  'ntuple_000402_plots.root'
-        
-
-                 ]
-
+    filenames = [
+        'ntuple_000403_plots.root',
+        'ntuple_000396_plots.root',
+        'ntuple_000394_plots.root',
+        'ntuple_000393_plots.root',
+        'ntuple_000392_plots.root',
+        'ntuple_000398_plots.root',
+        'ntuple_000399_plots.root',
+        'ntuple_000402_plots.root',
+        'ntuple_000449_plots.root',
+        'ntuple_000436_plots.root',
+        'ntuple_000435_plots.root'
+    ]
+    
     
     os.system('mkdir -p pdf png')
     hs = []
@@ -158,10 +166,12 @@ def main(argv):
     betas = []
     betagammas = []
     ebetas = []
-    leg = ROOT.TLegend(0.65, 0.65, 0.88, 0.88)
+    leg = ROOT.TLegend(0.12, 0.65, 0.40, 0.88)
     leg.SetBorderSize(0)
     stuff.append(leg)
-    cols = [ROOT.kBlack, ROOT.kGray+1, ROOT.kGreen+2, ROOT.kBlue, ROOT.kViolet, ROOT.kRed, ROOT.kOrange+1, ROOT.kYellow]
+    cols = [ROOT.kBlack, ROOT.kGreen+2, ROOT.kBlue, ROOT.kViolet, ROOT.kRed,
+            ROOT.kOrange+1, ROOT.kYellow, ROOT.kYellow+2, ROOT.kCyan+1, ROOT.kTeal-7,
+            ROOT.kAzure, ROOT.kGray+2, ROOT.kGreen+1, ROOT.kBlue, ROOT.kMagenta]
     for filename,col in zip(filenames,cols):
         rfile = ROOT.TFile(dirname + filename, 'read')
         rfiles.append(rfile)
@@ -200,12 +210,16 @@ def main(argv):
             cans.append(can)
             #can.Divide(8,4)
         h.SetStats(0)
-        #h.Rebin2D(2,2)
+
+        projY = h.ProjectionY()
+        projYs.append(projY)
+        h.Rebin2D(2,2)
+        
         hcp = h.DrawCopy('scat' + opt)
         if opt == '':
-            hcp.GetXaxis().SetRangeUser(13, 23)
-            hcp.GetYaxis().SetRangeUser(4, 16)
-        alpha = 0.1
+            hcp.GetXaxis().SetRangeUser(t1, t2)
+            hcp.GetYaxis().SetRangeUser(scint1, scint2)
+        alpha = 0.10
         hcp.SetMarkerColorAlpha(col, alpha)
         hcp.SetLineColorAlpha(col, alpha)
         hcp.SetMarkerSize(0.1)
@@ -220,15 +234,23 @@ def main(argv):
         betagamma = getBetaGamma(ms['p'], momentum)
         leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
 
-        ys.append(h.GetMean(2))
-        eys.append(h.GetMeanError(2))
+
+        projYcp = projY.Clone(projY.GetName() + '_cp')
+
+        meanfull = projY.GetMean()
+        sigmafull = projY.GetStdDev()
+
+        x2 = projY.GetXaxis().GetXmax()
+        x1 = max(projY.GetXaxis().GetXmin(), meanfull - sigmafull)
+        projYcp.GetXaxis().SetRangeUser(x1, x2)
+        mean = projYcp.GetMean()
+        meanerr = projYcp.GetMeanError()        
+        ys.append(mean)
+        eys.append(meanerr)
         betas.append(beta)
         betagammas.append( betagamma)
         ebetas.append(0.)
 
-        projY = h.ProjectionY()
-        projYs.append(projY)
-        
         opt = 'same'
         #adjustStats(h)
         #ROOT.gPad.Update()
@@ -252,7 +274,7 @@ def main(argv):
     legp = ROOT.TLegend(0.65, 0.65, 0.88, 0.88)
     legp.SetBorderSize(0)
     stuff.append(legp)
-    for h,projY,momemntum in zip(hs,projYs,momenta):
+    for h,projY,momentum,beta in zip(hs,projYs,momenta,betas):
         projY.SetLineColor(h.GetFillColor())
         projY.SetFillColorAlpha(h.GetFillColor(), 0.3)
         projY.SetLineWidth(2)
@@ -265,7 +287,7 @@ def main(argv):
         projY.SetStats(0)
         projY.Draw('hist' + opt)
         if opt == '':
-            projY.GetXaxis().SetRangeUser(4., 14.)
+            projY.GetXaxis().SetRangeUser(scint1, scint2)
         legp.AddEntry(projY, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
         opt = 'same'
     legp.Draw()
@@ -275,7 +297,7 @@ def main(argv):
     
     ##########################################
     canname = 'protonsBetaGraph'
-    gcan = ROOT.TCanvas(canname, canname, 100, 100, 1000, 400)
+    gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
     gcan.Divide(2,1)
     print(betas, ebetas, ys, eys)
     grb = MakeGraph(betas, ebetas, ys, eys)
@@ -283,7 +305,7 @@ def main(argv):
     
     hn = 'tmpbg'
     ht = hn + ';#beta#gamma;Mean trig. scint. charge [a.u.];'
-    htmpbg = ROOT.TH2D(hn, ht, 100, 0.5, 1.5, 100, 6., 12.)
+    htmpbg = ROOT.TH2D(hn, ht, 100, 0.4, 1.5, 100, scint1, scint2)
     htmpbg.SetStats(0)
     htmpbg.GetXaxis().SetMoreLogLabels()
 
@@ -297,7 +319,7 @@ def main(argv):
 
     hn = 'tmpbg'
     ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
-    htmpb = ROOT.TH2D(hn, ht, 100, 0.5, 0.85, 100, 6., 12.)
+    htmpb = ROOT.TH2D(hn, ht, 100, 0.4, 0.85, 100, scint1, scint2)
     htmpb.SetStats(0)
     htmpb.GetXaxis().SetMoreLogLabels()
 
@@ -310,8 +332,13 @@ def main(argv):
     grb.Draw("P")
     #fun = ROOT.TF1('fun', '[0]/x^2 + [1]', 0.1, 1.)
     #fun.SetParameters(0.1, 1.)
-    fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
-    fun.SetParameters(10., 1., 0.5)
+    #fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
+    #fun.SetParameters(2., 10., 0.5)
+    fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2)', 0.1, 1.)
+    fun.SetParameters(2., 10., 0.5)
+    fun.SetParName(0, 'A')
+    fun.SetParName(1, 'B')
+    #fun.SetParName(2, 'C')
     grb.Fit('fun')
     
     cans.append(gcan)

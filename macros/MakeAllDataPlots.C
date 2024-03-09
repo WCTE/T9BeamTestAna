@@ -1,12 +1,9 @@
-
 #include "MakeAllDataPlots.h"
 #include "Tools.C"
 
 // jiri kvita 2023--2024
 
-// new
 using namespace std;
-
 
 // ______________________________________________________________
 
@@ -20,12 +17,26 @@ MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodosco
   _useWindowIntCharge = useWindowIntCharge;
   _debug = 0;
 
+  // Luan, 7.3.2024
+  // nominal diameter of the PMTs is 2.85 cm
+  // thickness of the scintillator tile is 1 cm
+
+  double dpmt = 28.5; // mm
+  double sf = 1.;
+  double rx = 50.;
+  double ry = 50.;
+  _xL = -rx*sf; // guess, mm
+  _xR = +rx*sf; // guess, mm
+  _yD = (-ry+dpmt/2.)*sf; // guess, mm
+  _yU = (+ry-dpmt/2.)*sf; // guess, mm
+ 
+  
   cout << "MakeAllDataPlots::MakeAllDataPlot: Configured as:" << endl;
-  cout << " fileName: " << _fileName.c_str() << endl 
-       << " momentum: " << _momentum << endl 
-       << " peakMode: " << _peakMode << endl 
-       << " isHodoscopeRun: " << _isHodoscopeRun << endl
-       << " useWindowIntCharge: " << useWindowIntCharge << endl
+  cout << " fileName           : " << _fileName.c_str() << endl 
+       << " momentum           : " << _momentum << endl 
+       << " peakMode           : " << _peakMode << endl 
+       << " isHodoscopeRun     : " << _isHodoscopeRun << endl
+       << " useWindowIntCharge : " << useWindowIntCharge << endl
        << endl;
 
   _tofutil = new tofUtil();
@@ -39,42 +50,44 @@ MakeAllDataPlots::~MakeAllDataPlots() {
 }
 // ______________________________________________________________
 
-
-
 void MakeAllDataPlots::Init(bool noAct1Cuts)
 {
 
   _noAct1Cuts = noAct1Cuts;
 
-  tofmin = 10.;
-  tofmax = 40.;
-  ntofbins = 200;
+  _tofmin = 10.;
+  _tofmax = 40.;
+  _ntofbins = 200;
 
-  tofminlow = 10.;
-  tofmaxlow = 20.;
-  ntofbinslow = 150;
+  _tofminlow = 10.;
+  _tofmaxlow = 20.;
+  _ntofbinslow = 150;
 
-  ntofbins2d = 400;
+  _ntofbins2d = 400;
 
-  actChargeMin = 0.0;
-  actChargeMax = 1.1; // 2.
-  actAmplitudeMax =  0.8; // 2.
-
-  PbGAmplitudeMin =  0.; // 2.
-  PbGAmplitudeMax =  2.; // 2.
+  // scale factors for p.e. charges limits
+  double PEsfTOF = 10.;
+  double PEsfPbG = 20.;
+  double PEsfACT = 300.;
   
-  PbGChargeMin =  0.; // 2.
-  PbGChargeMax =  2.; // 2. // 1.4
+  _actChargeMin = 0.0;
+  _actChargeMax = 1.1*PEsfACT; // 2.
+  _actAmplitudeMax =  0.8; // 2.
 
-  trigScintChargeMin = 0.;
-  trigScintChargeMax = 18.;
-  trigScintAmplitudeMin = 0.;
-  trigScintAmplitudeMax = 10.;
+  _PbGAmplitudeMin =  0.; // 2.
+  _PbGAmplitudeMax =  2.; // 2.
+
+  _PbGChargeMin =  0.; // 2.
+  _PbGChargeMax =  2.*PEsfPbG; // 2. // 1.4
+
+  _trigScintChargeMin = 0.;
+  _trigScintChargeMax = 18.*PEsfTOF;
+  _trigScintAmplitudeMin = 0.;
+  _trigScintAmplitudeMax = 10.*PEsfTOF;
   
   gSystem->Exec("mkdir -p histos/");
 
   _infile = new TFile(_fileName.c_str(), "READ");
-  
   
   TString peakModeTag = "";
   if (_peakMode != "")
@@ -96,7 +109,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   };
 
   cout << "Initialized with: " << endl;
-  cout << " _noAct1Cuts: " << _noAct1Cuts << endl;
+  cout << "  noAct1Cuts: " << _noAct1Cuts << endl;
     
 }
 
@@ -108,16 +121,16 @@ void MakeAllDataPlots::InitReaders()
 {
   cout << "In InitReaders" << endl;
   _eventInfo = new EventInfo(_infile, "EventInfo");
-  cout << "Initializing the tree readers..." << endl;
+  cout << "Initializing the tree readers" << endl;
   for (int ich = 0; ich < _nChannels; ++ich) {
-    //cout << "Initializing " <<  _treeNames[ich] << endl;
+    cout << "  initializing " <<  _treeNames[ich] << endl;
     _reader[ich] = new channelReadClass(_infile, _treeNames[ich], _useWindowIntCharge);
     _trees[ich] = _reader[ich] -> fChain;
     _ent[ich] = _trees[ich] -> GetEntries();
     _readerMap[_treeNames[ich]] = _reader[ich];
-    cout << "  ...reader for " << _treeNames[ich].Data() << ": " << _ent[ich] << " entries." << endl;
+    cout << "    ...reader for " << _treeNames[ich].Data() << ": " << _ent[ich] << " entries" << endl;
   }
-  cout << "done Init" << endl;
+  cout << "Done Init" << endl;
 
   // jk 16.11.2023
   _Nmin = 999999999;
@@ -134,48 +147,69 @@ void MakeAllDataPlots::InitReaders()
 
 void MakeAllDataPlots::InitGeneralHistos() {
   
-  _nChannels = 32;
+  //_nChannels = 32;
   cout << "InitGeneralHistos" << endl;
   
   _outFile -> mkdir("General");
   _outFile -> cd("General");
-  
- for(int i = 0; i < _nChannels; i++) {
-    string name1 = "hRef_Charge" + to_string(i);
-    string name2 = "hRef_Voltage" + to_string(i);
-    string name3 = "hRef_Hits" + to_string(i);
-    string name4 = "hRef_PedestalSigma" + to_string(i);
-    string name5 = "hRef_Time" + to_string(i);
-    string name6 = "hRef_nPeaks" + to_string(i);
-    string name7 = "hRef_Pedestal" + to_string(i);
-    string name8 = "hRef_PedestalNbPeaks" + to_string(i);
 
-    string title1 = "Channel " + to_string(i) + "; Charge [nC]; Triggers";
-    string title2 = "Channel " + to_string(i) + "; Total Amplitude [V]; Triggers";
-    string title3 = "Channel " + to_string(i) + "; Hits per trigger; Triggers";
-    string title4 = "Channel " + to_string(i) + "; #sigma_{ped} [V]; Triggers";
-    string title5 = "Channel " + to_string(i) + "; Time [ns]; Triggers";
-    string title6 = "Channel " + to_string(i) + "; Number of peaks; Triggers";
-    string title7 = "Channel " + to_string(i) + "; Pedestal Amplitude; Triggers/1mV";
-    string title8 = "Channel " + to_string(i) + "; Pedestal Amplitude; Number of peaks";
+  for (int i = 0; i < _nChannels; ++i) {
+    TString chname = _treeNames[i];
+    // cout << "Preparing histos for channel " << chname.Data() << endl;
+    TString name1 = Form("hRef_Charge%i", i);
+    TString name2 = Form("hRef_Voltage%i", i);
+    TString name3 = Form("hRef_Hits%i", i);
+    TString name4 = Form("hRef_PedestalSigma%i", i);
+    TString name5 = Form("hRef_Time%i", i);
+    TString name6 = Form("hRef_nPeaks%i", i);
+    TString name7 = Form("hRef_Pedestal%i", i);
+    TString name8 = Form("hRef_PedestalNbPeaks%i", i);
 
-    TH1D temp1(name1.c_str(), title1.c_str(), 400, actChargeMin, actChargeMax);
-    TH1D temp2(name2.c_str(), title2.c_str(), 400, 0., 2);
-    TH1D temp3(name3.c_str(), title3.c_str(), 5, -0.5, 4.5);
-    TH1D temp4(name4.c_str(), title4.c_str(), 200, 0., 0.01);
-    TH1D temp5(name5.c_str(), title5.c_str(), 270, 0., 540.);
-    TH1D temp6(name6.c_str(), title6.c_str(), 20, 0., 20.);
-    TH1D temp7(name7.c_str(), title7.c_str(), 1000., 1.65, 1.65+1000*0.0012207);
-    TH2D temp8(name8.c_str(), title8.c_str(), 200, 0., 3*0.8,  5, 0., 5.);
+    TString title1 = Form("Channel %i", i) + TString("; Charge [nC]; Triggers"); 
+    TString title2 = Form("Channel %i", i) + TString("; Total Amplitude [V]; Triggers");
+    TString title3 = Form("Channel %i", i) + TString("; Hits per trigger; Triggers");
+    TString title4 = Form("Channel %i", i) + TString("; #sigma_{ped} [V]; Triggers");
+    TString title5 = Form("Channel %i", i) + TString("; Time [ns]; Triggers");
+    TString title6 = Form("Channel %i", i) + TString("; Number of peaks; Triggers");
+    TString title7 = Form("Channel %i", i) + TString("; Pedestal Amplitude; Triggers/1mV");
+    TString title8 = Form("Channel %i", i) + TString("; Pedestal Amplitude; Number of peaks");
 
-    hCharge.push_back(temp1);
-    hVoltage.push_back(temp2);
-    hPedestalSigma.push_back(temp4);
-    hTime.push_back(temp5);
-    hnPeaks.push_back(temp6);
+    double cmin = _actChargeMin;
+    double cmax = _actChargeMax;
+    double amin = _actAmplitudeMin;
+    double amax = _actAmplitudeMax;
+    if (chname.Contains("TOF")) {
+      //      cout << "Setting histo limits to TOF" << endl;
+      cmin = _trigScintChargeMin;
+      cmax = _trigScintChargeMax;
+      amin = _trigScintAmplitudeMin;
+      amax = _trigScintAmplitudeMax;
+    } else if (chname.Contains("PbG")) {
+      //      cout << "Setting histo limits to PbG" << endl;
+      cmin = _PbGChargeMin;
+      cmax = _PbGChargeMax;
+      amin = _PbGAmplitudeMin;
+      amax = _PbGAmplitudeMax;
+    }
+    
+    TH1D temp1(name1, title1, 400, cmin, cmax);
+    TH1D temp2(name2, title2, 400, amin, amax);
+    TH1D temp3(name3, title3, 5, -0.5, 4.5);
+    TH1D temp4(name4, title4, 200, 0., 0.01);
+    TH1D temp5(name5, title5, 270, 0., 540.);
+    TH1D temp6(name6, title6, 20, 0., 20.);
+    TH1D temp7(name7, title7, 1000., 1.65, 1.65+1000*0.0012207);
+    TH2D temp8(name8, title8, 200, 0., 3*0.8,  5, 0., 5.);
+
+    _hCharge.push_back(temp1);
+    _hVoltage.push_back(temp2);
+    _hPedestalSigma.push_back(temp4);
+    _hTime.push_back(temp5);
+    _hnPeaks.push_back(temp6);
   }
+ 
  _outFile -> cd("../");
- cout << "done" << endl;
+ // cout << "Done" << endl;
  
 }
 
@@ -222,7 +256,7 @@ void MakeAllDataPlots::InitHodoscopeHistos() {
   _histos1d["hnHitsHodoscope"] = new TH1D("hnHitsHodoscope", ";Hodoscope channel; Number of hits", 15, 0, 15);
   
   _outFile -> cd("../");
-  cout << "done" << endl;
+  //cout << "Done" << endl;
 
 }
 
@@ -236,17 +270,17 @@ void MakeAllDataPlots::InitTofHistos()
   _outFile -> mkdir("TOF");
   _outFile -> cd("TOF");
   // TOF 1D
-  _histos1d["hTOFAll"] = new TH1D("hTOFAll", ";t_{TOF}^{All} [ns]", 120, tofmin, tofmax);
-  _histos1d["hTOFAllWide"] = new TH1D("hTOFAllWide", ";t_{TOF}^{All} [ns]", 2*ntofbins, tofmin, 2*tofmax);
-  _histos1d["hTOFEl"] = new TH1D("hTOFEl", ";t_{TOF}^{e} [ns]", ntofbins, tofmin, tofmax);
-  _histos1d["hTOFOther"] = new TH1D("hTOFOther", ";t_{TOF}^{non-e} [ns]", ntofbins, tofmin, tofmax);
-  _histos1d["hTOFOther_act1cuts"] = new TH1D("hTOFOther_act1cuts", ";t_{TOF}^{non-e} [ns]", ntofbins, tofmin, tofmax);
+  _histos1d["hTOFAll"] = new TH1D("hTOFAll", ";t_{TOF}^{All} [ns]", 120, _tofmin, _tofmax);
+  _histos1d["hTOFAllWide"] = new TH1D("hTOFAllWide", ";t_{TOF}^{All} [ns]", 2*_ntofbins, _tofmin, 2*_tofmax);
+  _histos1d["hTOFEl"] = new TH1D("hTOFEl", ";t_{TOF}^{e} [ns]", _ntofbins, _tofmin, _tofmax);
+  _histos1d["hTOFOther"] = new TH1D("hTOFOther", ";t_{TOF}^{non-e} [ns]", _ntofbins, _tofmin, _tofmax);
+  _histos1d["hTOFOther_act1cuts"] = new TH1D("hTOFOther_act1cuts", ";t_{TOF}^{non-e} [ns]", _ntofbins, _tofmin, _tofmax);
   
   
-  _histos1d["hTOFAllLow"] = new TH1D("hTOFAllLow", ";t_{TOF}^{All} [ns]", ntofbinslow, tofminlow, tofmaxlow);
-  _histos1d["hTOFElLow"] = new TH1D("hTOFElLow", ";t_{TOF}^{e} [ns]", ntofbinslow, tofminlow, tofmaxlow);
-  _histos1d["hTOFOtherLow"] = new TH1D("hTOFOtherLow", ";t_{TOF}^{non-e} [ns]", ntofbinslow, tofminlow, tofmaxlow);
-  _histos1d["hTOFOtherLow_act1cuts"] = new TH1D("hTOFOtherLow_act1cuts", ";t_{TOF}^{non-e} [ns]", ntofbinslow, tofminlow, tofmaxlow);
+  _histos1d["hTOFAllLow"] = new TH1D("hTOFAllLow", ";t_{TOF}^{All} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
+  _histos1d["hTOFElLow"] = new TH1D("hTOFElLow", ";t_{TOF}^{e} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
+  _histos1d["hTOFOtherLow"] = new TH1D("hTOFOtherLow", ";t_{TOF}^{non-e} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
+  _histos1d["hTOFOtherLow_act1cuts"] = new TH1D("hTOFOtherLow_act1cuts", ";t_{TOF}^{non-e} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
 
   _histos1d["hT0"] = new TH1D("hRef_T0", "", 270, 50, 320);
   _histos1d["hT1"] = new TH1D("hRef_T1", "", 270, 50, 320);
@@ -279,6 +313,8 @@ void MakeAllDataPlots::InitTofHistos()
 
 // ______________________________________________________________
 
+// TDirectory name for ourput file, and selection tak for histo name and selection title
+
 void MakeAllDataPlots::InitTrigScintHistos(TString dirname, TString selTag, TString selTit)
 {
 
@@ -287,68 +323,92 @@ void MakeAllDataPlots::InitTrigScintHistos(TString dirname, TString selTag, TStr
 
 
  // both trig scintil.:
-  _histos2d["hRef_pbC_TrigScintC" + selTag] = new TH2D("hRef_pbC_TrigScintC" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax);
-  _histos2d["hRef_pbA_TrigScintC" + selTag] = new TH2D("hRef_pbA_TrigScintC" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax);
-  _histos2d["hRef_pbC_TrigScintA" + selTag] = new TH2D("hRef_pbC_TrigScintA" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax);
-  _histos2d["hRef_pbA_TrigScintA" + selTag] = new TH2D("hRef_pbA_TrigScintA" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax);
+  _histos2d["hRef_pbC_TrigScintC" + selTag] = new TH2D("hRef_pbC_TrigScintC" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax);
+  _histos2d["hRef_pbA_TrigScintC" + selTag] = new TH2D("hRef_pbA_TrigScintC" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax);
+  _histos2d["hRef_pbC_TrigScintA" + selTag] = new TH2D("hRef_pbC_TrigScintA" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax);
+  _histos2d["hRef_pbA_TrigScintA" + selTag] = new TH2D("hRef_pbA_TrigScintA" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax);
 
-  _histos2d["hRef_TOF_TrigScintC" + selTag] = new TH2D("hRef_TOF_TrigScintC" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax);
-  _histos2d["hRef_TOF_TrigScintA" + selTag] = new TH2D("hRef_TOF_TrigScintA" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax);
+  _histos2d["hRef_TOF_TrigScintC" + selTag] = new TH2D("hRef_TOF_TrigScintC" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax);
+  _histos2d["hRef_TOF_TrigScintA" + selTag] = new TH2D("hRef_TOF_TrigScintA" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax);
 
   // TOF0X
-  _histos2d["hRef_pbC_TrigScint0C" + selTag] = new TH2D("hRef_pbC_TrigScint0C" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 0 Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax/2.);
-  _histos2d["hRef_pbA_TrigScint0C" + selTag] = new TH2D("hRef_pbA_TrigScint0C" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 0 Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax/2.);
-  _histos2d["hRef_pbC_TrigScint0A" + selTag] = new TH2D("hRef_pbC_TrigScint0A" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 0 Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/2.);
-  _histos2d["hRef_pbA_TrigScint0A" + selTag] = new TH2D("hRef_pbA_TrigScint0A" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 0 Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax/2.);
+  _histos2d["hRef_pbC_TrigScint0C" + selTag] = new TH2D("hRef_pbC_TrigScint0C" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 0 Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax/2.);
+  _histos2d["hRef_pbA_TrigScint0C" + selTag] = new TH2D("hRef_pbA_TrigScint0C" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 0 Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax/2.);
+  _histos2d["hRef_pbC_TrigScint0A" + selTag] = new TH2D("hRef_pbC_TrigScint0A" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 0 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/2.);
+  _histos2d["hRef_pbA_TrigScint0A" + selTag] = new TH2D("hRef_pbA_TrigScint0A" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 0 Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax/2.);
 
-  _histos2d["hRef_TOF_TrigScint0C" + selTag] = new TH2D("hRef_TOF_TrigScint0C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 0 Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax/2.);
-  _histos2d["hRef_TOF_TrigScint0A" + selTag] = new TH2D("hRef_TOF_TrigScint0A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 0 Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/2.);
+  _histos2d["hRef_TOF_TrigScint0C" + selTag] = new TH2D("hRef_TOF_TrigScint0C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 0 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax/2.);
+  _histos2d["hRef_TOF_TrigScint0A" + selTag] = new TH2D("hRef_TOF_TrigScint0A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 0 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/2.);
 
-  // TOF0 0+1
-  _histos2d["hRef_pbC_TrigScint001C" + selTag] = new TH2D("hRef_pbC_TrigScint001C" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 0 0+1 Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbA_TrigScint001C" + selTag] = new TH2D("hRef_pbA_TrigScint001C" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 0 0+1 Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbC_TrigScint001A" + selTag] = new TH2D("hRef_pbC_TrigScint001A" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 0 0+1 Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
-  _histos2d["hRef_pbA_TrigScint001A" + selTag] = new TH2D("hRef_pbA_TrigScint001A" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 0 0+1 Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax/4.);
+  // TOF0 L
+  _histos2d["hRef_pbC_TrigScint0LC" + selTag] = new TH2D("hRef_pbC_TrigScint0LC" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 0 0+1 Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbA_TrigScint0LC" + selTag] = new TH2D("hRef_pbA_TrigScint0LC" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 0 0+1 Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbC_TrigScint0LA" + selTag] = new TH2D("hRef_pbC_TrigScint0LA" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 0 0+1 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
+  _histos2d["hRef_pbA_TrigScint0LA" + selTag] = new TH2D("hRef_pbA_TrigScint0LA" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 0 0+1 Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax/4.);
 
-  _histos2d["hRef_TOF_TrigScint001C" + selTag] = new TH2D("hRef_TOF_TrigScint001C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 0 0+1 Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_TOF_TrigScint001A" + selTag] = new TH2D("hRef_TOF_TrigScint001A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 0 0+1 Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
+  _histos2d["hRef_TOF_TrigScint0LC" + selTag] = new TH2D("hRef_TOF_TrigScint0LC" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 0 0+1 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_TOF_TrigScint0LA" + selTag] = new TH2D("hRef_TOF_TrigScint0LA" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 0 0+1 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
 
-   // TOF0 2+3
-  _histos2d["hRef_pbC_TrigScint023C" + selTag] = new TH2D("hRef_pbC_TrigScint023C" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 0 2+3 Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbA_TrigScint023C" + selTag] = new TH2D("hRef_pbA_TrigScint023C" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 0 2+3 Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbC_TrigScint023A" + selTag] = new TH2D("hRef_pbC_TrigScint023A" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 0 2+3 Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
-  _histos2d["hRef_pbA_TrigScint023A" + selTag] = new TH2D("hRef_pbA_TrigScint023A" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 0 2+3 Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax/4.);
+   // TOF0 R
+  _histos2d["hRef_pbC_TrigScint0RC" + selTag] = new TH2D("hRef_pbC_TrigScint0RC" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 0 2+3 Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbA_TrigScint0RC" + selTag] = new TH2D("hRef_pbA_TrigScint0RC" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 0 2+3 Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbC_TrigScint0RA" + selTag] = new TH2D("hRef_pbC_TrigScint0RA" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 0 2+3 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
+  _histos2d["hRef_pbA_TrigScint0RA" + selTag] = new TH2D("hRef_pbA_TrigScint0RA" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 0 2+3 Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax/4.);
 
-  _histos2d["hRef_TOF_TrigScint023C" + selTag] = new TH2D("hRef_TOF_TrigScint023C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 0 2+3 Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_TOF_TrigScint023A" + selTag] = new TH2D("hRef_TOF_TrigScint023A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 0 2+3 Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
+  _histos2d["hRef_TOF_TrigScint0RC" + selTag] = new TH2D("hRef_TOF_TrigScint0RC" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 0 2+3 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_TOF_TrigScint0RA" + selTag] = new TH2D("hRef_TOF_TrigScint0RA" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 0 2+3 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
+
+  // L-R
+  _histos2d["hRef_TrigScint0RC_TrigScint0LC" + selTag] = new TH2D("hRef_TrigScint0RC_TrigScint0LC" + selTag, "; " + selTit + " Trig. scint.1 R Charge; " + selTit + " Trig. scint.1 L Charge", 200, _trigScintChargeMin, _trigScintChargeMax/4., 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+
 
   // TOF1X
-  _histos2d["hRef_pbC_TrigScint1C" + selTag] = new TH2D("hRef_pbC_TrigScint1C" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 1 Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax/2.);
-  _histos2d["hRef_pbA_TrigScint1C" + selTag] = new TH2D("hRef_pbA_TrigScint1C" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 1 Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax/2.);
-  _histos2d["hRef_pbC_TrigScint1A" + selTag] = new TH2D("hRef_pbC_TrigScint1A" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint. 1 Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/2.);
-  _histos2d["hRef_pbA_TrigScint1A" + selTag] = new TH2D("hRef_pbA_TrigScint1A" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint. 1 Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax/2.);
+  _histos2d["hRef_pbC_TrigScint1C" + selTag] = new TH2D("hRef_pbC_TrigScint1C" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 1 Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax/2.);
+  _histos2d["hRef_pbA_TrigScint1C" + selTag] = new TH2D("hRef_pbA_TrigScint1C" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 1 Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax/2.);
+  _histos2d["hRef_pbC_TrigScint1A" + selTag] = new TH2D("hRef_pbC_TrigScint1A" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint. 1 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/2.);
+  _histos2d["hRef_pbA_TrigScint1A" + selTag] = new TH2D("hRef_pbA_TrigScint1A" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint. 1 Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax/2.);
 
-  _histos2d["hRef_TOF_TrigScint1C" + selTag] = new TH2D("hRef_TOF_TrigScint1C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 1 Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax/2.);
-  _histos2d["hRef_TOF_TrigScint1A" + selTag] = new TH2D("hRef_TOF_TrigScint1A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint. 1 Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/2.);
+  _histos2d["hRef_TOF_TrigScint1C" + selTag] = new TH2D("hRef_TOF_TrigScint1C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 1 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax/2.);
+  _histos2d["hRef_TOF_TrigScint1A" + selTag] = new TH2D("hRef_TOF_TrigScint1A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. 1 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/2.);
   
-  // TOF1 0+1
-  _histos2d["hRef_pbC_TrigScint101C" + selTag] = new TH2D("hRef_pbC_TrigScint101C" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint.1 0+1 Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbA_TrigScint101C" + selTag] = new TH2D("hRef_pbA_TrigScint101C" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint.1 0+1 Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbC_TrigScint101A" + selTag] = new TH2D("hRef_pbC_TrigScint101A" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint.1 0+1 Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
-  _histos2d["hRef_pbA_TrigScint101A" + selTag] = new TH2D("hRef_pbA_TrigScint101A" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint.1 0+1 Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax/4.);
+  // TOF1 L
+  _histos2d["hRef_pbC_TrigScint1LC" + selTag] = new TH2D("hRef_pbC_TrigScint1LC" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint.1 0+1 Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbA_TrigScint1LC" + selTag] = new TH2D("hRef_pbA_TrigScint1LC" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint.1 0+1 Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbC_TrigScint1LA" + selTag] = new TH2D("hRef_pbC_TrigScint1LA" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint.1 0+1 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
+  _histos2d["hRef_pbA_TrigScint1LA" + selTag] = new TH2D("hRef_pbA_TrigScint1LA" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint.1 0+1 Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax/4.);
 
-  _histos2d["hRef_TOF_TrigScint101C" + selTag] = new TH2D("hRef_TOF_TrigScint101C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint.1 0+1 Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_TOF_TrigScint101A" + selTag] = new TH2D("hRef_TOF_TrigScint101A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint.1 0+1 Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
+  _histos2d["hRef_TOF_TrigScint1LC" + selTag] = new TH2D("hRef_TOF_TrigScint1LC" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint.1 0+1 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_TOF_TrigScint1LA" + selTag] = new TH2D("hRef_TOF_TrigScint1LA" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint.1 0+1 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
 
-  // TOF1 2+3
-  _histos2d["hRef_pbC_TrigScint123C" + selTag] = new TH2D("hRef_pbC_TrigScint123C" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint.1 2+3 Charge", 200, PbGChargeMin, PbGChargeMax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbA_TrigScint123C" + selTag] = new TH2D("hRef_pbA_TrigScint123C" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint.1 2+3 Charge", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_pbC_TrigScint123A" + selTag] = new TH2D("hRef_pbC_TrigScint123A" + selTag, "; " + selTit + "  Pb-glass Charge ; Trig. scint.1 2+3 Amplitude", 200, PbGChargeMin, PbGChargeMax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
-  _histos2d["hRef_pbA_TrigScint123A" + selTag] = new TH2D("hRef_pbA_TrigScint123A" + selTag, "; " + selTit + "  Pb-glass Amplitude ; Trig. scint.1 2+3 Amplitude", 200, 0., PbGAmplitudeMax, 200,trigScintChargeMin, trigScintAmplitudeMax/4.);
+  // TOF1 R
+  _histos2d["hRef_pbC_TrigScint1RC" + selTag] = new TH2D("hRef_pbC_TrigScint1RC" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint.1 2+3 Charge", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbA_TrigScint1RC" + selTag] = new TH2D("hRef_pbA_TrigScint1RC" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint.1 2+3 Charge", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_pbC_TrigScint1RA" + selTag] = new TH2D("hRef_pbC_TrigScint1RA" + selTag, "; " + selTit + "  Pb-glass Charge; " + selTit + " Trig. scint.1 2+3 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
+  _histos2d["hRef_pbA_TrigScint1RA" + selTag] = new TH2D("hRef_pbA_TrigScint1RA" + selTag, "; " + selTit + "  Pb-glass Amplitude; " + selTit + " Trig. scint.1 2+3 Amplitude", 200, 0., _PbGAmplitudeMax, 200,_trigScintChargeMin, _trigScintAmplitudeMax/4.);
 
-  _histos2d["hRef_TOF_TrigScint123C" + selTag] = new TH2D("hRef_TOF_TrigScint123C" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint.1 2+3 Charge", ntofbins2d, tofmin, tofmax, 200, trigScintChargeMin, trigScintChargeMax/4.);
-  _histos2d["hRef_TOF_TrigScint123A" + selTag] = new TH2D("hRef_TOF_TrigScint123A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns] ; Trig. scint.1 2+3 Amplitude", ntofbins2d, tofmin, tofmax, 200, trigScintAmplitudeMin, trigScintAmplitudeMax/4.);
+  _histos2d["hRef_TOF_TrigScint1RC" + selTag] = new TH2D("hRef_TOF_TrigScint1RC" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint.1 2+3 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  _histos2d["hRef_TOF_TrigScint1RA" + selTag] = new TH2D("hRef_TOF_TrigScint1RA" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint.1 2+3 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, _trigScintAmplitudeMin, _trigScintAmplitudeMax/4.);
 
+  // L-R
+  _histos2d["hRef_TrigScint1RC_TrigScint1LC" + selTag] = new TH2D("hRef_TrigScint1RC_TrigScint1LC" + selTag, "; " + selTit + " Trig. scint.1 R Charge ; " + selTit + "  Trig. scint.1 L Charge", 200, _trigScintChargeMin, _trigScintChargeMax/4., 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+
+
+  // L-L between trig scinti 0 and 1
+
+_histos2d["hRef_TrigScint0LC_TrigScint1LC" + selTag] = new TH2D("hRef_TrigScint0LC_TrigScint1LC" + selTag, "; " + selTit + " Trig. scint. 0 L Charge ; " + selTit + "  Trig. scint.1 L Charge", 200, _trigScintChargeMin, _trigScintChargeMax/4., 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+  
+  // R-R between trig scinti 0 and 1
+  _histos2d["hRef_TrigScint0RC_TrigScint1RC" + selTag] = new TH2D("hRef_TrigScint0RC_TrigScint1RC" + selTag, "; " + selTit + " Trig. scint. 0 R Charge ; " + selTit + "  Trig. scint.1 R Charge", 200, _trigScintChargeMin, _trigScintChargeMax/4., 200, _trigScintChargeMin, _trigScintChargeMax/4.);
+
+  // extrapolated map, charge-weighted
+  double sf = 1.2;// 0.24;
+  _histos2d["hRef_TrigScint0_Cweighted_xymap" + selTag] = new TH2D("hRef_TrigScint0_Cweighted_xymap" + selTag, "; " + selTit + " Trig. scint. 0 Ch.-weighted X [quasi mm];" + selTit + " Trig. scint. 0 Ch.-weighted Y [quasi mm];", 100, sf*_xL, sf*_xR, 100, sf*_yD, sf*_yU);
+  _histos2d["hRef_TrigScint1_Cweighted_xymap" + selTag] = new TH2D("hRef_TrigScint1_Cweighted_xymap" + selTag, "; " + selTit + " Trig. scint. 1 Ch.-weighted X [quasi mm];" + selTit + " Trig. scint. 1 Ch.-weighted Y [quasi mm];", 100, sf*_xL, sf*_xR, 100, sf*_yD, sf*_yU);
+  
+  _histos2d["hRef_TrigScint0_Tweighted_xymap" + selTag] = new TH2D("hRef_TrigScint0_Tweighted_xymap" + selTag, "; " + selTit + " Trig. scint. 0 time-weighted X [quasi mm];" + selTit + " Trig. scint. 0 time-weighted Y [quasi mm];", 100, sf*_xL, sf*_xR, 100, sf*_yD, sf*_yU);
+  _histos2d["hRef_TrigScint1_Tweighted_xymap" + selTag] = new TH2D("hRef_TrigScint1_Tweighted_xymap" + selTag, "; " + selTit + " Trig. scint. 1 time-weighted X [quasi mm];" + selTit + " Trig. scint. 1 time-weighted Y [quasi mm];", 100, sf*_xL, sf*_xR, 100, sf*_yD, sf*_yU);
+  
+  
     _outFile -> cd("../");
 
 }
@@ -378,24 +438,23 @@ void MakeAllDataPlots::InitChargedHistos()
   _outFile -> cd("Charged");
   
   //lead glass vs act 2 and 3 - identify particles
-  _histos2d["hRef_pbA_act23A"] = new TH2D("hRef_pbA_act23A", "; Pb-glass Amplitude ; (ACT2+ACT3)/2 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., 2*actAmplitudeMax);
-  _histos2d["hRef_pbC_act23C"] = new TH2D("hRef_pbC_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Charge", 200, actChargeMin, actChargeMax, 400, 0., 2*actAmplitudeMax);
+  _histos2d["hRef_pbA_act23A"] = new TH2D("hRef_pbA_act23A", "; Pb-glass Amplitude ; (ACT2+ACT3)/2 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., 2*_actAmplitudeMax);
+  _histos2d["hRef_pbC_act23C"] = new TH2D("hRef_pbC_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Charge", 200, _actChargeMin, _actChargeMax, 400, 0., 2*_actAmplitudeMax);
 
-  _histos2d["hRef_pbC_act23A"] = new TH2D("hRef_pbC_act23A", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, 0., actAmplitudeMax, 400, 0., 2*actAmplitudeMax);
-  _histos2d["hRef_pbA_act23C"] = new TH2D("hRef_pbA_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, PbGChargeMin, PbGChargeMax, 400, 0., 2*actAmplitudeMax);
+  _histos2d["hRef_pbC_act23A"] = new TH2D("hRef_pbC_act23A", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, 0., _actAmplitudeMax, 400, 0., 2*_actAmplitudeMax);
+  _histos2d["hRef_pbA_act23C"] = new TH2D("hRef_pbA_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., 2*_actAmplitudeMax);
 
-  _histos2d["hRef_pbA_act0A"] = new TH2D("hRef_pbA_act0A", "; Pb-glass Amplitude ; ACT0 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., ACT0Gain*actAmplitudeMax);
-  _histos2d["hRef_pbC_act0C"] = new TH2D("hRef_pbC_act0C", "; Pb-glass Charge ; ACT1 Charge", 200, PbGChargeMin, PbGChargeMax, 400, 0., ACT0Gain*actChargeMax);
-  _histos2d["hRef_pbA_act1A"] = new TH2D("hRef_pbA_act1A", "; Pb-glass Amplitude ; ACT1 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., actAmplitudeMax);
-  _histos2d["hRef_pbC_PbG1C"] = new TH2D("hRef_pbC_PbG1C", "; Pb-glass Charge ; PBG1 Charge", 200, actChargeMin, PbGChargeMax, 400, 0., PbGChargeMax);
-  _histos2d["hRef_pbA_act1C"] = new TH2D("hRef_pbA_act1C", "; Pb-glass Amplitude ; ACT1 Charge", 200, 0., PbGAmplitudeMax, 400,actChargeMin, actChargeMax);
+  _histos2d["hRef_pbA_act0A"] = new TH2D("hRef_pbA_act0A", "; Pb-glass Amplitude ; ACT0 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., ACT0Gain*_actAmplitudeMax);
+  _histos2d["hRef_pbC_act0C"] = new TH2D("hRef_pbC_act0C", "; Pb-glass Charge ; ACT1 Charge", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., ACT0Gain*_actChargeMax);
+  _histos2d["hRef_pbA_act1A"] = new TH2D("hRef_pbA_act1A", "; Pb-glass Amplitude ; ACT1 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., _actAmplitudeMax);
+  _histos2d["hRef_pbC_PbG1C"] = new TH2D("hRef_pbC_PbG1C", "; Pb-glass Charge ; PBG1 Charge", 200, _actChargeMin, _PbGChargeMax, 400, 0., _PbGChargeMax);
+  _histos2d["hRef_pbA_act1C"] = new TH2D("hRef_pbA_act1C", "; Pb-glass Amplitude ; ACT1 Charge", 200, 0., _PbGAmplitudeMax, 400,_actChargeMin, _actChargeMax);
 
-  _histos2d["hRef_pbC_act1C"] = new TH2D("hRef_pbC_act1C", "; Pb-glass Charge ; ACT1 Charge", 200, actChargeMin, actChargeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_pbC_act1C"] = new TH2D("hRef_pbC_act1C", "; Pb-glass Charge ; ACT1 Charge", 200, _actChargeMin, _actChargeMax, 400, 0., _actAmplitudeMax);
   // act1cuts
-  _histos2d["hRef_pbA_act1A_act1cuts"] = new TH2D("hRef_pbA_act1A_act1cuts", "; Pb-glass Amplitude ; ACT1 Amplitude", 200, 0., PbGAmplitudeMax, 400, 0., actAmplitudeMax);
+  _histos2d["hRef_pbA_act1A_act1cuts"] = new TH2D("hRef_pbA_act1A_act1cuts", "; Pb-glass Amplitude ; ACT1 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., _actAmplitudeMax);
 
   _outFile -> cd("../");
-
 
   // 5.3.2024
   // Trigger scintillators (unfortunatelly labelled as TOF all through out the code;-)
@@ -410,56 +469,74 @@ void MakeAllDataPlots::InitChargedHistos()
 
   // L-R studies:
   // 17.11.2023
-  _histos2d["hRef_act0LA_act0RA_noneZero"] = new TH2D("hRef_act0LA_act0RA_nonZero", "; ACT0L Amplitude;ACT0R Amplitude", 200, 0., actAmplitudeMax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_act1LA_act1RA_noneZero"] = new TH2D("hRef_act1LA_act1RA_nonZero", "; ACT1L Amplitude;ACT1R Amplitude", 200, 0., actAmplitudeMax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_act2LA_act2RA_noneZero"] = new TH2D("hRef_act2LA_act2RA_nonZero", "; ACT2L Amplitude;ACT2R Amplitude", 200, 0., actAmplitudeMax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_act3LA_act3RA_noneZero"] = new TH2D("hRef_act3LA_act3RA_nonZero", "; ACT3L Amplitude;ACT3R Amplitude", 200, 0., actAmplitudeMax, 200, 0., actAmplitudeMax);
+  _histos2d["hRef_act0LA_act0RA_nonZero"] = new TH2D("hRef_act0LA_act0RA_nonZero", "; ACT0L Amplitude;ACT0R Amplitude", 200, 0., 2.5*_actAmplitudeMax, 200, 0., 2.5*_actAmplitudeMax);
+  _histos2d["hRef_act1LA_act1RA_nonZero"] = new TH2D("hRef_act1LA_act1RA_nonZero", "; ACT1L Amplitude;ACT1R Amplitude", 200, 0., _actAmplitudeMax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_act2LA_act2RA_nonZero"] = new TH2D("hRef_act2LA_act2RA_nonZero", "; ACT2L Amplitude;ACT2R Amplitude", 200, 0., _actAmplitudeMax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_act3LA_act3RA_nonZero"] = new TH2D("hRef_act3LA_act3RA_nonZero", "; ACT3L Amplitude;ACT3R Amplitude", 200, 0., _actAmplitudeMax, 200, 0., _actAmplitudeMax);
 
-  _histos2d["hRef_act0LA_act1LA_noneZero"] = new TH2D("hRef_act0LA_act1LA_nonZero", "; ACT0L Amplitude;ACT1L Amplitude", 200, 0., actAmplitudeMax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_act0RA_act1RA_noneZero"] = new TH2D("hRef_act0RA_act1RA_nonZero", "; ACT0R Amplitude;ACT1R Amplitude", 200, 0., actAmplitudeMax, 200, 0., actAmplitudeMax);
+  _histos2d["hRef_act0LA_act1LA_nonZero"] = new TH2D("hRef_act0LA_act1LA_nonZero", "; ACT0L Amplitude;ACT1L Amplitude", 200, 0., 2.5*_actAmplitudeMax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_act0RA_act1RA_nonZero"] = new TH2D("hRef_act0RA_act1RA_nonZero", "; ACT0R Amplitude;ACT1R Amplitude", 200, 0., 2.5*_actAmplitudeMax, 200, 0., _actAmplitudeMax);
 
+  _histos2d["hRef_act0LC_act0RC_nonZero"] = new TH2D("hRef_act0LC_act0RC_nonZero", "; ACT0L Charge;ACT0R Charge", 200, 0., 2.5*_actChargeMax, 200, 0., 2.5*_actChargeMax);
+  _histos2d["hRef_act1LC_act1RC_nonZero"] = new TH2D("hRef_act1LC_act1RC_nonZero", "; ACT1L Charge;ACT1R Charge", 200, 0., _actChargeMax, 200, 0., _actChargeMax);
+  _histos2d["hRef_act2LC_act2RC_nonZero"] = new TH2D("hRef_act2LC_act2RC_nonZero", "; ACT2L Charge;ACT2R Charge", 200, 0., _actChargeMax, 200, 0., _actChargeMax);
+  _histos2d["hRef_act3LC_act3RC_nonZero"] = new TH2D("hRef_act3LC_act3RC_nonZero", "; ACT3L Charge;ACT3R Charge", 200, 0., _actChargeMax, 200, 0., _actChargeMax);
 
+  _histos2d["hRef_act0LC_act1LC_nonZero"] = new TH2D("hRef_act0LC_act1LC_nonZero", "; ACT0L Charge;ACT1L Charge", 200, 0., 2.5*_actChargeMax, 200, 0., _actChargeMax);
+  _histos2d["hRef_act0RC_act1RC_nonZero"] = new TH2D("hRef_act0RC_act1RC_nonZero", "; ACT0R Charge;ACT1R Charge", 200, 0., 2.5*_actChargeMax, 200, 0., _actChargeMax);
+
+  // diff, charges only
+  double dsf = 0.15;
+  _histos1d["hRef_act0LC_minus_act0RC_nonZero"] = new TH1D("hRef_act0LC_minus_act0RC_nonZero", "; ACT0L Charge - ACT0R Charge", 200, -3*_actChargeMax*dsf, 3*_actChargeMax*dsf);
+  _histos1d["hRef_act1LC_minus_act1RC_nonZero"] = new TH1D("hRef_act1LC_minus_act1RC_nonZero", "; ACT1L Charge - ACT1R Charge", 200, -_actChargeMax*dsf, _actChargeMax*dsf);
+  _histos1d["hRef_act2LC_minus_act2RC_nonZero"] = new TH1D("hRef_act2LC_minus_act2RC_nonZero", "; ACT2L Charge - ACT2R Charge", 200, -_actChargeMax*dsf, _actChargeMax*dsf);
+  _histos1d["hRef_act3LC_minus_act3RC_nonZero"] = new TH1D("hRef_act3LC_minus_act3RC_nonZero", "; ACT3L Charge - ACT3R Charge", 200, -_actChargeMax*dsf, _actChargeMax*dsf);
+
+  _histos1d["hRef_act0LC_minus_act1LC_nonZero"] = new TH1D("hRef_act0LC_minus_act1LC_nonZero", "; ACT0L Charge - ACT1L Charge", 200, -_actChargeMax*dsf, _actChargeMax*dsf);
+  _histos1d["hRef_act0RC_minus_act1RC_nonZero"] = new TH1D("hRef_act0RC_minus_act1RC_nonZero", "; ACT0R Charge - ACT1R Charge", 200, -_actChargeMax*dsf, _actChargeMax*dsf);
+
+  
   // (ACT2+ACT3)/2 vs TOF plots
-  _histos2d["hRef_TOFACT23A"] = new TH2D("hRef_TOFACT23A", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., 2*actAmplitudeMax);
-  _histos2d["hRef_TOFACT23C"] = new TH2D("hRef_TOFACT23C", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, 2*actChargeMax);
+  _histos2d["hRef_TOFACT23A"] = new TH2D("hRef_TOFACT23A", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., 2*_actAmplitudeMax);
+  _histos2d["hRef_TOFACT23C"] = new TH2D("hRef_TOFACT23C", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, 2*_actChargeMax);
 
   // also ACT 0 and 1, separately:
   /* seems they were already defined below...
-  _histos2d["hRef_TOFACT0A"] = new TH2D("hRef_TOFACT0A", "; t_{1}-t_{0} [ns]; ACT0 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT1A"] = new TH2D("hRef_TOFACT1A", "; t_{1}-t_{0} [ns]; ACT1 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT0A"] = new TH2D("hRef_TOFACT0A", "; t_{1}-t_{0} [ns]; ACT0 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_TOFACT1A"] = new TH2D("hRef_TOFACT1A", "; t_{1}-t_{0} [ns]; ACT1 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
   */
 
   //TOF vs Pb-glass plots
-  _histos2d["hRef_PbATOF"] = new TH2D("hRef_PbATOF", "; Pb-glass Amplitude; t_{1}-t_{0} [ns]", 200, 0., PbGAmplitudeMax, ntofbins2d, tofmin, tofmax);
-  _histos2d["hRef_PbCTOF"] = new TH2D("hRef_PbCTOF", "; Pb-glass Charge; t_{1}-t_{0} [ns]", 200, PbGChargeMin, PbGChargeMax, ntofbins2d, tofmin, tofmax);
-  _histos2d["hRef_TOFPbA"] = new TH2D("hRef_TOFPbA", "; t_{1}-t_{0} [ns]; Pb-glass Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., PbGAmplitudeMax);
-  _histos2d["hRef_TOFPbC"] = new TH2D("hRef_TOFPbC", "; t_{1}-t_{0} [ns]; Pb-glass Charge", ntofbins2d, tofmin, tofmax, 200, 0., PbGChargeMax);
+  _histos2d["hRef_PbATOF"] = new TH2D("hRef_PbATOF", "; Pb-glass Amplitude; t_{1}-t_{0} [ns]", 200, 0., _PbGAmplitudeMax, _ntofbins2d, _tofmin, _tofmax);
+  _histos2d["hRef_PbCTOF"] = new TH2D("hRef_PbCTOF", "; Pb-glass Charge; t_{1}-t_{0} [ns]", 200, _PbGChargeMin, _PbGChargeMax, _ntofbins2d, _tofmin, _tofmax);
+  _histos2d["hRef_TOFPbA"] = new TH2D("hRef_TOFPbA", "; t_{1}-t_{0} [ns]; Pb-glass Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _PbGAmplitudeMax);
+  _histos2d["hRef_TOFPbC"] = new TH2D("hRef_TOFPbC", "; t_{1}-t_{0} [ns]; Pb-glass Charge", _ntofbins2d, _tofmin, _tofmax, 200, 0., _PbGChargeMax);
   
   //acraplet - investigate "weird electrons"
   _histos2d["hHC0AHC1A"] = new TH2D("hweirdE_HC0AHC1A", "; Hole Counter 0 Amplitude; Hole Counter 1 Amplitude", 200, 0., 1000, 200, 0., 1000.);
   _histos2d["hHC0CHC1C"] = new TH2D("hweirdE_HC0CHC1C", "; Hole Counter 0 Charge; Hole Counter 1 Charge", 200, 0., 1., 200, 0., 1.);
 
   // no cuts
-  _histos2d["hRef_TOFACT0A"] = new TH2D("hRef_TOFACT0A", "; t_{1}-t_{0} [ns]; ACT0 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT1A"] = new TH2D("hRef_TOFACT1A", "; t_{1}-t_{0} [ns]; ACT1 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT2A"] = new TH2D("hRef_TOFACT2A", "; t_{1}-t_{0} [ns]; ACT2 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
-  _histos2d["hRef_TOFACT3A"] = new TH2D("hRef_TOFACT3A", "; t_{1}-t_{0} [ns]; ACT3 Amplitude", ntofbins2d, tofmin, tofmax, 200, 0., actAmplitudeMax);
+  _histos2d["hRef_TOFACT0A"] = new TH2D("hRef_TOFACT0A", "; t_{1}-t_{0} [ns]; ACT0 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_TOFACT1A"] = new TH2D("hRef_TOFACT1A", "; t_{1}-t_{0} [ns]; ACT1 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_TOFACT2A"] = new TH2D("hRef_TOFACT2A", "; t_{1}-t_{0} [ns]; ACT2 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_TOFACT3A"] = new TH2D("hRef_TOFACT3A", "; t_{1}-t_{0} [ns]; ACT3 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
 
-  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT2C"] = new TH2D("hRef_TOFACT2C", "; t_{1}-t_{0} [ns]; ACT2 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
-  _histos2d["hRef_TOFACT3C"] = new TH2D("hRef_TOFACT3C", "; t_{1}-t_{0} [ns]; ACT3 Charge", ntofbins2d, tofmin, tofmax, 200, actChargeMin, actChargeMax);
+  _histos2d["hRef_TOFACT0C"] = new TH2D("hRef_TOFACT0C", "; t_{1}-t_{0} [ns]; ACT0 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hRef_TOFACT1C"] = new TH2D("hRef_TOFACT1C", "; t_{1}-t_{0} [ns]; ACT1 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hRef_TOFACT2C"] = new TH2D("hRef_TOFACT2C", "; t_{1}-t_{0} [ns]; ACT2 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hRef_TOFACT3C"] = new TH2D("hRef_TOFACT3C", "; t_{1}-t_{0} [ns]; ACT3 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
 
 
   // ACT2+ACT3 cut
-  _histos1d["hTOF_act2act3cut"] = new TH1D("hTOF_act2act3cut", "; t_{1}-t_{0} [ns];", 120, tofmin, tofmax);
+  _histos1d["hTOF_act2act3cut"] = new TH1D("hTOF_act2act3cut", "; t_{1}-t_{0} [ns];", 120, _tofmin, _tofmax);
 
   // 2D ACT charges
-  _histos2d["hACT2CACT1C"] = new TH2D("hRef_ACT2CACT1C", "; ACT2 Charge; ACT1 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
-  _histos2d["hACT3CACT2C"] = new TH2D("hRef_ACT3CACT2C", "; ACT3 Charge; ACT2 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
-  _histos2d["hACT1CACT3C"] = new TH2D("hRef_ACT1CACT3C", "; ACT1 Charge; ACT3 Charge", 200, actChargeMin, actChargeMax, 200, actChargeMin, actChargeMax);
+  _histos2d["hACT2CACT1C"] = new TH2D("hRef_ACT2CACT1C", "; ACT2 Charge; ACT1 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hACT3CACT2C"] = new TH2D("hRef_ACT3CACT2C", "; ACT3 Charge; ACT2 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hACT1CACT3C"] = new TH2D("hRef_ACT1CACT3C", "; ACT1 Charge; ACT3 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
 
   _outFile -> cd("../");
 
@@ -475,15 +552,15 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hnPeaksToF1vsnPeaksToF0"] = new TH2D("hnPeaksToF1vsnPeaksToF0", "hnPeaksToF1vsnPeaksToF0;<n_{Peaks}^{ToF0}>;<n_{Peaks}^{ToF1}>", nbn, n1, n2, nbn, n1, n2);
   _histos2d["hnPeaksACT3vsnPeaksACT2"] = new TH2D("hnPeaksACT3vsnPeaksACT2", "hnPeaksACT3vsnPeaksACT2;<n_{Peaks}^{ACT2}>;<n_{Peaks}^{ACT3}>", nbn/2, n1, n2, nbn/2, n1, n2);
   
-  _histos2d["hnPeaksACT23vsToF"] = new TH2D("hnPeaksACT23vsToF", "hnPeaksACT23vsToF;t_{TOF};<n_{Peaks}^{ACT23}>", ntofbins2d/4, tofmin, tofmax, nbn, n1, n2);
-  _histos2d["hnPeaksACT23vsToFlow"] = new TH2D("hnPeaksACT23vsToFlow", "hnPeaksACT23vsToF;t_{TOF};<n_{Peaks}^{ACT23}>", ntofbins2d/4, tofminlow, tofmaxlow, nbn, n1, n2);
-  _histos2d["hnPeaksToFvsToF"] = new TH2D("hnPeaksToFvsToF", "hnPeaksToFvsToF;t_{TOF};<n_{Peaks}^{ToF}>", ntofbins2d/4, tofmin, tofmax, nbn, n1, n2);
-  _histos2d["hnPeaksToFvsToFlow"] = new TH2D("hnPeaksToFvsToFlow", "hnPeaksToFvsToF;t_{TOF};<n_{Peaks}^{ToF}>", ntofbins2d/4, tofminlow, tofmaxlow, nbn, n1, n2);
-  _histos2d["hnPeaksACT23vsLeadGlassA"] = new TH2D("hnPeaksACT23vsLeadGlassA", "hnPeaksACT23vsLeadGlassA;lead glass A;<n_{Peaks}^{ACT23}>", 100,  0., actAmplitudeMax/2., nbn, n1, n2);
-  _histos2d["hnPeaksToFvsLeadGlassA"] = new TH2D("hnPeaksToFvsLeadGlassA", "hnPeaksToFvsLeadGlassA;lead glass A;<n_{Peaks}^{ToF}>", 100,  0., actAmplitudeMax/2., nbn, n1, n2);
+  _histos2d["hnPeaksACT23vsToF"] = new TH2D("hnPeaksACT23vsToF", "hnPeaksACT23vsToF;t_{TOF};<n_{Peaks}^{ACT23}>", _ntofbins2d/4, _tofmin, _tofmax, nbn, n1, n2);
+  _histos2d["hnPeaksACT23vsToFlow"] = new TH2D("hnPeaksACT23vsToFlow", "hnPeaksACT23vsToF;t_{TOF};<n_{Peaks}^{ACT23}>", _ntofbins2d/4, _tofminlow, _tofmaxlow, nbn, n1, n2);
+  _histos2d["hnPeaksToFvsToF"] = new TH2D("hnPeaksToFvsToF", "hnPeaksToFvsToF;t_{TOF};<n_{Peaks}^{ToF}>", _ntofbins2d/4, _tofmin, _tofmax, nbn, n1, n2);
+  _histos2d["hnPeaksToFvsToFlow"] = new TH2D("hnPeaksToFvsToFlow", "hnPeaksToFvsToF;t_{TOF};<n_{Peaks}^{ToF}>", _ntofbins2d/4, _tofminlow, _tofmaxlow, nbn, n1, n2);
+  _histos2d["hnPeaksACT23vsLeadGlassA"] = new TH2D("hnPeaksACT23vsLeadGlassA", "hnPeaksACT23vsLeadGlassA;lead glass A;<n_{Peaks}^{ACT23}>", 100,  0., _actAmplitudeMax/2., nbn, n1, n2);
+  _histos2d["hnPeaksToFvsLeadGlassA"] = new TH2D("hnPeaksToFvsLeadGlassA", "hnPeaksToFvsLeadGlassA;lead glass A;<n_{Peaks}^{ToF}>", 100,  0., _actAmplitudeMax/2., nbn, n1, n2);
   n1 = 0.;
   n2 = 10.;
-  _histos2d["hnPeaksLeadGlassvsLeadGlassA"] = new TH2D("hnPeaksLeadGlassvsLeadGlassA", "hnPeaksLeadGlassvsLeadGlassA;lead glass A;n_{Peaks}^{Pb}", 100,  0., actAmplitudeMax/2., int(n2-n1), n1, n2);
+  _histos2d["hnPeaksLeadGlassvsLeadGlassA"] = new TH2D("hnPeaksLeadGlassvsLeadGlassA", "hnPeaksLeadGlassvsLeadGlassA;lead glass A;n_{Peaks}^{Pb}", 100,  0., _actAmplitudeMax/2., int(n2-n1), n1, n2);
   _outFile -> cd("../");
   
   cout << "done" << endl;
@@ -544,7 +621,6 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
       _nSpills++;
       _lastSpillNumber = SpillNumber;
     }
-    
     //    cout << " RunNumber=" << RunNumber << " EventNumber=" << EventNumber << " SpillNumber=" << SpillNumber << endl;
     
     for (int ich = 0; ich < _nChannels; ++ich) {
@@ -554,7 +630,7 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
     }
     if (_debug)      cout << "done" << endl;
 
-
+    // READ!
     this -> ReadChannels();
     
     // peak cuts on demand
@@ -563,6 +639,7 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
 	continue;
     } // not hodoscope run
 
+    // FILL!
     this -> FillChannels();
     this -> FillTofHistos();
     
@@ -577,7 +654,7 @@ void MakeAllDataPlots::Loop(int verbose, int debug) {
     
   } // entries
 
-
+  cout << "End of event loop!" << endl;
 } // Loop
 
 
@@ -605,7 +682,7 @@ bool MakeAllDataPlots::PassedPeakCuts()
   double ACTC23ElectronUpperThreshA = 3.5;
       
   if (_debug)      cout << "point a" << endl;
-  _onePeakInPbGlass = (NPeaks["PbGlass"] == 1);
+  _onePeakInPbGlass = (_NPeaks["PbGlass"] == 1);
   if (_debug)      cout << "point b" << endl;
       
   // this is WCTE TB 2023 Run1 (4xACTSm trigger tofs lead glas; no hodoscope) specific!
@@ -656,7 +733,7 @@ bool MakeAllDataPlots::PassedPeakCuts()
   if (_peakMode == "h" && ( ! (_onePeakInAllToFs && _onePeakInPbGlass)) )
     return false;
 
-  if (_peakMode == "i" && (  (Charges["TOF10"] < 0.04 && Charges["TOF10"] > 0.03) || (Amplitudes["TOF00"] > 1.43 && Amplitudes["TOF00"] < 1.435) ) )
+  if (_peakMode == "i" && (  (_Charges["TOF10"] < 0.04 && _Charges["TOF10"] > 0.03) || (_Amplitudes["TOF00"] > 1.43 && _Amplitudes["TOF00"] < 1.435) ) )
     return false;
 
 
@@ -676,21 +753,22 @@ void MakeAllDataPlots::ReadChannels()
     for (int ich = 0; ich < _nChannels; ++ich) {
       TString chname = _treeNames[ich];
       if (_debug)      cout << "point c, " << chname.Data() << endl;
-      PeakID[chname] = getHighestPeakIndex(_readerMap[chname]);
-      int ipeak = PeakID[chname];
+      _PeakID[chname] = getHighestPeakIndex(_readerMap[chname]);
+      int ipeak = _PeakID[chname];
       int iwindowpeak = 0; // !!!
-      NPeaks[chname] = _readerMap[chname] -> nPeaks;
+      _NPeaks[chname] = _readerMap[chname] -> nPeaks;
       if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
-	Amplitudes[chname]  = _readerMap[chname] -> PeakVoltage[ipeak];
+	_Amplitudes[chname]  = _readerMap[chname] -> PeakVoltage[ipeak];
 	if (_useWindowIntCharge) // && !chname.Contains("TOF"))
-	  Charges[chname]     = _readerMap[chname] -> WindowIntCharge[iwindowpeak];
+	  // was: WindowIntCharge
+	  _Charges[chname]     = _readerMap[chname] -> WindowIntPE[iwindowpeak];
 	else
-	  Charges[chname]     = _readerMap[chname] -> IntCharge[ipeak];
-	SignalTimes[chname] = _readerMap[chname] -> SignalTime[ipeak];
+	  _Charges[chname]     = _readerMap[chname] -> IntCharge[ipeak];
+	_SignalTimes[chname] = _readerMap[chname] -> SignalTime[ipeak];
       } else {
-	Amplitudes[chname]  = 0.;
-	Charges[chname]     = 0.;
-	SignalTimes[chname] = 0.;
+	_Amplitudes[chname]  = 0.;
+	_Charges[chname]     = 0.;
+	_SignalTimes[chname] = 0.;
       }
       if (_debug)      cout << "point d" << endl;
 
@@ -706,25 +784,25 @@ void MakeAllDataPlots::FillChannels()
   for (int ich = 0; ich < _nChannels; ++ich) {
       TString chname = _treeNames[ich];
       if (_debug)      cout << "point c, " << chname.Data() << endl;
-      int ipeak = PeakID[chname];
+      int ipeak = _PeakID[chname];
       if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
 
 	// can be simplified using the above maps
 	
-	hCharge.at(ich).Fill(Charges[chname]);
-	hVoltage.at(ich).Fill(Amplitudes[chname]);
-	hTime.at(ich).Fill(SignalTimes[chname]);
-	hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
-	hnPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
+	_hCharge.at(ich).Fill(_Charges[chname]);
+	_hVoltage.at(ich).Fill(_Amplitudes[chname]);
+	_hTime.at(ich).Fill(_SignalTimes[chname]);
+	_hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
+	_hnPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
 
 	/*
 	// histograms over all channels
-	hCharge.at(ich).Fill(_reader[ich] -> IntCharge[ipeak]);
-	hVoltage.at(ich).Fill(_reader[ich] -> PeakVoltage[ipeak]);
-	hTime.at(ich).Fill(_reader[ich] -> SignalTime[ipeak]);
+	_hCharge.at(ich).Fill(_reader[ich] -> IntCharge[ipeak]);
+	_hVoltage.at(ich).Fill(_reader[ich] -> PeakVoltage[ipeak]);
+	_hTime.at(ich).Fill(_reader[ich] -> SignalTime[ipeak]);
 	//hNbPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
-	hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
-	hnPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
+	_hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
+	_hnPeaks.at(ich).Fill(_reader[ich] -> nPeaks);
 	*/
 	
       } 
@@ -738,15 +816,15 @@ void MakeAllDataPlots::FillTofHistos()
 
   // TOF trigger scintilators
 
-    double t00 = SignalTimes["TOF00"];
-    double t01 = SignalTimes["TOF01"];
-    double t02 = SignalTimes["TOF02"];
-    double t03 = SignalTimes["TOF03"];
+    double t00 = _SignalTimes["TOF00"];
+    double t01 = _SignalTimes["TOF01"];
+    double t02 = _SignalTimes["TOF02"];
+    double t03 = _SignalTimes["TOF03"];
 
-    double t10 = SignalTimes["TOF10"];
-    double t11 = SignalTimes["TOF11"];
-    double t12 = SignalTimes["TOF12"];
-    double t13 = SignalTimes["TOF13"];
+    double t10 = _SignalTimes["TOF10"];
+    double t11 = _SignalTimes["TOF11"];
+    double t12 = _SignalTimes["TOF12"];
+    double t13 = _SignalTimes["TOF13"];
 
     if (_debug)      cout << "point e" << endl;
 
@@ -802,46 +880,75 @@ void MakeAllDataPlots::ComputeChargesAndAmplitudes() {
   if (_debug)      cout << "charged a" << endl;
 
     // ACTs
-    _act0c = Charges["ACT0L"] + Charges["ACT0R"];
-    _act1c = Charges["ACT1L"] + Charges["ACT1R"];
-    _act2c = Charges["ACT2L"] + Charges["ACT2R"];
-    _act3c = Charges["ACT3L"] + Charges["ACT3R"];
+    _act0c = _Charges["ACT0L"] + _Charges["ACT0R"];
+    _act1c = _Charges["ACT1L"] + _Charges["ACT1R"];
+    _act2c = _Charges["ACT2L"] + _Charges["ACT2R"];
+    _act3c = _Charges["ACT3L"] + _Charges["ACT3R"];
 
-    _act0a = Amplitudes["ACT0L"] + Amplitudes["ACT0R"];
-    _act1a = Amplitudes["ACT1L"] + Amplitudes["ACT1R"];
-    _act2a = Amplitudes["ACT2L"] + Amplitudes["ACT2R"];
-    _act3a = Amplitudes["ACT3L"] + Amplitudes["ACT3R"];
+    _act0a = _Amplitudes["ACT0L"] + _Amplitudes["ACT0R"];
+    _act1a = _Amplitudes["ACT1L"] + _Amplitudes["ACT1R"];
+    _act2a = _Amplitudes["ACT2L"] + _Amplitudes["ACT2R"];
+    _act3a = _Amplitudes["ACT3L"] + _Amplitudes["ACT3R"];
 
     _act23aAver = (_act2a + _act3a) / 2.;
     _act23cAver = (_act2c + _act3c) / 2.;
 
     // hole counters and lead glass
     
-    _hc0c = Charges["Hole0"];
-    _hc0a = Amplitudes["Hole0"];
+    _hc0c = _Charges["Hole0"];
+    _hc0a = _Amplitudes["Hole0"];
 
-    _hc1c = Charges["Hole1"];
-    _hc1a = Amplitudes["Hole1"];
+    _hc1c = _Charges["Hole1"];
+    _hc1a = _Amplitudes["Hole1"];
 
-    _pbc = Charges["PbGlass"];
-    _pba = Amplitudes["PbGlass"];
+    _pbc = _Charges["PbGlass"];
+    _pba = _Amplitudes["PbGlass"];
 
-    _trigScintA = Charges["TOF00"] + Charges["TOF01"] + Charges["TOF02"] + Charges["TOF03"] + Charges["TOF10"] + Charges["TOF11"] + Charges["TOF12"] + Charges["TOF13"];
-    _trigScintC = Amplitudes["TOF00"] + Amplitudes["TOF01"] + Amplitudes["TOF02"] + Amplitudes["TOF03"] + Amplitudes["TOF10"] + Amplitudes["TOF11"] + Amplitudes["TOF12"] + Amplitudes["TOF13"];
+    _trigScintC = _Charges["TOF00"] + _Charges["TOF01"] + _Charges["TOF02"] + _Charges["TOF03"] + _Charges["TOF10"] + _Charges["TOF11"] + _Charges["TOF12"] + _Charges["TOF13"];
+    _trigScintA = _Amplitudes["TOF00"] + _Amplitudes["TOF01"] + _Amplitudes["TOF02"] + _Amplitudes["TOF03"] + _Amplitudes["TOF10"] + _Amplitudes["TOF11"] + _Amplitudes["TOF12"] + _Amplitudes["TOF13"];
 
-    _trigScint0A = Charges["TOF00"] + Charges["TOF01"] + Charges["TOF02"] + Charges["TOF03"];
-    _trigScint0C = Amplitudes["TOF00"] + Amplitudes["TOF01"] + Amplitudes["TOF02"] + Amplitudes["TOF03"];
-    _trigScint001A = Charges["TOF00"] + Charges["TOF01"];
-    _trigScint001C = Amplitudes["TOF00"] + Amplitudes["TOF01"];
-    _trigScint023A = Charges["TOF02"] + Charges["TOF03"];
-    _trigScint023C = Amplitudes["TOF02"] + Amplitudes["TOF03"];
 
-    _trigScint1A = Charges["TOF10"] + Charges["TOF11"] + Charges["TOF12"] + Charges["TOF13"];
-    _trigScint1C = Amplitudes["TOF10"] + Amplitudes["TOF11"] + Amplitudes["TOF12"] + Amplitudes["TOF13"];
-    _trigScint101A = Charges["TOF10"] + Charges["TOF11"];
-    _trigScint101C = Amplitudes["TOF10"] + Amplitudes["TOF11"];
-    _trigScint123A = Charges["TOF12"] + Charges["TOF13"];
-    _trigScint123C = Amplitudes["TOF12"] + Amplitudes["TOF13"];
+    // Bruno, 7.3.2024:
+    // 0 and 1 are up
+    // 2 and 3 are down
+    // 'TOF' trigger scintillator 0:
+    // Channels 1 and 3 are on the right side looking downstream and 0 & 2 on the left side.
+    // 'TOF' trigger scintillator 1:
+    // Channels 0 and 2 are on the right side looking downstream and 1 & 3 on the left side.
+    
+    _trigScint0C = _Charges["TOF00"] + _Charges["TOF01"] + _Charges["TOF02"] + _Charges["TOF03"];
+    _trigScint0A = _Amplitudes["TOF00"] + _Amplitudes["TOF01"] + _Amplitudes["TOF02"] + _Amplitudes["TOF03"];
+    _trigScint0LC = _Charges["TOF00"] + _Charges["TOF02"];
+    _trigScint0LA = _Amplitudes["TOF00"] + _Amplitudes["TOF02"];
+    _trigScint0RC = _Charges["TOF01"] + _Charges["TOF03"];
+    _trigScint0RA = _Amplitudes["TOF01"] + _Amplitudes["TOF03"];
+
+    _trigScint1C = _Charges["TOF10"] + _Charges["TOF11"] + _Charges["TOF12"] + _Charges["TOF13"];
+    _trigScint1A = _Amplitudes["TOF10"] + _Amplitudes["TOF11"] + _Amplitudes["TOF12"] + _Amplitudes["TOF13"];
+    _trigScint1LC = _Charges["TOF11"] + _Charges["TOF13"];
+    _trigScint1LA = _Amplitudes["TOF11"] + _Amplitudes["TOF13"];
+    _trigScint1RC = _Charges["TOF10"] + _Charges["TOF12"];
+    _trigScint1RA = _Amplitudes["TOF10"] + _Amplitudes["TOF12"];
+
+
+    // Charge-weighted hit positions in T0 and T1
+    _trigScint0_CweightedX =  ( _xL*_Charges["TOF00"] + _xL*_Charges["TOF02"] + _xR*_Charges["TOF01"] + _xR*_Charges["TOF03"] ) / _trigScint0C;
+    _trigScint1_CweightedX =  ( _xL*_Charges["TOF11"] + _xL*_Charges["TOF13"] + _xR*_Charges["TOF10"] + _xR*_Charges["TOF12"] ) / _trigScint1C; 
+    _trigScint0_CweightedY =  ( _yU*_Charges["TOF00"] + _yU*_Charges["TOF01"] +  _yD*_Charges["TOF02"] + _yD*_Charges["TOF03"] ) / _trigScint0C;
+    _trigScint1_CweightedY =  ( _yU*_Charges["TOF10"] + _yU*_Charges["TOF11"] +  _yD*_Charges["TOF12"] + _yD*_Charges["TOF13"] ) / _trigScint1C;
+    
+    // Time-weighted hit positions in T0 and T1
+    
+    double trigScint0SumTime = _SignalTimes["TOF00"] + _SignalTimes["TOF01"] + _SignalTimes["TOF02"] + _SignalTimes["TOF03"];
+    double trigScint1SumTime = _SignalTimes["TOF10"] + _SignalTimes["TOF11"] + _SignalTimes["TOF12"] + _SignalTimes["TOF13"];
+    
+    _trigScint0_TweightedX =  ( _xL*_SignalTimes["TOF00"] + _xL*_SignalTimes["TOF02"] + _xR*_SignalTimes["TOF01"] + _xR*_SignalTimes["TOF03"] ) / trigScint0SumTime;
+    _trigScint1_TweightedX =  ( _xL*_SignalTimes["TOF11"] + _xL*_SignalTimes["TOF13"] + _xR*_SignalTimes["TOF10"] + _xR*_SignalTimes["TOF12"] ) / trigScint1SumTime;
+    _trigScint0_TweightedY =  ( _yU*_SignalTimes["TOF00"] + _yU*_SignalTimes["TOF01"] + _yD*_SignalTimes["TOF02"] + _yD*_SignalTimes["TOF03"] ) / trigScint0SumTime;
+    _trigScint1_TweightedY =  ( _yU*_SignalTimes["TOF10"] + _yU*_SignalTimes["TOF11"] + _yD*_SignalTimes["TOF12"] + _yD*_SignalTimes["TOF13"] ) / trigScint1SumTime;
+    
+
+      
 }
 
 // ______________________________________________________________
@@ -868,22 +975,25 @@ void MakeAllDataPlots::FillTrigScintHistos(TString selTag)
     _histos2d["hRef_TOF_TrigScint0A" + selTag]->Fill(_tof, _trigScint0A);
 
     // TOF0 0+1 trigger scintillators:
-    _histos2d["hRef_pbC_TrigScint001C" + selTag]->Fill(_pbc, _trigScint001C);
-    _histos2d["hRef_pbA_TrigScint001C" + selTag]->Fill(_pba, _trigScint001C);
-    _histos2d["hRef_pbC_TrigScint001A" + selTag]->Fill(_pbc, _trigScint001A);
-    _histos2d["hRef_pbA_TrigScint001A" + selTag]->Fill(_pba, _trigScint001A);
+    _histos2d["hRef_pbC_TrigScint0LC" + selTag]->Fill(_pbc, _trigScint0LC);
+    _histos2d["hRef_pbA_TrigScint0LC" + selTag]->Fill(_pba, _trigScint0LC);
+    _histos2d["hRef_pbC_TrigScint0LA" + selTag]->Fill(_pbc, _trigScint0LA);
+    _histos2d["hRef_pbA_TrigScint0LA" + selTag]->Fill(_pba, _trigScint0LA);
     
-    _histos2d["hRef_TOF_TrigScint001C" + selTag]->Fill(_tof, _trigScint001C);
-    _histos2d["hRef_TOF_TrigScint001A" + selTag]->Fill(_tof, _trigScint001A);
-
+    _histos2d["hRef_TOF_TrigScint0LC" + selTag]->Fill(_tof, _trigScint0LC);
+    _histos2d["hRef_TOF_TrigScint0LA" + selTag]->Fill(_tof, _trigScint0LA);
+    
     // TOF0 2+3 trigger scintillators:
-    _histos2d["hRef_pbC_TrigScint023C" + selTag]->Fill(_pbc, _trigScint023C);
-    _histos2d["hRef_pbA_TrigScint023C" + selTag]->Fill(_pba, _trigScint023C);
-    _histos2d["hRef_pbC_TrigScint023A" + selTag]->Fill(_pbc, _trigScint023A);
-    _histos2d["hRef_pbA_TrigScint023A" + selTag]->Fill(_pba, _trigScint023A);
+    _histos2d["hRef_pbC_TrigScint0RC" + selTag]->Fill(_pbc, _trigScint0RC);
+    _histos2d["hRef_pbA_TrigScint0RC" + selTag]->Fill(_pba, _trigScint0RC);
+    _histos2d["hRef_pbC_TrigScint0RA" + selTag]->Fill(_pbc, _trigScint0RA);
+    _histos2d["hRef_pbA_TrigScint0RA" + selTag]->Fill(_pba, _trigScint0RA);
     
-    _histos2d["hRef_TOF_TrigScint023C" + selTag]->Fill(_tof, _trigScint023C);
-    _histos2d["hRef_TOF_TrigScint023A" + selTag]->Fill(_tof, _trigScint023A);
+    _histos2d["hRef_TOF_TrigScint0RC" + selTag]->Fill(_tof, _trigScint0RC);
+    _histos2d["hRef_TOF_TrigScint0RA" + selTag]->Fill(_tof, _trigScint0RA);
+
+    // L-R:
+    _histos2d["hRef_TrigScint0RC_TrigScint0LC" + selTag]->Fill(_trigScint0RC, _trigScint0LC);
 
     // TOF1X trigger scintillators:
     _histos2d["hRef_pbC_TrigScint1C" + selTag]->Fill(_pbc, _trigScint1C);
@@ -895,23 +1005,38 @@ void MakeAllDataPlots::FillTrigScintHistos(TString selTag)
     _histos2d["hRef_TOF_TrigScint1A" + selTag]->Fill(_tof, _trigScint1A);
 
     // TOF1 0+1 trigger scintillators:
-    _histos2d["hRef_pbC_TrigScint101C" + selTag]->Fill(_pbc, _trigScint101C);
-    _histos2d["hRef_pbA_TrigScint101C" + selTag]->Fill(_pba, _trigScint101C);
-    _histos2d["hRef_pbC_TrigScint101A" + selTag]->Fill(_pbc, _trigScint101A);
-    _histos2d["hRef_pbA_TrigScint101A" + selTag]->Fill(_pba, _trigScint101A);
+    _histos2d["hRef_pbC_TrigScint1LC" + selTag]->Fill(_pbc, _trigScint1LC);
+    _histos2d["hRef_pbA_TrigScint1LC" + selTag]->Fill(_pba, _trigScint1LC);
+    _histos2d["hRef_pbC_TrigScint1LA" + selTag]->Fill(_pbc, _trigScint1LA);
+    _histos2d["hRef_pbA_TrigScint1LA" + selTag]->Fill(_pba, _trigScint1LA);
     
-    _histos2d["hRef_TOF_TrigScint101C" + selTag]->Fill(_tof, _trigScint101C);
-    _histos2d["hRef_TOF_TrigScint101A" + selTag]->Fill(_tof, _trigScint101A);
+    _histos2d["hRef_TOF_TrigScint1LC" + selTag]->Fill(_tof, _trigScint1LC);
+    _histos2d["hRef_TOF_TrigScint1LA" + selTag]->Fill(_tof, _trigScint1LA);
 
     // TOF1 2+3 trigger scintillators:
-    _histos2d["hRef_pbC_TrigScint123C" + selTag]->Fill(_pbc, _trigScint123C);
-    _histos2d["hRef_pbA_TrigScint123C" + selTag]->Fill(_pba, _trigScint123C);
-    _histos2d["hRef_pbC_TrigScint123A" + selTag]->Fill(_pbc, _trigScint123A);
-    _histos2d["hRef_pbA_TrigScint123A" + selTag]->Fill(_pba, _trigScint123A);
+    _histos2d["hRef_pbC_TrigScint1RC" + selTag]->Fill(_pbc, _trigScint1RC);
+    _histos2d["hRef_pbA_TrigScint1RC" + selTag]->Fill(_pba, _trigScint1RC);
+    _histos2d["hRef_pbC_TrigScint1RA" + selTag]->Fill(_pbc, _trigScint1RA);
+    _histos2d["hRef_pbA_TrigScint1RA" + selTag]->Fill(_pba, _trigScint1RA);
     
-    _histos2d["hRef_TOF_TrigScint123C" + selTag]->Fill(_tof, _trigScint123C);
-    _histos2d["hRef_TOF_TrigScint123A" + selTag]->Fill(_tof, _trigScint123A);
+    _histos2d["hRef_TOF_TrigScint1RC" + selTag]->Fill(_tof, _trigScint1RC);
+    _histos2d["hRef_TOF_TrigScint1RA" + selTag]->Fill(_tof, _trigScint1RA);
+    
+    // L-R:
+    _histos2d["hRef_TrigScint1RC_TrigScint1LC" + selTag]->Fill(_trigScint1RC, _trigScint1LC);
 
+    // L-L and R-R
+    _histos2d["hRef_TrigScint0LC_TrigScint1LC" + selTag]->Fill(_trigScint0LC, _trigScint1LC);
+    _histos2d["hRef_TrigScint0RC_TrigScint1RC" + selTag]->Fill(_trigScint0RC, _trigScint1RC);
+
+    // the interpolated weoghted hits positions
+    // weighted by the charges
+     _histos2d["hRef_TrigScint0_Cweighted_xymap" + selTag]-> Fill(_trigScint0_CweightedX,  _trigScint0_CweightedY);
+     _histos2d["hRef_TrigScint1_Cweighted_xymap" + selTag]-> Fill(_trigScint1_CweightedX,  _trigScint1_CweightedY);
+     // weighted by the time
+     _histos2d["hRef_TrigScint0_Tweighted_xymap" + selTag]-> Fill(_trigScint0_TweightedX,  _trigScint0_TweightedY);
+     _histos2d["hRef_TrigScint1_Tweighted_xymap" + selTag]-> Fill(_trigScint1_TweightedX,  _trigScint1_TweightedY);
+    
 }
 
 // ______________________________________________________________
@@ -930,25 +1055,43 @@ void MakeAllDataPlots::FillChargedHistos()
 
     // 17.11.2023:
     // A's are zero if no peaks;)
-    if (Amplitudes["ACT0L"] > 0.05 &&  Amplitudes["ACT0R"] > 0.05) {
-      _histos2d["hRef_act0LA_act0RA_noneZero"]->Fill(Amplitudes["ACT0L"], Amplitudes["ACT0R"] );
+    if (_Amplitudes["ACT0L"] > 0.05 &&  _Amplitudes["ACT0R"] > 0.05) {
+      _histos2d["hRef_act0LA_act0RA_nonZero"]->Fill(_Amplitudes["ACT0L"], _Amplitudes["ACT0R"] );
     }
-    if (Amplitudes["ACT1L"] > 0.01 &&  Amplitudes["ACT1R"] > 0.01) {
-      _histos2d["hRef_act1LA_act1RA_noneZero"]->Fill(Amplitudes["ACT1L"], Amplitudes["ACT1R"] );
+    if (_Amplitudes["ACT1L"] > 0.01 &&  _Amplitudes["ACT1R"] > 0.01) {
+      _histos2d["hRef_act1LA_act1RA_nonZero"]->Fill(_Amplitudes["ACT1L"], _Amplitudes["ACT1R"] );
     }
-    if (Amplitudes["ACT2L"] > 0.01 &&  Amplitudes["ACT2R"] > 0.01) {
-      _histos2d["hRef_act2LA_act2RA_noneZero"]->Fill(Amplitudes["ACT2L"], Amplitudes["ACT2R"] );
+    if (_Amplitudes["ACT2L"] > 0.01 &&  _Amplitudes["ACT2R"] > 0.01) {
+      _histos2d["hRef_act2LA_act2RA_nonZero"]->Fill(_Amplitudes["ACT2L"], _Amplitudes["ACT2R"] );
     }
-    if (Amplitudes["ACT3L"] > 0.01 &&  Amplitudes["ACT3R"] > 0.01) {
-      _histos2d["hRef_act3LA_act3RA_noneZero"]->Fill(Amplitudes["ACT3L"], Amplitudes["ACT3R"] );
+    if (_Amplitudes["ACT3L"] > 0.01 &&  _Amplitudes["ACT3R"] > 0.01) {
+      _histos2d["hRef_act3LA_act3RA_nonZero"]->Fill(_Amplitudes["ACT3L"], _Amplitudes["ACT3R"] );
     }
 
-    if (Amplitudes["ACT0L"] > 0.05 &&  Amplitudes["ACT1L"] > 0.01) {
-      _histos2d["hRef_act0LA_act1LA_noneZero"]->Fill(Amplitudes["ACT0L"], Amplitudes["ACT1L"] );
+    if (_Amplitudes["ACT0L"] > 0.05 &&  _Amplitudes["ACT1L"] > 0.01) {
+      _histos2d["hRef_act0LA_act1LA_nonZero"]->Fill(_Amplitudes["ACT0L"], _Amplitudes["ACT1L"] );
     }
-    if (Amplitudes["ACT0R"] > 0.05 &&  Amplitudes["ACT1R"] > 0.01) {
-      _histos2d["hRef_act0RA_act1RA_noneZero"]->Fill(Amplitudes["ACT0R"], Amplitudes["ACT1R"] );
+    if (_Amplitudes["ACT0R"] > 0.05 &&  _Amplitudes["ACT1R"] > 0.01) {
+      _histos2d["hRef_act0RA_act1RA_nonZero"]->Fill(_Amplitudes["ACT0R"], _Amplitudes["ACT1R"] );
     }
+
+    // charges:
+    _histos2d["hRef_act0LC_act0RC_nonZero"]->Fill(_Charges["ACT0L"], _Charges["ACT0R"] );
+    _histos2d["hRef_act1LC_act1RC_nonZero"]->Fill(_Charges["ACT1L"], _Charges["ACT1R"] );
+    _histos2d["hRef_act2LC_act2RC_nonZero"]->Fill(_Charges["ACT2L"], _Charges["ACT2R"] );
+    _histos2d["hRef_act3LC_act3RC_nonZero"]->Fill(_Charges["ACT3L"], _Charges["ACT3R"] );
+    _histos2d["hRef_act0LC_act1LC_nonZero"]->Fill(_Charges["ACT0L"], _Charges["ACT1L"] );
+    _histos2d["hRef_act0RC_act1RC_nonZero"]->Fill(_Charges["ACT0R"], _Charges["ACT1R"] );
+
+    // diffs, charges only:
+    _histos1d["hRef_act0LC_minus_act0RC_nonZero"]->Fill(_Charges["ACT0L"] - _Charges["ACT0R"] );
+    _histos1d["hRef_act1LC_minus_act1RC_nonZero"]->Fill(_Charges["ACT1L"] - _Charges["ACT1R"] );
+    _histos1d["hRef_act2LC_minus_act2RC_nonZero"]->Fill(_Charges["ACT2L"] - _Charges["ACT2R"] );
+    _histos1d["hRef_act3LC_minus_act3RC_nonZero"]->Fill(_Charges["ACT3L"] - _Charges["ACT3R"] );
+    _histos1d["hRef_act0LC_minus_act1LC_nonZero"]->Fill(_Charges["ACT0L"] - _Charges["ACT1L"] );
+    _histos1d["hRef_act0RC_minus_act1RC_nonZero"]->Fill(_Charges["ACT0R"] - _Charges["ACT1R"] );
+
+    
 
     if (_debug)      cout << "charged b" << endl;
     
@@ -1014,7 +1157,7 @@ void MakeAllDataPlots::FillChargedHistos()
     // and now also for p-like selection:
     // expected tof of protons:
     double ptofExp = _tofutil -> getTof("p", _momentum);
-    double tsigma = 1.; // ns
+    double tsigma = 1.2; // ns
     // cout << " momentum: " << _momentum << " tof=" << _tof << " ptofExp=" << ptofExp <<  " " << fabs(_tof - ptofExp) << " " <<  tsigma << endl;
     if ( fabs(_tof - ptofExp) < tsigma) {
       this -> FillTrigScintHistos("_p-like");
@@ -1161,7 +1304,7 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
 
 
   // Jiri
-  double pbanew = Amplitudes["LeadGlass"];
+  double pbanew = _Amplitudes["LeadGlass"];
   int maxhdchid = -1;
   double maxA = -1;
   bool hits[15];
@@ -1172,7 +1315,7 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
     if (! chname.Contains("HD"))
       continue;
     int hdchid = -1;
-    double Aj = Amplitudes[chname];
+    double Aj = _Amplitudes[chname];
     if (j >= 17 && j < 24)
       hdchid = j - 9;
     else
@@ -1205,7 +1348,7 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
   //careful ! position of the detectors on the digitiser have moved!!!
   for (int i = 0; i < 15; i++){
     TString hdname = Form("HD%i", i);
-    if (Amplitudes[hdname] >= threshHodoscopeHit){
+    if (_Amplitudes[hdname] >= threshHodoscopeHit){
       _histos1d["hnHitsHodoscope"] -> Fill(i);
       //_histos1d["hnHitsHodoscope"] -> Fill(_channelToHodoscope[i]);
     }
@@ -1222,7 +1365,6 @@ void MakeAllDataPlots::FillHodoscopeHistos() {
 void MakeAllDataPlots::Terminate()
 {
 
-  cout << "End of event loop!" << endl;
   // normalization of the fraction 2D occupancy map
   if (_isHodoscopeRun) {
     for(int j = 0; j < 15; ++j) {

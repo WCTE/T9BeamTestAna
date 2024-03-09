@@ -123,6 +123,7 @@ def main(argv):
     txts = []
     basedir = 'TrigScint/'
     pbasedir = 'TrigScint_p/'
+    chbasedir = 'Charged/'
     hnames2d = [ 'hRef_TOFPbA',
                  'hRef_TOFPbC',
                  
@@ -130,24 +131,66 @@ def main(argv):
                  'hRef_TOF_TrigScint0C',
                  'hRef_TOF_TrigScint1C',
 
-                 'hRef_TOF_TrigScint001C',
-                 'hRef_TOF_TrigScint023C',
-                 'hRef_TOF_TrigScint101C',
-                 'hRef_TOF_TrigScint123C',
+                 'hRef_TOF_TrigScint0LC',
+                 'hRef_TOF_TrigScint0RC',
+                 'hRef_TOF_TrigScint1LC',
+                 'hRef_TOF_TrigScint1RC',
 
                  'hRef_pbC_TrigScintC',
                  'hRef_pbC_TrigScintA',
                  'hRef_pbA_TrigScintC',
                  'hRef_pbA_TrigScintA',
+
+                 'hRef_TrigScint0RC_TrigScint0LC',
+                 'hRef_TrigScint1RC_TrigScint1LC',
+                 'hRef_TrigScint0RC_TrigScint0LC_p-like',
+                 'hRef_TrigScint1RC_TrigScint1LC_p-like',
+
+                 # L-L, R-R
+                 'hRef_TrigScint0LC_TrigScint1LC',
+                 'hRef_TrigScint0RC_TrigScint1RC',
+                 'hRef_TrigScint0LC_TrigScint1LC_p-like',
+                 'hRef_TrigScint0RC_TrigScint1RC_p-like',
+
+                 'hRef_TrigScint0_Cweighted_xymap',
+                 'hRef_TrigScint1_Cweighted_xymap',
+
+                 'hRef_TrigScint0_Cweighted_xymap_p-like',
+                 'hRef_TrigScint1_Cweighted_xymap_p-like',
+
+                 'hRef_TrigScint0_Tweighted_xymap',
+                 'hRef_TrigScint1_Tweighted_xymap',
+
+                 'hRef_TrigScint0_Tweighted_xymap_p-like',
+                 'hRef_TrigScint1_Tweighted_xymap_p-like',
+
+                 #'hRef_act0LA_act0RA_nonZero',
+                 #'hRef_act1LA_act1RA_nonZero',
+                 #'hRef_act2LA_act2RA_nonZero',
+                 #'hRef_act3LA_act3RA_nonZero',
+                 #'hRef_act3LC_act3RC_nonZero',
+
+                 'hRef_act0LC_minus_act0RC_nonZero',
+                 'hRef_act1LC_minus_act1RC_nonZero',
+                 'hRef_act2LC_minus_act2RC_nonZero',
+                 'hRef_act3LC_minus_act3RC_nonZero',
+                 
+                 
+                 
                 ]
     
     for hname in hnames2d:
-        h = rfile.Get(basedir + hname)
+        rdir = basedir
+        if 'p-like' in hname:
+            rdir = pbasedir
+        elif 'nonZero' in hname:
+            rdir = chbasedir
+        h = rfile.Get(rdir + hname)
         try:
             #print('ok, got ', h.GetName())
             tmp = h.GetName()
         except:
-            print('ERROR getting histo {}!'.format(hname))
+            print('ERROR getting histo {}{}!'.format(rdir,hname))
             continue
 
         #print('Pushing ', ich, hname)
@@ -155,12 +198,32 @@ def main(argv):
 
         canname = 'WCTEJuly2023_Quick2D_{}_{}'.format(ftag, hname)
         canname = canname.replace('_list_root','').replace('_ntuple','')
-        can = ROOT.TCanvas(canname, canname, 0, 0, 1100, 800)
+        cw = 1100
+        ch = 800
+        if 'xymap' in hname:
+            cw = 1000
+            ch = 900
+        can = ROOT.TCanvas(canname, canname, 0, 0, cw, ch)
         cans.append(can)
         #can.Divide(8,4)
-        h.SetStats(0)
         #h.Rebin2D(2,2)
-        h.Draw('colz')
+        opt = 'colz'
+        is2d = True
+        h.SetStats(0)
+        if 'minus' in hname:
+            #h.SetFillColor()
+            h.SetFillStyle(1111)
+            opt = 'hist pfc'
+            is2d = False
+            h.SetStats(1)
+        h.Draw(opt)
+        if is2d:
+            rho = h.GetCorrelationFactor()
+            rtxt = ROOT.TLatex(0.76, 0.85, '#rho={:1.2f}'.format(rho))
+            rtxt.SetNDC()
+            rtxt.SetTextSize(0.04)
+            rtxt.Draw()
+            stuff.append(rtxt)
         #adjustStats(h)
         #ROOT.gPad.Update()
         cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
@@ -173,6 +236,25 @@ def main(argv):
             lines = makeLines(h, 0., parts, momentum, True)
             stuff.append(lines)
         stuff.append([cnote, pnote, pnote2])
+        x1,x2 = h.GetXaxis().GetXmin(),h.GetXaxis().GetXmax()
+        y1,y2 = h.GetYaxis().GetXmin(),h.GetYaxis().GetXmax()
+        if ('LC' in hname and 'RC' in hname) or ( 'TrigScint0' in hname and 'TrigScint1' in hname) :
+            diag = ROOT.TLine(x1, y1, x2, y2)
+            diag.SetLineColor(ROOT.kMagenta)
+            diag.SetLineStyle(1)
+            diag.SetLineWidth(2)
+            diag.Draw()
+            stuff.append(diag)
+        if 'xymap' in hname:
+            hl = ROOT.TLine(x1, 0.5*(y1+y2), x2, 0.5*(y1+y2))
+            hl.SetLineWidth(2)
+            hl.SetLineColor(ROOT.kMagenta)
+            hl.Draw()
+            vl = ROOT.TLine(0.5*(x1+x2), y1, 0.5*(x1+x2), y2)
+            vl.SetLineWidth(2)
+            vl.SetLineColor(ROOT.kMagenta)
+            vl.Draw()
+            stuff.append([hl,vl])
 
         
 ##################################
