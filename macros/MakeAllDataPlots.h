@@ -44,19 +44,23 @@ class MakeAllDataPlots
   Double_t pedestal[nMaxChannels];
   Double_t pedestalSigma[nMaxChannels];
   Double_t nPeaks[nMaxChannels];
+  
 
   Int_t _lastSpillNumber;
   Int_t _nSpills;
-  
-  map<TString,int> _PeakID;
+
+  map<TString,double> _NPeaksA; 
+  map<TString,double> _NPeaksC; 
+  map<TString,int> _PeakIDA; // amplitudes, p.e. non-corrected
+  map<TString,int> _PeakIDC; // charged base, usually p.e. corrected and window integrated
   map<TString,double> _Amplitudes; // amplitude
   map<TString,double> _Charges; // charge
   map<TString,double> _SignalTimes; // time
-  map<TString,double> _NPeaks; // time
 
   // ranges
   double _tofmin;
   double _tofmax;
+  double _tofmaxhigh;
   int    _ntofbins;
 
   double _tofminlow;
@@ -96,7 +100,12 @@ class MakeAllDataPlots
   double _xR;
   double _yD;
   double _yU;
- 
+
+  double _ACTwidth;
+  double _act0x;
+  double _act1x;
+  double _act2x;
+  double _act3x;
   
   // cuts
   map<int, map<TString,double > > _cutsMap;
@@ -119,7 +128,8 @@ class MakeAllDataPlots
   vector<TH1D> _hVoltage;
   vector<TH1D> _hPedestalSigma;
   vector<TH1D> _hTime;
-  vector<TH1D> _hnPeaks;
+  vector<TH1D> _hnPeaksA;
+  vector<TH1D> _hnPeaksC;
   
   map<TString,TH1D*> _histos1d;
   map<TString,TH2D*> _histos2d;
@@ -204,7 +214,7 @@ class MakeAllDataPlots
   MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode = "", bool useWindowIntCharge = false);
   ~MakeAllDataPlots();
 
-  int getHighestPeakIndex(channelReadClass *reader);
+  int getHighestPeakIndex(channelReadClass *reader, bool useCharges);
   void Init(bool noAct1Cuts);
   void InitReaders();
   void InitTofHistos();

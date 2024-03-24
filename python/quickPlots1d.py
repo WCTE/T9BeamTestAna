@@ -102,7 +102,8 @@ def main(argv):
         'hRef_Time' : ROOT.kGreen,
         'hRef_Charge' : ROOT.kCyan,
         'hRef_Voltage' : ROOT.kMagenta,
-        'hRef_nPeaks' : ROOT.kYellow,
+        'hRef_nPeaksC' : ROOT.kYellow,
+        'hRef_nPeaksA' : ROOT.kGray,
     }
     
     nChannels = 19 # 32

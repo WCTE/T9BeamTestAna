@@ -108,12 +108,47 @@ def main(argv):
     ROOT.gStyle.SetPalette(ROOT.kRainBow)
     #ROOT.gStyle.SetPalette(1)
 
+    #TStag = ''
+    TStag = '0'
+    #TStag = '1'
+    tstag = 'TS' + TStag
+    if tstag == 'TS':
+        tstag = 'bothTS'
+    
+    particle = 'p' 
+    #particle = 'D'
+    #particle = 'T'
+    #particle = 'e'
+    #particle = 'mu'
+    #particle = 'pi'
 
-    scint1 = 4.
-    scint2 = 22.
+    bgmin = 0.4
+    bgmax = 1.5
+    bmin = 0.4
+    bmax = 0.85
+    
+    #scint1 = 4.
+    #scint2 = 22.
+    scint1 = 0.
+    scint2 = 2500.
     t1 = 13.
-    t2 = 30.
+    t2 = 35.
+    if particle == 'D':
+        t2 = 60.
+        bgmin = 0.4
+        bgmax = 0.7
+        bmin = 0.4
+        bmax = 0.6
 
+    if particle == 'T':
+        t2 = 85.
+        bgmin = 0.2
+        bgmax = 0.7
+        bmin = 0.2
+        bmax = 0.5
+
+
+    """
     dirname = 'histos/'
     filenames = [
         'ntuple_000403_plots.root',
@@ -128,7 +163,22 @@ def main(argv):
         'ntuple_000436_plots.root',
         'ntuple_000435_plots.root'
     ]
+    """
     
+    dirname = 'histos/windowpe_analyzed/'
+    filenames = [
+        'peakAnalysed_timeCorr_windInt_-16_45_000403_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000396_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000394_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000393_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000392_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000398_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000399_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000402_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000449_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000436_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_-16_45_000435_plots_f.root'
+    ]
     
     os.system('mkdir -p pdf png')
     hs = []
@@ -137,8 +187,10 @@ def main(argv):
     projYs = []
     txts = []
     #basedir = 'TrigScint/'
-    pbasedir = 'TrigScint_p/'
-    hname = 'hRef_TOF_TrigScintC_p-like'
+    
+    pbasedir = 'TrigScint_{}/'.format(particle)
+    hname = 'hRef_TOF_TrigScint{}C_{}-like'.format(TStag, particle)
+    
      #'hRef_TOFPbA',
      #'hRef_TOFPbC',
      
@@ -192,12 +244,14 @@ def main(argv):
         momenta.append(momentum)
         Hs = []
         Txts = []
-        ftag = filename.split('/')[-1].replace('output_','').replace('_plots.root','')
+        ftag = filename.split('/')[-1].replace('output_','').replace('_plots_f.root','').replace('_plots.root','')
 
         h = rfile.Get(pbasedir + hname)
         try:
             print('ok, got {} from file {}'.format(h.GetName(), rfile.GetName()))
             tmp = h.GetName()
+            #print('meanX: {1.2f}'.format(h.GetMean(1)))
+            #print('meanY: {1.2f}'.format(h.GetMean(2)))
         except:
             print('ERROR getting histo {}{} from file {}!'.format(pbasedir,hname, rfile.GetName()))
             continue
@@ -213,7 +267,9 @@ def main(argv):
 
         projY = h.ProjectionY()
         projYs.append(projY)
-        h.Rebin2D(2,2)
+        if particle == 'D' or particle == 'T':
+            #h.Rebin2D(2,2)
+            projY.Rebin(4)
         
         hcp = h.DrawCopy('scat' + opt)
         if opt == '':
@@ -230,8 +286,8 @@ def main(argv):
         h.SetMarkerSize(2)
         h.SetMarkerStyle(20)
         hscp.append(hcp)
-        beta = getBeta(ms['p'], momentum)
-        betagamma = getBetaGamma(ms['p'], momentum)
+        beta = getBeta(ms[particle], momentum)
+        betagamma = getBetaGamma(ms[particle], momentum)
         leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
 
 
@@ -243,13 +299,14 @@ def main(argv):
         x2 = projY.GetXaxis().GetXmax()
         x1 = max(projY.GetXaxis().GetXmin(), meanfull - sigmafull)
         projYcp.GetXaxis().SetRangeUser(x1, x2)
-        mean = projYcp.GetMean()
-        meanerr = projYcp.GetMeanError()        
-        ys.append(mean)
-        eys.append(meanerr)
-        betas.append(beta)
-        betagammas.append( betagamma)
-        ebetas.append(0.)
+        if projY.GetEntries() > 10.:
+            mean = projYcp.GetMean()
+            meanerr = projYcp.GetMeanError()        
+            ys.append(mean)
+            eys.append(meanerr)
+            betas.append(beta)
+            betagammas.append( betagamma)
+            ebetas.append(0.)
 
         opt = 'same'
         #adjustStats(h)
@@ -267,7 +324,7 @@ def main(argv):
     #stuff.append([cnote, pnote, pnote2])
 
     ##########################################
-    canname = 'protonsLandau'
+    canname = '{}Landau'.format(particle)
     canp = ROOT.TCanvas(canname, canname, 200, 200, 1000, 800)
     canp.cd()
     opt = ''
@@ -296,7 +353,7 @@ def main(argv):
 
     
     ##########################################
-    canname = 'protonsBetaGraph'
+    canname = '{}BetaGraph'.format(particle)
     gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
     gcan.Divide(2,1)
     print(betas, ebetas, ys, eys)
@@ -305,7 +362,7 @@ def main(argv):
     
     hn = 'tmpbg'
     ht = hn + ';#beta#gamma;Mean trig. scint. charge [a.u.];'
-    htmpbg = ROOT.TH2D(hn, ht, 100, 0.4, 1.5, 100, scint1, scint2)
+    htmpbg = ROOT.TH2D(hn, ht, 100, bgmin, bgmax, 100, scint1, scint2)
     htmpbg.SetStats(0)
     htmpbg.GetXaxis().SetMoreLogLabels()
 
@@ -319,7 +376,7 @@ def main(argv):
 
     hn = 'tmpbg'
     ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
-    htmpb = ROOT.TH2D(hn, ht, 100, 0.4, 0.85, 100, scint1, scint2)
+    htmpb = ROOT.TH2D(hn, ht, 100,bmin, bmax, 100, scint1, scint2)
     htmpb.SetStats(0)
     htmpb.GetXaxis().SetMoreLogLabels()
 
@@ -352,8 +409,8 @@ def main(argv):
         if 'vs' in can.GetName():
             pnote.Draw()            
         can.Update()
-        can.Print(pngdir + can.GetName() + '.png')
-        can.Print(pdfdir + can.GetName() + '.pdf')
+        can.Print(pngdir + can.GetName() + '_{}_{}.png'.format(tstag, particle))
+        can.Print(pdfdir + can.GetName() + '_{}_{}.pdf'.format(tstag, particle))
     
     if not gBatch:
         ROOT.gApplication.Run()

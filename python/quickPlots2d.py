@@ -13,19 +13,13 @@ import ROOT
 from math import sqrt, pow, log, exp
 import os, sys, getopt
 
+from collections import OrderedDict
+
 from labelTools import *
 
 cans = []
 stuff = []
 lines = []
-
-
-def makeLine(x1, x2, y1, y2):
-    line = ROOT.TLine(x1, y1, x2, y2)
-    line.SetLineColor(ROOT.kGreen)
-    line.SetLineWidth(2)
-    line.Draw()
-    return line
 
 
 def PrintUsage(argv):
@@ -121,10 +115,7 @@ def main(argv):
     os.system('mkdir -p pdf png')
     hs = []
     txts = []
-    basedir = 'TrigScint/'
-    pbasedir = 'TrigScint_p/'
-    chbasedir = 'Charged/'
-    hnames2d = [ 'hRef_TOFPbA',
+    hnames2d = [ #'hRef_TOFPbA
                  'hRef_TOFPbC',
                  
                  'hRef_TOF_TrigScintC',
@@ -136,21 +127,24 @@ def main(argv):
                  'hRef_TOF_TrigScint1LC',
                  'hRef_TOF_TrigScint1RC',
 
-                 'hRef_pbC_TrigScintC',
-                 'hRef_pbC_TrigScintA',
-                 'hRef_pbA_TrigScintC',
-                 'hRef_pbA_TrigScintA',
-
-                 'hRef_TrigScint0RC_TrigScint0LC',
-                 'hRef_TrigScint1RC_TrigScint1LC',
-                 'hRef_TrigScint0RC_TrigScint0LC_p-like',
-                 'hRef_TrigScint1RC_TrigScint1LC_p-like',
-
-                 # L-L, R-R
+   # L-L, R-R
                  'hRef_TrigScint0LC_TrigScint1LC',
                  'hRef_TrigScint0RC_TrigScint1RC',
                  'hRef_TrigScint0LC_TrigScint1LC_p-like',
                  'hRef_TrigScint0RC_TrigScint1RC_p-like',
+                 
+    #             ]
+    #dummy = [
+
+                 'hRef_pbC_TrigScintC',
+                 #'hRef_pbC_TrigScintA',
+                 'hRef_pbA_TrigScintC',
+                 #'hRef_pbA_TrigScintA',
+                 
+                 'hRef_TrigScint0RC_TrigScint0LC',
+                 'hRef_TrigScint1RC_TrigScint1LC',
+                 'hRef_TrigScint0RC_TrigScint0LC_p-like',
+                 'hRef_TrigScint1RC_TrigScint1LC_p-like',
 
                  'hRef_TrigScint0_Cweighted_xymap',
                  'hRef_TrigScint1_Cweighted_xymap',
@@ -164,26 +158,44 @@ def main(argv):
                  'hRef_TrigScint0_Tweighted_xymap_p-like',
                  'hRef_TrigScint1_Tweighted_xymap_p-like',
 
+                 # amplitudes:
                  #'hRef_act0LA_act0RA_nonZero',
                  #'hRef_act1LA_act1RA_nonZero',
                  #'hRef_act2LA_act2RA_nonZero',
                  #'hRef_act3LA_act3RA_nonZero',
                  #'hRef_act3LC_act3RC_nonZero',
 
-                 'hRef_act0LC_minus_act0RC_nonZero',
-                 'hRef_act1LC_minus_act1RC_nonZero',
-                 'hRef_act2LC_minus_act2RC_nonZero',
-                 'hRef_act3LC_minus_act3RC_nonZero',
-                 
-                 
+                 # charges:
+                 'hRef_act0LC_act0RC_nonZero',
+                 'hRef_act1LC_act1RC_nonZero',
+                 'hRef_act2LC_act2RC_nonZero',
+                 'hRef_act3LC_act3RC_nonZero',
+
+                 #'hRef_act0LC_minus_act0RC_nonZero',
+                 #'hRef_act1LC_minus_act1RC_nonZero',
+                 #'hRef_act2LC_minus_act2RC_nonZero',
+                 #'hRef_act3LC_minus_act3RC_nonZero',
+
+                 'hRef_act0Xmap_nonZero',
+                 'hRef_act1Xmap_nonZero',
+                 'hRef_act2Xmap_nonZero',
+                 'hRef_act3Xmap_nonZero',
                  
                 ]
+    
+    basedir = 'TrigScint/'
+    pbasedir = 'TrigScint_p/'
+    chbasedir = 'Charged/'
+
+    meanXmap = OrderedDict()
     
     for hname in hnames2d:
         rdir = basedir
         if 'p-like' in hname:
             rdir = pbasedir
-        elif 'nonZero' in hname:
+        elif 'nonZero' in hname or 'Xmap' in hname:
+            rdir = chbasedir
+        elif 'hRef_TOFPb' in hname:
             rdir = chbasedir
         h = rfile.Get(rdir + hname)
         try:
@@ -197,7 +209,7 @@ def main(argv):
         hs.append(h)
 
         canname = 'WCTEJuly2023_Quick2D_{}_{}'.format(ftag, hname)
-        canname = canname.replace('_list_root','').replace('_ntuple','')
+        canname = canname.replace('_list_root','').replace('_ntuple','').replace('.root','')
         cw = 1100
         ch = 800
         if 'xymap' in hname:
@@ -210,13 +222,23 @@ def main(argv):
         opt = 'colz'
         is2d = True
         h.SetStats(0)
-        if 'minus' in hname:
-            #h.SetFillColor()
-            h.SetFillStyle(1111)
-            opt = 'hist pfc'
-            is2d = False
-            h.SetStats(1)
         h.Draw(opt)
+        if 'minus' in hname or 'Xmap' in hname:
+            h.SetFillColor(ROOT.kMagenta)
+            h.SetFillStyle(1111)
+            opt = 'hist'
+            is2d = False
+            #h.SetStats(1)
+            mean = h.GetMean()
+            emean = h.GetMeanError()
+            print(mean, emean)
+            rtxt = ROOT.TLatex(0.72, 0.85, '#mu={:1.2f}#pm{:1.2f}'.format(mean, emean))
+            rtxt.SetNDC()
+            rtxt.SetTextSize(0.04)
+            rtxt.Draw()
+            stuff.append(rtxt)
+            if 'Xmap' in hname:
+                meanXmap[h.GetName()] = [mean, emean]
         if is2d:
             rho = h.GetCorrelationFactor()
             rtxt = ROOT.TLatex(0.76, 0.85, '#rho={:1.2f}'.format(rho))
@@ -224,6 +246,7 @@ def main(argv):
             rtxt.SetTextSize(0.04)
             rtxt.Draw()
             stuff.append(rtxt)
+
         #adjustStats(h)
         #ROOT.gPad.Update()
         cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
@@ -255,6 +278,12 @@ def main(argv):
             vl.SetLineColor(ROOT.kMagenta)
             vl.Draw()
             stuff.append([hl,vl])
+            if 'Cweighted_xymap' in hname and not 'p-like' in hname:
+                meanX = h.GetMean(1)
+                emeanX = h.GetMeanError(1)
+                meanY = h.GetMean(2)
+                emeanY = h.GetMeanError(2)
+                meanXmap[h.GetName()] = [meanX, emeanX]
 
         
 ##################################
@@ -276,13 +305,49 @@ def main(argv):
     stuff.append(pnote)
     """
 
+    cw = 1100
+    ch = 800
+    canname = 'meanXmap'
+    can = ROOT.TCanvas(canname, canname, 100, 100, cw, ch)
+    cans.append(can)
+    #grMeanXmap = ROOT.TGraphErrors()
+    ip = -1
+    nb = len(meanXmap)
+    name = 'meanXmap'
+    title = ';;#DeltaX [quasi mm]'
+    hmean = ROOT.TH1D(name, title, nb, 0, nb)
+    for key,vals in meanXmap.items():
+        ip = ip+1
+        mean = vals[0]
+        emean = vals[1]
+        #grMeanXmap.SetPoint(ip, ip, mean)
+        #grMeanXmap.SetPointError(ip, ip, emean)
+        hmean.SetBinContent(ip+1, mean)
+        hmean.SetBinError(ip+1, emean)
+        prettykey = key.replace('hRef_','').replace('_nonZero','').replace('_Cweighted_xymap','').replace('Xmap','').replace('TrigScint','TS').replace('act','ACT')
+        hmean.SetStats(0)
+        hmean.GetXaxis().SetBinLabel(ip+1, prettykey)
+
+    can.cd()
+    hmean.SetMarkerSize(2)
+    hmean.SetMarkerStyle(20)
+    hmean.SetMarkerColor(ROOT.kBlue)
+    hmean.SetMinimum(-15.)
+    hmean.SetMaximum(15.)
+    hmean.Draw("P")
+    onel = makeLine(0., 0., nb, 0.)
+    onel.Draw()
+    stuff.append(onel)
+    ROOT.gPad.SetGridx(1)
+    ROOT.gPad.SetGridy(1)
+    
     for can in cans:
         can.cd()
         if 'vs' in can.GetName():
             pnote.Draw()            
         can.Update()
         can.Print(pngdir + can.GetName() + '.png')
-        can.Print(pdfdir + can.GetName() + '.pdf')
+        ###can.Print(pdfdir + can.GetName() + '.pdf')
     
     if not gBatch:
         ROOT.gApplication.Run()

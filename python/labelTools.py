@@ -22,6 +22,14 @@ ChNamesHodo =  {    0 : "ACT0L",    1: "ACT0R",
                     23: "HD0",   24: "HD1",   25: "HD2",  26: "HD3",  27: "HD4",  28: "HD5",  29: "HD6",  30: "HD7"
             }
 
+##########################################
+def makeLine(x1, y1, x2, y2, col = ROOT.kBlack, lst = 1, lw = 1):
+    line = ROOT.TLine(x1, y1, x2, y2)
+    line.SetLineColor(col)
+    line.SetLineStyle(lst)
+    line.SetLineWidth(lw)
+    line.Draw()
+    return line
 
 ##########################################
 def makeLines(h, eoff, parts, momentum, useYaxis = False):
@@ -37,12 +45,9 @@ def makeLines(h, eoff, parts, momentum, useYaxis = False):
     te = getTof(ms['e'], momentum) + eoff
     for part in parts:
         dt = getTofDiff('e', part, momentum)
-        print(f'makeLines {part}: dt={dt} ns')
-        print('line coors: ', te + dt, y1, te + dt, y2)
-        line = ROOT.TLine(te + dt, y1, te + dt, y2)
-        line.SetLineStyle(1)
-        line.SetLineWidth(1)
-        line.SetLineColor(pcols[part])
+        #print(f'makeLines {part}: dt={dt} ns')
+        #print('line coors: ', te + dt, y1, te + dt, y2)
+        line = makeLine(te + dt, y1, te + dt, y2, pcols[part], 1, 1)
         line.Draw()
         lines.append(line)
     return lines
@@ -56,8 +61,8 @@ def makeFitLines(h, parts, times):
     y1 = 1.05*h.GetMaximum()
     y2 = h.GetMinimum()
     for part,time in zip(parts,times):
-        print(f'makeFitLines {part}: time={time} ns')
-        print('line coors: ', time, y1, time, y2)
+        #print(f'makeFitLines {part}: time={time} ns')
+        #print('line coors: ', time, y1, time, y2)
         line = ROOT.TLine(time, y1, time, y2)
         line.SetLineStyle(2)
         line.SetLineWidth(2)
