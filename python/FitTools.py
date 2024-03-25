@@ -31,9 +31,9 @@ gTS1D = 'TS1D'
 gTS1T = 'TS1T'
 
 # not preferred:
-gTS1p = 'TSboth_p'
-gTS1D = 'TSboth_D'
-gTS1T = 'TSboth_T'
+gTSp = 'TSboth_p'
+gTSD = 'TSboth_D'
+gTST = 'TSboth_T'
 
 
 # https://root.cern/manual/python/#alternative-for-tpymultigenfunction-and-tpymultigradfunction
@@ -41,9 +41,9 @@ gTS1T = 'TSboth_T'
 
 ##################################################################
 def initGlobalPars():
-    gInitPars['A'] = [1.e-4, 1e4]
-    gInitPars['B'] = [1.e-4, 10.]
-    gInitPars['C'] = [0., 3000.]
+    gInitPars['A'] = [1., 500.,]
+    gInitPars['B'] = [1., 20.]
+    gInitPars['C'] = [1e-6, 1.e-2]
     return
 
 ##################################################################
@@ -79,12 +79,12 @@ def prepareData(grs):
 ##################################################################
 def getBaseFit(beta, A, B, debug = 0):
     fval = 0.
-    if beta > 0. and beta <= 1.:
+    if beta > 0. and beta < 1.:
         # Bethe-Bloch ansatz:
         fval = A / pow(beta,2) * (log(B*beta/sqrt(1-pow(beta,2))) - pow(beta,2))
     else:
         print('ERROR in getBaseFit: beta out of physically allowed range!')
-    if debug: print(f'fval={fval}')
+    #if debug: print(f'fval={fval}')
     return fval
 
 ##################################################################
@@ -99,7 +99,9 @@ def getFitVal(region, x, npars, pars, debug = 0):
     particle = ''
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
-    if npars > 2 and (region == gTS0p or region == gTS0D or region == gTS0T):
+    if npars > 2 and (region == gTS1p or region == gTS1D or region == gTS1T):
+        # conversion from integrated charge in p.e. to MeV
+        #print('converting')
         C = pars[2]
         if 'p' == region[-1]:
             particle = 'p'
@@ -113,16 +115,19 @@ def getFitVal(region, x, npars, pars, debug = 0):
             m = ms[particle]
         except:
             print('Failed getting particle mass and correct the beta!')
-        if debug: print(f'm={m} A={A} B={B} C={C}')
+        if debug: print(f'm={m:1.1f} A={A:1.1f} B={B:1.1f} C={C:1.1f}')
         if m > 0.:
-            dE = C * getBaseFit(x, A, B, debug)
+            dE = C * getBaseFit(x, A, B, debug) / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
             if dE > 0:
-                gamma = 1./sqrt(1. - pow(beta,2))
-                E = m*gamma
-                gamma0 = (E + dE) / m
-                if debug: print(f'x={x} E={E} dE={dE} gamma0={gamma0}')
-                if gamma0 > 1.:
-                    beta = sqrt( 1. - 1./pow(gamma0,2))
+                gamma0 = 1./sqrt(1. - pow(beta,2))
+                E0 = m*gamma0
+                gamma1 = (E0 - dE) / m
+                if debug: print(f'x={x} E0={E0:1.1f} dE={dE:1.1f} beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
+                if gamma1 > 1.:
+                    beta = sqrt( 1. - 1./pow(gamma1,2))
+                else:
+                    print('ERROR, negative gamma0!')
+                if debug: print(f'  beta0={beta:1.3f}')
             else:
                 if debug:
                     print('ERROR, negative energy correction!')
@@ -173,7 +178,7 @@ class MyFunction( object ):
         #for i in range(0, self.NDim()):
         #    gPars[i] = x[i]
         chi2 = getChi2(self.npars, pars, self.debug)
-        if self.debug: print(f'chi2={chi2}')
+        #if self.debug: print(f'chi2={chi2}')
         return chi2
 
     #def Clone( self ):
@@ -233,7 +238,7 @@ def minimizeChi2(npars, step = 0.01):
 
     fitter.Config().SetMinimizer("Minuit2", "Migrad")
     npars = len(params)
-    debug = 0
+    debug = 1
     myfcn = MyFunction(npars, debug)
 
     # OLD:
@@ -258,6 +263,11 @@ def minimizeChi2(npars, step = 0.01):
         if ipar >= npars:
             break
         fitter.Config().ParSettings(ipar).SetLimits(parLimits[0], parLimits[1])
+
+    fitter.Config().ParSettings(0).SetName("A")
+    fitter.Config().ParSettings(1).SetName("B")
+    if npars > 2:
+        fitter.Config().ParSettings(2).SetName("C")
     
     fitter.FitFCN(globalChi2Functor) #, 0, dataSize, True)
 
@@ -280,7 +290,24 @@ def minimizeChi2(npars, step = 0.01):
  
     result = fitter.Result()
     result.Print(ROOT.std.cout)
-
+    bestPars = result.Parameters()
+    parErrs = result.Errors()
+    # https://root.cern/doc/v610/classROOT_1_1Fit_1_1FitResult.html
+    print('*** FIT RESULTS ***')
+    chi2 = result.MinFcnValue() # .Chi2()
+    ndf = 0 # #result.Ndf()
+    for region,dpoints in gDataPoints.items():
+        ndf = ndf + len(dpoints)
+    ndf = ndf - npars
+    pval = result.Prob()
+    status = result.Status()
+    print('Fit status {}, chi2/ndf={:1.3f}/{:}'.format(status, chi2, ndf))
+    if ndf > 0:
+        print('               chi2/ndf={:1.3f}'.format(chi2/ndf))
+    for ipar in range(0, result.NPar()):
+        pname = result.ParName(ipar)
+        print('Parameter {:} {:1.3f} +/- {:1.3f}'.format(pname, bestPars[ipar], parErrs[ipar]))
+    
     pars = []
     parerrs = []
     ## get the minimized parameter:
@@ -299,12 +326,12 @@ def minimizeChi2(npars, step = 0.01):
     #else:
     #    print('minimizeLhood :: FAILED MINIMIZATION! :-(')
 
-    return pars, parerrs
+    return bestPars, parErrs
 
 
 ##################################################################
 # support both 1D and 2D versions on demand
-def doTheFit(grs, step = 0.01):
+def doTheFit(grs, step = 0.001):
 
     gInitPars = {}
     #del gPars[:]

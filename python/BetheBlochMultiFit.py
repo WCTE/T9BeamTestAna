@@ -1,6 +1,6 @@
 #!/snap/bin/pyroot
 
-#/usr/bin/python3
+###  /usr/bin/python3
 
 # jk
 # 20/09/2022
@@ -77,12 +77,13 @@ def readInputFiles():
 
 ####################################################################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-def singleFit(argv, rfiles, TStag, particle):
+def singleFit(argv, rfiles, TStag, particle, minEntries = 100.):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
     cans = []
 
     ROOT.gStyle.SetOptFit(111)
+    ROOT.gStyle.SetPadLeftMargin(0.15)
     print('*** Settings:')
 
     bgmin = 0.4
@@ -110,12 +111,19 @@ def singleFit(argv, rfiles, TStag, particle):
         bmin = 0.2
         bmax = 0.5
    
-   
+    # COMMON HACK!!!
+    bgmin = 0.3
+    bgmax = 1.5
+    bmin = 0.3
+    bmax = 0.85
+
+        
     os.system('mkdir -p pdf png')
     hs = []
     momenta = []
     hscp = []
     projYs = []
+    projYcps = []
     txts = []
     #basedir = 'TrigScint/'
 
@@ -139,7 +147,9 @@ def singleFit(argv, rfiles, TStag, particle):
     cols = [ROOT.kBlack, ROOT.kGreen+2, ROOT.kBlue, ROOT.kViolet, ROOT.kRed,
             ROOT.kOrange+1, ROOT.kYellow, ROOT.kYellow+2, ROOT.kCyan+1, ROOT.kTeal-7,
             ROOT.kAzure, ROOT.kGray+2, ROOT.kGreen+1, ROOT.kBlue, ROOT.kMagenta]
+    ifile = -1
     for rfile,col in zip(rfiles,cols):
+        ifile = ifile + 1
         filename = rfile.GetName()
         momentum = None
         runindex = -1;
@@ -205,15 +215,15 @@ def singleFit(argv, rfiles, TStag, particle):
         leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
 
 
-        projYcp = projY.Clone(projY.GetName() + '_cp')
-
+        projYcp = projY.Clone(projY.GetName() + f'_cp_{tstag}_{particle}_' + str(ifile))
+        projYcps.append(projYcp)
         meanfull = projY.GetMean()
         sigmafull = projY.GetStdDev()
 
         x2 = projY.GetXaxis().GetXmax()
         x1 = max(projY.GetXaxis().GetXmin(), meanfull - sigmafull)
         projYcp.GetXaxis().SetRangeUser(x1, x2)
-        if projY.GetEntries() > 10.:
+        if projY.GetEntries() > minEntries:
             mean = projYcp.GetMean()
             meanerr = projYcp.GetMeanError()        
             ys.append(mean)
@@ -313,11 +323,11 @@ def singleFit(argv, rfiles, TStag, particle):
     grb.Fit('fun')
     
     cans.append(gcan)
-    stuff.append([grb, grbg])
+    stuff.append([grb, grbg, htmpb, htmpbg, projYs, projYcps])
     gcan.Update()
 
     
-    return grb, grbg, cans, projYs
+    return grb, grbg, cans, projYs, projYcps
 
 
 
@@ -382,7 +392,7 @@ def main(argv):
               #'' # both trigger scintillators
               ]
     particles = [ 'p', # protons
-                  'D', # deuterons
+                  #'D', # deuterons
                   #'T' # tritium
                  ]
     rfiles = readInputFiles()
@@ -390,12 +400,15 @@ def main(argv):
     GrsBeta = {}
     GrsBg = {}
     Cans = []
+    projs = []
     for TStag in TStags:
         for particle in particles:
             region = 'TS' + TStag + particle
-            grbeta, grbg, cans, projYs = singleFit(sys.argv, rfiles, TStag, particle)
+            print(f'Adding region {region}')
+            grbeta, grbg, cans, projYs, projYcps = singleFit(sys.argv, rfiles, TStag, particle)
             GrsBeta[region] = grbeta
-            stuff.append([grbeta, grbg, cans, projYs])
+            stuff.append([grbeta, grbg, cans])
+            projs.append([projYs, projYcps])
             Cans.append(cans)
     
     step = 0.01

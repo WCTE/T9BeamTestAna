@@ -100,6 +100,7 @@ def main(argv):
         return
 
     ROOT.gStyle.SetOptFit(111)
+    ROOT.gStyle.SetPadLeftMargin(0.15)
     print('*** Settings:')
     print('tag={:}, batch={:}'.format(gTag, gBatch))
 
@@ -108,8 +109,8 @@ def main(argv):
     ROOT.gStyle.SetPalette(ROOT.kRainBow)
     #ROOT.gStyle.SetPalette(1)
 
-    #TStag = ''
-    TStag = '0'
+    TStag = ''
+    #TStag = '0'
     #TStag = '1'
     tstag = 'TS' + TStag
     if tstag == 'TS':
@@ -130,7 +131,7 @@ def main(argv):
     #scint1 = 4.
     #scint2 = 22.
     scint1 = 0.
-    scint2 = 2500.
+    scint2 = 2000.
     t1 = 13.
     t2 = 35.
     if particle == 'D':
@@ -218,7 +219,7 @@ def main(argv):
     betas = []
     betagammas = []
     ebetas = []
-    leg = ROOT.TLegend(0.12, 0.65, 0.40, 0.88)
+    leg = ROOT.TLegend(0.68, 0.18, 0.88, 0.48)
     leg.SetBorderSize(0)
     stuff.append(leg)
     cols = [ROOT.kBlack, ROOT.kGreen+2, ROOT.kBlue, ROOT.kViolet, ROOT.kRed,
@@ -258,7 +259,7 @@ def main(argv):
 
         hs.append(h)
         if can == None:
-            canname = 'WCTEJuly2023_protons2D_{}_{}'.format(ftag, hname)
+            canname = 'WCTEJuly2023_protons2D_{}_{}'.format(particle, tstag)
             canname = canname.replace('_list_root','').replace('_ntuple','')
             can = ROOT.TCanvas(canname, canname, 0, 0, 1100, 800)
             cans.append(can)
@@ -299,7 +300,7 @@ def main(argv):
         x2 = projY.GetXaxis().GetXmax()
         x1 = max(projY.GetXaxis().GetXmin(), meanfull - sigmafull)
         projYcp.GetXaxis().SetRangeUser(x1, x2)
-        if projY.GetEntries() > 10.:
+        if projY.GetEntries() > 100.:
             mean = projYcp.GetMean()
             meanerr = projYcp.GetMeanError()        
             ys.append(mean)
@@ -353,7 +354,7 @@ def main(argv):
 
     
     ##########################################
-    canname = '{}BetaGraph'.format(particle)
+    canname = '{}BetaGraph_{}'.format(particle,tstag)
     gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
     gcan.Divide(2,1)
     print(betas, ebetas, ys, eys)
