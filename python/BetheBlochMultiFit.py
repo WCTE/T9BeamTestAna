@@ -77,7 +77,7 @@ def readInputFiles():
 
 ####################################################################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-def singleFit(argv, rfiles, TStag, particle, minEntries = 100.):
+def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', Opt2d = 'box'):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
     cans = []
@@ -195,7 +195,7 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100.):
             #h.Rebin2D(2,2)
             projY.Rebin(4)
         
-        hcp = h.DrawCopy('scat' + opt)
+        hcp = h.DrawCopy(Opt2d + opt)
         if opt == '':
             hcp.GetXaxis().SetRangeUser(t1, t2)
             hcp.GetYaxis().SetRangeUser(scint1, scint2)
@@ -266,7 +266,7 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100.):
             projY.Scale(1./val)
         projY.SetMaximum(projY.GetMaximum()*1.2)
         projY.SetStats(0)
-        projY.Draw('hist' + opt)
+        projY.Draw(Opt1d + opt)
         if opt == '':
             projY.GetXaxis().SetRangeUser(scint1, scint2)
         legp.AddEntry(projY, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
@@ -346,35 +346,6 @@ def main(argv):
     os.system(f'mkdir {pngdir}')
     os.system(f'mkdir {pdfdir}')
 
-  
-
-    ### https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-    ### https://pymotw.com/2/getopt/
-    ### https://docs.python.org/3.1/library/getopt.html
-    print(argv[1:])
-    try:
-        # options that require an argument should be followed by a colon (:).
-        opts, args = getopt.getopt(argv[2:], 'hbt:', ['help','batch','tag='])
-        print('Got options:')
-        print(opts)
-        print(args)
-    except getopt.GetoptError:
-        print('Parsing...')
-        print ('Command line argument error!')
-        print('{:} [ -h -b --batch -tTag --tag="MyCoolTag"]]'.format(argv[0]))
-        sys.exit(2)
-    for opt,arg in opts:
-        print('Processing command line option {} {}'.format(opt,arg))
-        if opt == '-h':
-            print('{:} [ -h -b --batch -tTag --tag="MyCoolTag"]'.format(argv[0]))
-            sys.exit()
-        elif opt in ("-b", "--batch"):
-            gBatch = True
-            print('OK, running in batch mode')
-        elif opt in ("-t", "--tag"):
-            gTag = arg
-            print('OK, using user-defined histograms tag for output pngs {:}'.format(gTag,) )
-
     if gBatch:
         ROOT.gROOT.SetBatch(1)
 
@@ -388,7 +359,7 @@ def main(argv):
 
     #TStag = ''
     TStags = ['0',
-              #'1'
+              '1'
               #'' # both trigger scintillators
               ]
     particles = [ 'p', # protons

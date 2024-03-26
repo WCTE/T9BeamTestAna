@@ -43,7 +43,8 @@ gTST = 'TSboth_T'
 def initGlobalPars():
     gInitPars['A'] = [1., 500.,]
     gInitPars['B'] = [1., 20.]
-    gInitPars['C'] = [1e-6, 1.e-2]
+    gInitPars['Krel'] = [0.1, 10.]
+    gInitPars['Conv'] = [1e-6, 1.e-2]
     return
 
 ##################################################################
@@ -61,18 +62,25 @@ def prepareData(grs):
         gDataPoints[region] = []
     x = c_double(0.)
     y = c_double(0.)
-        
+
+    haveTS0 = False
+    haveTS1 = False
     for region,gr in grs.items():
         print(f'  processing region {region}')
+        if 'TS0' in region:
+            haveTS0 = True
+        if 'TS1' in region:
+            haveTS1 = True
         for ip in range(0,gr.GetN()):
             gr.GetPoint(ip, x, y)
             ey = gr.GetErrorY(ip)
             gDataPoints[region].append(cPoint(x.value, y.value, 1.*ey))
 
+            
     # basic one region fit, parameters A, B
     npars = 2
-    if len(grs) > 2: # expect we fit split of TS0 and TS1 for one or more particle types
-        npars = 3
+    if haveTS0 and haveTS1: # expect we fit split of TS0 and TS1 for one or more particle types
+        npars = 4
     print('  initialized {} graph regions'.format(len(grs)))
     return npars
 
@@ -93,16 +101,21 @@ def getFitVal(region, x, npars, pars, debug = 0):
     #B = gPars[1]
     A = pars[0]
     B = pars[1]
+
     beta = 1.*x
+    Krel = 1.
     # dEdX congversion par
     C = 0.
     particle = ''
+
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
-    if npars > 2 and (region == gTS1p or region == gTS1D or region == gTS1T):
+    if npars > 3 and (region == gTS1p or region == gTS1D or region == gTS1T):
+        # constant to equalize TS1 to TS0
+        Krel = pars[2]
         # conversion from integrated charge in p.e. to MeV
         #print('converting')
-        C = pars[2]
+        C = pars[3]
         if 'p' == region[-1]:
             particle = 'p'
         elif 'D' == region[-1]:
@@ -132,7 +145,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 if debug:
                     print('ERROR, negative energy correction!')
         
-    fval = getBaseFit(beta, A, B, debug)
+    fval = Krel*getBaseFit(beta, A, B, debug)
     return fval
 
 ##################################################################
@@ -266,8 +279,9 @@ def minimizeChi2(npars, step = 0.01):
 
     fitter.Config().ParSettings(0).SetName("A")
     fitter.Config().ParSettings(1).SetName("B")
-    if npars > 2:
-        fitter.Config().ParSettings(2).SetName("C")
+    if npars > 3:
+        fitter.Config().ParSettings(2).SetName("Krel")
+        fitter.Config().ParSettings(3).SetName("Conv")
     
     fitter.FitFCN(globalChi2Functor) #, 0, dataSize, True)
 
@@ -303,7 +317,7 @@ def minimizeChi2(npars, step = 0.01):
     status = result.Status()
     print('Fit status {}, chi2/ndf={:1.3f}/{:}'.format(status, chi2, ndf))
     if ndf > 0:
-        print('               chi2/ndf={:1.3f}'.format(chi2/ndf))
+        print('              chi2/ndf={:1.3f}'.format(chi2/ndf))
     for ipar in range(0, result.NPar()):
         pname = result.ParName(ipar)
         print('Parameter {:} {:1.3f} +/- {:1.3f}'.format(pname, bestPars[ipar], parErrs[ipar]))
