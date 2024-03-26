@@ -93,7 +93,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
     #B = gPars[1]
     A = pars[0]
     B = pars[1]
-    beta = x
+    beta = 1.*x
     # dEdX congversion par
     C = 0.
     particle = ''

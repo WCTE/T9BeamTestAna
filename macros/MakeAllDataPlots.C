@@ -81,7 +81,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 
   // scale factors for p.e. charges limits
   double PEsfTOF = 150;
-  double PEsfPbG = 25.;
+  double PEsfPbG = 300.;
   double PEsfACT = 10.;
 
   if (!_useWindowIntCharge) {
@@ -118,7 +118,6 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 
   _outFile = new TFile(outFileName.Data(), "RECREATE");
   _outFile -> cd();
-
 
   _cutsMap[900] = {   { "tof_t0_cut", 4.9}, 
 		      { "tof_t1_cut", 6}, 
@@ -866,7 +865,10 @@ void MakeAllDataPlots::ReadChannels()
       if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
 	if (_useWindowIntCharge) { // && !chname.Contains("TOF"))
 	  // preferred, to compare PMTs
-	  _Charges[chname]     = _readerMap[chname] -> WindowIntPE[ipeak];// ?!?!?!
+	  if (chname != "PbGlass")
+	    _Charges[chname]     = _readerMap[chname] -> WindowIntPE[ipeak];// ?!?!?!
+	  else
+	    _Charges[chname]     = _readerMap[chname] -> WholeWaveformInt;// ?!?!?!
 	  // NOT preferred!:
 	  // _Charges[chname]     = _readerMap[chname] -> WindowIntCharge[ipeak]; 
 	  _SignalTimes[chname] = _readerMap[chname] -> SignalTimeCorrected[ipeak];

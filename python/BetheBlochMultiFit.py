@@ -388,11 +388,11 @@ def main(argv):
 
     #TStag = ''
     TStags = ['0',
-              '1'
+              #'1'
               #'' # both trigger scintillators
               ]
     particles = [ 'p', # protons
-                  #'D', # deuterons
+                  'D', # deuterons
                   #'T' # tritium
                  ]
     rfiles = readInputFiles()

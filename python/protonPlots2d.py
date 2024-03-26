@@ -131,7 +131,7 @@ def main(argv):
     #scint1 = 4.
     #scint2 = 22.
     scint1 = 0.
-    scint2 = 2000.
+    scint2 = 2500.
     t1 = 13.
     t2 = 35.
     if particle == 'D':
@@ -147,6 +147,12 @@ def main(argv):
         bgmax = 0.7
         bmin = 0.2
         bmax = 0.5
+
+    # COMMON HACK!!!
+    bgmin = 0.3
+    bgmax = 1.5
+    bmin = 0.3
+    bmax = 0.85
 
 
     """
