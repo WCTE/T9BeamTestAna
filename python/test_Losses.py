@@ -69,19 +69,20 @@ for pair in pairs:
     pname = particle.GetName()
     print('*** {:} in {:} '.format(pname, material.GetName()))
     # print bg, beta, gamma
-    print('    T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(T, p, E, beta, gamma, beta*gamma))
+    print('    BEFORE:    T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(T, p, E, beta, gamma, beta*gamma))
     #print(beta, particle, material, useHigherCorrs)
     dedx, halflog = dEdX(beta, particle, material, useHigherCorrs)
-    print('    Ionization losses                                      : {:1.3f} MeV/cm'.format(dedx))
     newE = E - dedx
     newp = sqrt(newE*newE - M*M)
     newT = newE - M
     fracEloss = dedx / E
     newbeta = newp / newE
     newgamma = newE/M
-    print('    New momentum after 1cm of the material                 : {:3.1f}'.format(newp))
-    print('    New energy after 1cm of the material                   : {:3.1f}'.format(newE))
-    print('    New kinetic energy after 1cm of the material           : {:3.1f}'.format(newT))
+    print('    AFTER 1cm: T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(newT, newp, newE, newbeta, newgamma, newbeta*newgamma))
+    print('    Ionization losses                                      : {:1.3f} MeV/cm'.format(dedx))
+    #print('    New momentum after 1cm of the material                 : {:3.1f}'.format(newp))
+    #print('    New energy after 1cm of the material                   : {:3.1f}'.format(newE))
+    #print('    New kinetic energy after 1cm of the material           : {:3.1f}'.format(newT))
 
     print('    Energy fraction loss after 1cm of the material         : {:1.4f}'.format(dedx / E))
     print('    Kinetic energy fraction loss after 1cm of the material : {:1.4f}'.format(dedx / T))
