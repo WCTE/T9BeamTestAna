@@ -77,7 +77,7 @@ def readInputFiles():
 
 ####################################################################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', Opt2d = 'box'):
+def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d = 'hist', Opt2d = 'box'):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
     cans = []
@@ -116,15 +116,25 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
     bgmax = 1.5
     bmin = 0.3
     bmax = 0.85
-
+    
+    if particle == 'e':
+        t2 = 85.
+        bgmin = 0.2
+        bgmax = 1.7
+        bmin = 0.2
+        bmax = 1.1
         
     os.system('mkdir -p pdf png')
+
+    # make these dictionaries keyed by momentum?
     hs = []
     momenta = []
     hscp = []
     projYs = []
     projYcps = []
     txts = []
+
+    
     #basedir = 'TrigScint/'
 
     tstag = 'TS' + TStag
@@ -190,6 +200,8 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
         h.SetStats(0)
 
         projY = h.ProjectionY()
+        pname = f'projY_{tstag}_{ifile}_{momentum}'
+        projY.SetName(pname)
         projYs.append(projY)
         if particle == 'D' or particle == 'T':
             #h.Rebin2D(2,2)
@@ -213,7 +225,6 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
         beta = getBeta(ms[particle], momentum)
         betagamma = getBetaGamma(ms[particle], momentum)
         leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
-
 
         projYcp = projY.Clone(projY.GetName() + f'_cp_{tstag}_{particle}_' + str(ifile))
         projYcps.append(projYcp)
@@ -255,9 +266,11 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
     legp = ROOT.TLegend(0.65, 0.65, 0.88, 0.88)
     legp.SetBorderSize(0)
     stuff.append(legp)
-    for h,projY,momentum,beta in zip(hs,projYs,momenta,betas):
-        projY.SetLineColor(h.GetFillColor())
-        projY.SetFillColorAlpha(h.GetFillColor(), 0.3)
+    for h,col,projY,momentum,beta in zip(hs,cols,projYs,momenta,betas):
+        print(f'col: {col}')
+        projY.SetLineColor(col)
+        projY.SetFillColorAlpha(col, 0.3)
+        #projY.SetFillStyle(1111)
         projY.SetLineWidth(2)
         projY.SetLineStyle(1)
         projY.Rebin(2)
@@ -284,7 +297,7 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
     grb = MakeGraph(betas, ebetas, ys, eys)
     grbg = MakeGraph(betagammas, ebetas, ys, eys)
     
-    hn = 'tmpbg' + tstag + particle
+    hn = 'tmpbg' + tstag + particle 
     ht = hn + ';#beta#gamma;Mean trig. scint. charge [a.u.];'
     htmpbg = ROOT.TH2D(hn, ht, 100, bgmin, bgmax, 100, scint1, scint2)
     htmpbg.SetStats(0)
@@ -298,7 +311,7 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
     ROOT.gPad.SetGridy(1)
     grbg.Draw("P")
 
-    hn = 'tmpbg' + tstag + particle
+    hn = 'tmpb' + tstag + particle
     ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
     htmpb = ROOT.TH2D(hn, ht, 100,bmin, bmax, 100, scint1, scint2)
     htmpb.SetStats(0)
@@ -323,11 +336,11 @@ def singleFit(argv, rfiles, TStag, particle, minEntries = 100., Opt1d = 'hist', 
     grb.Fit('fun')
     
     cans.append(gcan)
-    stuff.append([grb, grbg, htmpb, htmpbg, projYs, projYcps])
+    stuff.append([momenta, grb, grbg, htmpb, htmpbg, projYs, projYcps])
     gcan.Update()
 
     
-    return grb, grbg, cans, projYs, projYcps
+    return momenta, grb, grbg, cans, projYs, projYcps, leg, legp
 
 
 
@@ -358,32 +371,83 @@ def main(argv):
     #ROOT.gStyle.SetPalette(1)
 
     #TStag = ''
-    TStags = ['0',
-              '1'
+    TStags = [#'0',
+              #'1'
               #'' # both trigger scintillators
+              '00','01','02','03',
+              '10','11','12','13',
               ]
-    particles = [ 'p', # protons
-                  'D', # deuterons
-                  #'T' # tritium
+    particles = [ #'p', # protons
+                  #'D', # deuterons
+                  #'T', # tritium,
+                  'e' # for calibration
                  ]
     rfiles = readInputFiles()
+    stuff.append(rfiles)
     # graphs of E losses in p.e. as function of beta or beta*gamma
     GrsBeta = {}
     GrsBg = {}
     Cans = []
-    projs = []
+    projs = {}
+    calibOnly = False
+    if len(particles) == 1 and particles[0] == 'e':
+        calibOnly = True
+    momenta = []
+    calibCs = {}
     for TStag in TStags:
         for particle in particles:
             region = 'TS' + TStag + particle
             print(f'Adding region {region}')
-            grbeta, grbg, cans, projYs, projYcps = singleFit(sys.argv, rfiles, TStag, particle)
+            momenta, grbeta, grbg, cans, projYs, projYcps, leg, legp = singleFit(sys.argv, rfiles, TStag, particle, calibOnly)
             GrsBeta[region] = grbeta
-            stuff.append([grbeta, grbg, cans])
-            projs.append([projYs, projYcps])
+            stuff.append([grbeta, grbg, cans, leg, legp])
+            projs[region] = [projYs, projYcps]
             Cans.append(cans)
+
+    if calibOnly:
+        Vals = {}
+        for region in projs:
+            for momentum,proj in zip(momenta,projs[region][0]):
+                val = proj.GetMean()
+                print('p={:1.0f} region {:} mean charge [Npe]: {:1.3f}'.format(momentum,region,val))
+                try:
+                    Vals[momentum][region] = 1.*val
+                except:
+                    Vals[momentum] = {}
+                    Vals[momentum][region] = 1.*val
+        #print(Vals)
+        for momentum in Vals:
+            aver = 0.
+            for region in Vals[momentum]:
+                val = Vals[momentum][region]
+                aver = aver + val
+            aver = aver / len(Vals[momentum])
+            calibCs[momentum] = {}
+            for region in Vals[momentum]:
+                val = Vals[momentum][region]
+                if val > 0.:
+                    calibCs[momentum][region] = aver/val
+                else:
+                    calibCs[momentum][region] = -1
+        #print(calibCs)
+        for momentum in Vals:
+            print(f'{momentum}: ', end='')
+            for region in Vals[momentum]:
+                c = calibCs[momentum][region]
+                print(' {:}: {:1.4f}'.format(region, c), end='')
+            print()
+        # TODO: plot constants across momenta using pyplot;-) or MakeGraph() ;-) fit slopes and compare
+        # Then, using p and D, multi-fit individual 8 regions 00..13 usin the calibration, or apply calibration 'constants' in event Loop?
+        # are these really constants? Don't thet include some delta electrons physics and momemntum dependence, too?
+        # fit peaks, and not use means of projections?
+        # 
+        if not gBatch:
+            ROOT.gApplication.Run()
+        return
     
     step = 0.01
-    pars, parerrs = doTheFit(GrsBeta, step)
+    debug = 0
+    pars, parerrs = doTheFit(GrsBeta, step, debug)
 
     # TODO: analyze the fitter parameters
     
@@ -403,7 +467,8 @@ def main(argv):
 
     
     print('DONE!')
-    
+    return
+
 ###################################
 ###################################
 ###################################

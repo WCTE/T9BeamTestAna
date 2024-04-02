@@ -44,7 +44,7 @@ def initGlobalPars():
     gInitPars['A'] = [1., 500.,]
     gInitPars['B'] = [1., 20.]
     gInitPars['Krel'] = [0.1, 10.]
-    gInitPars['Conv'] = [1e-6, 1.e-2]
+    gInitPars['Conv'] = [1e-6, 1.e-1]
     return
 
 ##################################################################
@@ -128,19 +128,20 @@ def getFitVal(region, x, npars, pars, debug = 0):
             m = ms[particle]
         except:
             print('Failed getting particle mass and correct the beta!')
-        if debug: print(f'm={m:1.1f} A={A:1.1f} B={B:1.1f} C={C:1.1f}')
+        if debug: print(f'  m={m:1.1f} A={A:1.1f} B={B:1.1f} Krel={Krel:1.3f} C={C:1.4f}')
         if m > 0.:
             dE = C * getBaseFit(x, A, B, debug) / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
             if dE > 0:
                 gamma0 = 1./sqrt(1. - pow(beta,2))
                 E0 = m*gamma0
+                p0 = sqrt(E0*E0 - m*m)
                 gamma1 = (E0 - dE) / m
-                if debug: print(f'x={x} E0={E0:1.1f} dE={dE:1.1f} beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
+                if debug: print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV, dE={dE:1.1f} MeV, beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
                 if gamma1 > 1.:
                     beta = sqrt( 1. - 1./pow(gamma1,2))
                 else:
                     print('ERROR, negative gamma0!')
-                if debug: print(f'  beta0={beta:1.3f}')
+                if debug: print(f'  beta1={beta:1.4f} dbeta = {x-beta:1.4f}')
             else:
                 if debug:
                     print('ERROR, negative energy correction!')
@@ -208,7 +209,7 @@ def mySimpleFcn(npars, x):
 
 
 ##################################################################
-def minimizeChi2(npars, step = 0.01):
+def minimizeChi2(npars, step = 0.01, debug = 0):
 
     # https://root-forum.cern.ch/t/numerical-minimization-with-root-math-functor/13286#p58684
 
@@ -251,7 +252,6 @@ def minimizeChi2(npars, step = 0.01):
 
     fitter.Config().SetMinimizer("Minuit2", "Migrad")
     npars = len(params)
-    debug = 1
     myfcn = MyFunction(npars, debug)
 
     # OLD:
@@ -345,7 +345,7 @@ def minimizeChi2(npars, step = 0.01):
 
 ##################################################################
 # support both 1D and 2D versions on demand
-def doTheFit(grs, step = 0.001):
+def doTheFit(grs, step = 0.001, debug = 0):
 
     gInitPars = {}
     #del gPars[:]
@@ -357,7 +357,7 @@ def doTheFit(grs, step = 0.001):
         print(f'  Region {region}')
         for dpoint in gDataPoints[region]:
             print('    beta={} y={} ey={}'.format(dpoint.x, dpoint.y, dpoint.ey))
-    pars, parerrs = minimizeChi2(npars, step)
+    pars, parerrs = minimizeChi2(npars, step, debug)
     return pars, parerrs
 
 ##################################################################
