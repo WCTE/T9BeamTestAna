@@ -80,7 +80,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   _ntofbins2d = 400;
 
   // scale factors for p.e. charges limits
-  double PEsfTOF = 150;
+  double PEsfTOF = 250;
   double PEsfPbG = 300.;
   double PEsfACT = 10.;
 
@@ -92,12 +92,12 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   
   _actChargeMin = 0.0;
   _actChargeMax = 2.*PEsfACT; // /2. 1.1* 2.*
-  _actAmplitudeMax =  2.; // 2.
+  _actAmplitudeMax =  2.;     // 2.
 
-  _PbGAmplitudeMin =  0.; // 2.
-  _PbGAmplitudeMax =  2.; // 2.
+  _PbGAmplitudeMin =  0.;     // 2.
+  _PbGAmplitudeMax =  2.;     // 2.
 
-  _PbGChargeMin =  0.; // 2.
+  _PbGChargeMin =  0.;        // 2.
   _PbGChargeMax =  2*PEsfPbG; // 2. // 1.4
 
   _trigScintChargeMin = 0.;

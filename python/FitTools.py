@@ -10,6 +10,9 @@ from ctypes import c_double
 from array import array
 
 from tofUtil import ms
+from Losses import *
+from Brems import *
+
 
 kBadP0 = -1
 kEpsilon = 1.e-5
@@ -19,32 +22,17 @@ gInitPars = {}
 gDataPoints = {}
 
 # number of studied variables = free parameters
-#gN = -1
-
-
-# region names:
-gTS0p = 'TS0p'
-gTS0D = 'TS0D'
-gTS0T = 'TS0T'
-gTS1p = 'TS1p'
-gTS1D = 'TS1D'
-gTS1T = 'TS1T'
-
-# not preferred:
-gTSp = 'TSboth_p'
-gTSD = 'TSboth_D'
-gTST = 'TSboth_T'
-
+# doesn't work globally...
+# gN = -1
 
 # https://root.cern/manual/python/#alternative-for-tpymultigenfunction-and-tpymultigradfunction
-
 
 ##################################################################
 def initGlobalPars():
     gInitPars['A'] = [1., 500.,]
     gInitPars['B'] = [1., 20.]
-    gInitPars['Krel'] = [0.1, 10.]
-    gInitPars['Conv'] = [1e-6, 1.e-1]
+    gInitPars['Krel'] = [1., 10.]
+    gInitPars['Conv'] = [1e-6, 1. ] #1.e-1]
     return
 
 ##################################################################
@@ -110,8 +98,9 @@ def getFitVal(region, x, npars, pars, debug = 0):
 
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
-    if npars > 3 and (region == gTS1p or region == gTS1D or region == gTS1T):
-        # constant to equalize TS1 to TS0
+    #if npars > 3 and (region == gTS1p or region == gTS1D or region == gTS1T):
+    if npars > 3 and 'TS1' in region:
+        # constant to equalize TS1 to TS0, or to shift them based on dE/dX beta dependence
         Krel = pars[2]
         # conversion from integrated charge in p.e. to MeV
         #print('converting')
@@ -136,12 +125,33 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 E0 = m*gamma0
                 p0 = sqrt(E0*E0 - m*m)
                 gamma1 = (E0 - dE) / m
+                
+                useHigherCorrs = False
+                material = gMaterials['Polystyrene']
+                print(beta, particle, material, useHigherCorrs)
+                fullName = 'e'
+                if particle == 'p':
+                    fullName = 'Proton'
+                if particle == 'D':
+                    fullName = 'Deuteron'
+                if particle == 'T':
+                    fullName = 'Tritium'
+                    
+                theorydE , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
+                print(theorydE)
+                newE = E0 - theorydE
+                newp = sqrt(newE*newE - m*m)
+                newT = newE - m
+                fracEloss = theorydE / E0
+                newbeta = newp / newE
+                newgamma = newE / m
+                
                 if debug: print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV, dE={dE:1.1f} MeV, beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
                 if gamma1 > 1.:
                     beta = sqrt( 1. - 1./pow(gamma1,2))
                 else:
                     print('ERROR, negative gamma0!')
-                if debug: print(f'  beta1={beta:1.4f} dbeta = {x-beta:1.4f}')
+                if debug: print(f'  beta1={beta:1.4f} theory dbeta = {newbeta - beta:1.4f}, actual dbeta = {x-beta:1.4f}')
             else:
                 if debug:
                     print('ERROR, negative energy correction!')

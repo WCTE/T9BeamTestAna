@@ -19,7 +19,6 @@ from labelTools import *
 from tofUtil import *
 from FitTools import *
 
-
 stuff = []
 lines = []
 
@@ -40,14 +39,26 @@ def PrintUsage(argv):
     print('Example:')
     print('{} output_300n_plots.root -b'.format(argv[0]))
     return
-####################################################################################
 
+####################################################################################
+def MakeGraphNoErrs(xs, ys, col = ROOT.kBlack, mst = 20, ms = 1.):
+    gr = ROOT.TGraph()
+    for i in range(0,len(xs)):
+        gr.SetPoint(i, xs[i], ys[i])
+    gr.SetMarkerColor(col)
+    gr.SetLineColor(col)
+    gr.SetMarkerStyle(mst)
+    gr.SetMarkerSize(ms)
+    return gr
+
+####################################################################################
 def MakeGraph(xs, exs, ys, eys, col = ROOT.kBlack, mst = 20, ms = 1.):
     gr = ROOT.TGraphErrors()
     for i in range(0,len(xs)):
         gr.SetPoint(i, xs[i], ys[i])
         gr.SetPointError(i, exs[i], eys[i])
     gr.SetMarkerColor(col)
+    gr.SetLineColor(col)
     gr.SetMarkerStyle(mst)
     gr.SetMarkerSize(ms)
     return gr
@@ -77,7 +88,7 @@ def readInputFiles():
 
 ####################################################################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d = 'hist', Opt2d = 'box'):
+def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 100., Opt1d = 'hist', Opt2d = 'box'):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
     cans = []
@@ -116,12 +127,14 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
     bgmax = 1.5
     bmin = 0.3
     bmax = 0.85
-    
+
+    # ...except for electrons for calibration;)
     if particle == 'e':
-        t2 = 85.
+        t1 = 10.
+        t2 = 13.
         bgmin = 0.2
-        bgmax = 1.7
-        bmin = 0.2
+        bgmax = 2.7
+        bmin = 0.9
         bmax = 1.1
         
     os.system('mkdir -p pdf png')
@@ -151,7 +164,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
     betas = []
     betagammas = []
     ebetas = []
-    leg = ROOT.TLegend(0.12, 0.65, 0.40, 0.88)
+    leg = ROOT.TLegend(0.68, 0.5, 0.88, 0.88) # 0.12, 0.65, 0.40, 0.88)
     leg.SetBorderSize(0)
     stuff.append(leg)
     cols = [ROOT.kBlack, ROOT.kGreen+2, ROOT.kBlue, ROOT.kViolet, ROOT.kRed,
@@ -174,7 +187,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
             momentum = getMomentum(srun)
         if momentum == None:
             momentum = getMergedMomentum(srun)
-        print(srun,momentum)
+        print('---> Run {:}, p={:} MeV/c'.format(srun,momentum))
         momenta.append(momentum)
         Hs = []
         Txts = []
@@ -182,7 +195,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
 
         h = rfile.Get(pbasedir + hname)
         try:
-            print('ok, got {} from file {}'.format(h.GetName(), rfile.GetName()))
+            print('   ...ok, got {} from file {}'.format(h.GetName(), rfile.GetName()))
             tmp = h.GetName()
             #print('meanX: {1.2f}'.format(h.GetMean(1)))
             #print('meanY: {1.2f}'.format(h.GetMean(2)))
@@ -191,7 +204,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
             continue
 
         hs.append(h)
-        if can == None:
+        if can == None and not calibOnly:
             canname = 'WCTEJuly2023_BetheBloch_SingleFit_{}_{}'.format(particle, tstag)
             canname = canname.replace('_list_root','').replace('_ntuple','')
             can = ROOT.TCanvas(canname, canname, 0, 0, 1100, 800)
@@ -206,25 +219,27 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
         if particle == 'D' or particle == 'T':
             #h.Rebin2D(2,2)
             projY.Rebin(4)
-        
-        hcp = h.DrawCopy(Opt2d + opt)
-        if opt == '':
-            hcp.GetXaxis().SetRangeUser(t1, t2)
-            hcp.GetYaxis().SetRangeUser(scint1, scint2)
-        alpha = 0.10
-        hcp.SetMarkerColorAlpha(col, alpha)
-        hcp.SetLineColorAlpha(col, alpha)
-        hcp.SetMarkerSize(0.1)
-        hcp.SetMarkerStyle(6)
-        ROOT.gPad.Update()
-        h.SetFillColorAlpha(hcp.GetMarkerColor(),1)
-        h.SetFillStyle(1111)
-        h.SetMarkerSize(2)
-        h.SetMarkerStyle(20)
-        hscp.append(hcp)
         beta = getBeta(ms[particle], momentum)
         betagamma = getBetaGamma(ms[particle], momentum)
-        leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
+
+        hcp = None
+        if not calibOnly:
+            hcp = h.DrawCopy(Opt2d + opt)
+            if opt == '':
+                hcp.GetXaxis().SetRangeUser(t1, t2)
+                hcp.GetYaxis().SetRangeUser(scint1, scint2)
+            alpha = 0.10
+            hcp.SetMarkerColorAlpha(col, alpha)
+            hcp.SetLineColorAlpha(col, alpha)
+            hcp.SetMarkerSize(0.1)
+            hcp.SetMarkerStyle(6)
+            ROOT.gPad.Update()
+            h.SetFillColorAlpha(hcp.GetMarkerColor(),1)
+            h.SetFillStyle(1111)
+            h.SetMarkerSize(2)
+            h.SetMarkerStyle(20)
+            hscp.append(hcp)
+            leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
 
         projYcp = projY.Clone(projY.GetName() + f'_cp_{tstag}_{particle}_' + str(ifile))
         projYcps.append(projYcp)
@@ -235,8 +250,26 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
         x1 = max(projY.GetXaxis().GetXmin(), meanfull - sigmafull)
         projYcp.GetXaxis().SetRangeUser(x1, x2)
         if projY.GetEntries() > minEntries:
-            mean = projYcp.GetMean()
-            meanerr = projYcp.GetMeanError()        
+            relcal = 1.
+            # we expect we get a region like TS01p, so we remove the particle,
+            # and add 'e' for which relative calibration was derived:
+            if not calibOnly and len(calibCs) > 0:
+                print('...ok, will try to use relative calibration constants!')
+                #print('  ', calibCs)
+                cregion = tstag + 'e'
+                #print('   ', momentum, cregion)
+                if momentum in calibCs and cregion in calibCs[momentum]:
+                    try:
+                        relcal = calibCs[momentum][cregion]
+                        print('   ...using relcal={:1.4f}'.format(relcal))
+                    except:
+                        print(f'   ...Unable to use calibration constants for momentum {momentum}, TS {tstag} using {cregion}!')
+                else:
+                    print(f'   ...did NOT find calib constant for momentum {momentum}, TS {tstag} using {cregion}!')
+                        
+            mean = relcal*projYcp.GetMean()
+            meanerr = relcal*projYcp.GetMeanError()
+                        
             ys.append(mean)
             eys.append(meanerr)
             betas.append(beta)
@@ -246,103 +279,109 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, minEntries = 100., Opt1d
         opt = 'same'
         #adjustStats(h)
         #ROOT.gPad.Update()
-
-    leg.Draw()
-    cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
-    #cnote.Draw()
-    #pnote.Draw()
-    pnote2 = makeMomentumLabel(srun, momentum, 0.12, 0.92)
-    #pnote2.Draw()
+    if not calibOnly:
+        leg.Draw()
+        cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
+        #cnote.Draw()
+        #pnote.Draw()
+        pnote2 = makeMomentumLabel(srun, momentum, 0.12, 0.92)
+        #pnote2.Draw()
+        
     #parts = ['e', 'mu', 'pi', 'K', 'p', 'D', 'T']
     #lines = makeLines(h, 0., parts, momentum, True)
     #stuff.append(lines)
     #stuff.append([cnote, pnote, pnote2])
 
     ####################################################################################
-    canname = 'WCTEJuly2023_LandauProfiles_{}_{}'.format(particle, tstag)
-    canp = ROOT.TCanvas(canname, canname, 200, 200, 1000, 800)
-    canp.cd()
-    opt = ''
-    legp = ROOT.TLegend(0.65, 0.65, 0.88, 0.88)
-    legp.SetBorderSize(0)
-    stuff.append(legp)
-    for h,col,projY,momentum,beta in zip(hs,cols,projYs,momenta,betas):
-        print(f'col: {col}')
-        projY.SetLineColor(col)
-        projY.SetFillColorAlpha(col, 0.3)
-        #projY.SetFillStyle(1111)
-        projY.SetLineWidth(2)
-        projY.SetLineStyle(1)
-        projY.Rebin(2)
-        val = projY.Integral(0, projY.GetXaxis().GetNbins()+1)
-        if val > 0.:
-            projY.Scale(1./val)
-        projY.SetMaximum(projY.GetMaximum()*1.2)
-        projY.SetStats(0)
-        projY.Draw(Opt1d + opt)
-        if opt == '':
-            projY.GetXaxis().SetRangeUser(scint1, scint2)
-        legp.AddEntry(projY, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
-        opt = 'same'
-    legp.Draw()
-    canp.Update()
-    cans.append(canp)
+    canp = None
+    legp = None
+    if not calibOnly:
+        canname = 'WCTEJuly2023_LandauProfiles_{}_{}'.format(particle, tstag)
+        canp = ROOT.TCanvas(canname, canname, 200, 200, 1000, 800)
+        canp.cd()
+        opt = ''
+        legp = ROOT.TLegend(0.65, 0.65, 0.88, 0.88)
+        legp.SetBorderSize(0)
+        stuff.append(legp)
+        for h,col,projY,momentum,beta in zip(hs,cols,projYs,momenta,betas):
+            #print(f'col: {col}')
+            projY.SetLineColor(col)
+            projY.SetFillColorAlpha(col, 0.3)
+            #projY.SetFillStyle(1111)
+            projY.SetLineWidth(2)
+            projY.SetLineStyle(1)
+            projY.Rebin(2)
+            val = projY.Integral(0, projY.GetXaxis().GetNbins()+1)
+            if val > 0.:
+                projY.Scale(1./val)
+            projY.SetMaximum(projY.GetMaximum()*1.2)
+            projY.SetStats(0)
+            projY.Draw(Opt1d + opt)
+            if opt == '':
+                projY.GetXaxis().SetRangeUser(scint1, scint2)
+            legp.AddEntry(projY, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
+            opt = 'same'
+        legp.Draw()
+        canp.Update()
+        cans.append(canp)
 
-    
+    gcan = None
+    grb = None
+    grbg = None
+    if not calibOnly:
     ####################################################################################
-    canname = 'BetaGraph_{}_{}'.format(particle, tstag)
-    gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
-    gcan.Divide(2,1)
-    print(betas, ebetas, ys, eys)
-    grb = MakeGraph(betas, ebetas, ys, eys)
-    grbg = MakeGraph(betagammas, ebetas, ys, eys)
-    
-    hn = 'tmpbg' + tstag + particle 
-    ht = hn + ';#beta#gamma;Mean trig. scint. charge [a.u.];'
-    htmpbg = ROOT.TH2D(hn, ht, 100, bgmin, bgmax, 100, scint1, scint2)
-    htmpbg.SetStats(0)
-    htmpbg.GetXaxis().SetMoreLogLabels()
+        canname = 'BetaGraph_{}_{}'.format(particle, tstag)
+        gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
+        gcan.Divide(2,1)
+        print('* betas, ebetas, ys, eys:')
+        print(betas, ebetas, ys, eys)
+        grb = MakeGraph(betas, ebetas, ys, eys)
+        grbg = MakeGraph(betagammas, ebetas, ys, eys)
 
-    gcan.cd(1)
-    htmpbg.Draw()
-    ROOT.gStyle.SetOptTitle(0)
-    #ROOT.gPad.SetLogx()
-    ROOT.gPad.SetGridx(1)
-    ROOT.gPad.SetGridy(1)
-    grbg.Draw("P")
+        hn = 'tmpbg' + tstag + particle 
+        ht = hn + ';#beta#gamma;Mean trig. scint. charge [a.u.];'
+        htmpbg = ROOT.TH2D(hn, ht, 100, bgmin, bgmax, 100, scint1, scint2)
+        htmpbg.SetStats(0)
+        htmpbg.GetXaxis().SetMoreLogLabels()
 
-    hn = 'tmpb' + tstag + particle
-    ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
-    htmpb = ROOT.TH2D(hn, ht, 100,bmin, bmax, 100, scint1, scint2)
-    htmpb.SetStats(0)
-    htmpb.GetXaxis().SetMoreLogLabels()
+        gcan.cd(1)
+        htmpbg.Draw()
+        ROOT.gStyle.SetOptTitle(0)
+        #ROOT.gPad.SetLogx()
+        ROOT.gPad.SetGridx(1)
+        ROOT.gPad.SetGridy(1)
+        grbg.Draw("P")
 
-    gcan.cd(2)
-    htmpb.Draw()
-    ROOT.gStyle.SetOptTitle(0)
-    #ROOT.gPad.SetLogx()
-    ROOT.gPad.SetGridx(1)
-    ROOT.gPad.SetGridy(1)
-    grb.Draw("P")
-    #fun = ROOT.TF1('fun', '[0]/x^2 + [1]', 0.1, 1.)
-    #fun.SetParameters(0.1, 1.)
-    #fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
-    #fun.SetParameters(2., 10., 0.5)
-    fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2)', 0.1, 1.)
-    fun.SetParameters(2., 10.)#, 0.5)
-    fun.SetParName(0, 'a')
-    fun.SetParName(1, 'b')
-    #fun.SetParName(2, 'g')
-    grb.Fit('fun')
-    
-    cans.append(gcan)
-    stuff.append([momenta, grb, grbg, htmpb, htmpbg, projYs, projYcps])
-    gcan.Update()
+        hn = 'tmpb' + tstag + particle
+        ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
+        htmpb = ROOT.TH2D(hn, ht, 100,bmin, bmax, 100, scint1, scint2)
+        htmpb.SetStats(0)
+        htmpb.GetXaxis().SetMoreLogLabels()
+
+        gcan.cd(2)
+        htmpb.Draw()
+        ROOT.gStyle.SetOptTitle(0)
+        #ROOT.gPad.SetLogx()
+        ROOT.gPad.SetGridx(1)
+        ROOT.gPad.SetGridy(1)
+        grb.Draw("P")
+        #fun = ROOT.TF1('fun', '[0]/x^2 + [1]', 0.1, 1.)
+        #fun.SetParameters(0.1, 1.)
+        #fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
+        #fun.SetParameters(2., 10., 0.5)
+        fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2)', 0.1, 1.)
+        fun.SetParameters(2., 10.)#, 0.5)
+        fun.SetParName(0, 'a')
+        fun.SetParName(1, 'b')
+        #fun.SetParName(2, 'g')
+        grb.Fit('fun')
+
+        cans.append(gcan)
+        stuff.append([momenta, grb, grbg, htmpb, htmpbg, projYs, projYcps])
+        gcan.Update()
 
     
     return momenta, grb, grbg, cans, projYs, projYcps, leg, legp
-
-
 
 ###################################
 ###################################
@@ -370,17 +409,20 @@ def main(argv):
     ROOT.gStyle.SetPalette(ROOT.kRainBow)
     #ROOT.gStyle.SetPalette(1)
 
-    #TStag = ''
-    TStags = [#'0',
-              #'1'
-              #'' # both trigger scintillators
-              '00','01','02','03',
-              '10','11','12','13',
-              ]
-    particles = [ #'p', # protons
-                  #'D', # deuterons
+    TStags = [
+        # not supported anymore!
+        #'0',
+        #'1'
+        #'' # both trigger scintillators
+        # NOW supported:
+        # individual TS PMTs:
+        '00','01','02','03',
+        '10','11','12','13',
+    ]
+    particles = [ 'e', # for calibration
+                  'p', # protons
+                  'D', # deuterons
                   #'T', # tritium,
-                  'e' # for calibration
                  ]
     rfiles = readInputFiles()
     stuff.append(rfiles)
@@ -389,78 +431,134 @@ def main(argv):
     GrsBg = {}
     Cans = []
     projs = {}
-    calibOnly = False
-    if len(particles) == 1 and particles[0] == 'e':
-        calibOnly = True
     momenta = []
     calibCs = {}
-    for TStag in TStags:
-        for particle in particles:
+    for particle in particles:
+        calibOnly = False
+        if particle == 'e':
+            calibOnly = True
+        for TStag in TStags:
             region = 'TS' + TStag + particle
             print(f'Adding region {region}')
-            momenta, grbeta, grbg, cans, projYs, projYcps, leg, legp = singleFit(sys.argv, rfiles, TStag, particle, calibOnly)
-            GrsBeta[region] = grbeta
+            momenta, grbeta, grbg, cans, projYs, projYcps, leg, legp = singleFit(sys.argv, rfiles, TStag, particle, calibOnly, calibCs)
+            if not calibOnly:
+                GrsBeta[region] = grbeta
             stuff.append([grbeta, grbg, cans, leg, legp])
             projs[region] = [projYs, projYcps]
             Cans.append(cans)
 
-    if calibOnly:
-        Vals = {}
-        for region in projs:
-            for momentum,proj in zip(momenta,projs[region][0]):
-                val = proj.GetMean()
-                print('p={:1.0f} region {:} mean charge [Npe]: {:1.3f}'.format(momentum,region,val))
-                try:
-                    Vals[momentum][region] = 1.*val
-                except:
-                    Vals[momentum] = {}
-                    Vals[momentum][region] = 1.*val
-        #print(Vals)
-        for momentum in Vals:
-            aver = 0.
-            for region in Vals[momentum]:
-                val = Vals[momentum][region]
-                aver = aver + val
-            aver = aver / len(Vals[momentum])
-            calibCs[momentum] = {}
-            for region in Vals[momentum]:
-                val = Vals[momentum][region]
-                if val > 0.:
-                    calibCs[momentum][region] = aver/val
-                else:
-                    calibCs[momentum][region] = -1
-        #print(calibCs)
-        for momentum in Vals:
-            print(f'{momentum}: ', end='')
-            for region in Vals[momentum]:
-                c = calibCs[momentum][region]
-                print(' {:}: {:1.4f}'.format(region, c), end='')
-            print()
-        # TODO: plot constants across momenta using pyplot;-) or MakeGraph() ;-) fit slopes and compare
-        # Then, using p and D, multi-fit individual 8 regions 00..13 usin the calibration, or apply calibration 'constants' in event Loop?
-        # are these really constants? Don't thet include some delta electrons physics and momemntum dependence, too?
-        # fit peaks, and not use means of projections?
-        # 
-        if not gBatch:
-            ROOT.gApplication.Run()
-        return
-    
+            if calibOnly:
+                chargeVals = {}
+                for region in projs:
+                    for momentum,proj in zip(momenta,projs[region][0]):
+                        val = proj.GetMean()
+                        print('p={:1.0f} region {:} mean charge [Npe]: {:1.3f}'.format(momentum,region,val))
+                        try:
+                            chargeVals[momentum][region] = 1.*val
+                        except:
+                            chargeVals[momentum] = {}
+                            chargeVals[momentum][region] = 1.*val
+                #print(chargeVals)
+                print('Working on relative TS calibrations constants...')
+                for momentum in chargeVals:
+                    aver = 0.
+                    for region in chargeVals[momentum]:
+                        val = chargeVals[momentum][region]
+                        aver = aver + val
+                    nn = len(chargeVals[momentum])
+                    #print(f'nPMTs: {nn}')
+                    if nn > 0:
+                        aver = aver / nn
+                    else:
+                        aver = -1.
+                    calibCs[momentum] = {}
+                    for region in chargeVals[momentum]:
+                        val = chargeVals[momentum][region]
+                        if val > 0.:
+                            calibCs[momentum][region] = aver/val
+                        else:
+                            calibCs[momentum][region] = -1
+                #print(calibCs)
+                print('"TOF" trigger scintillators relative calibration constants:')
+                xs = {}
+                ys = {}
+                imomentum = -1
+                for momentum in chargeVals:
+                    imomentum = imomentum + 1
+                    print(f'{momentum}: ', end='')
+                    for region in chargeVals[momentum]:
+                        c = calibCs[momentum][region]
+                        if imomentum == 0:
+                            xs[region] = []
+                            ys[region] = []
+                        xs[region].append(1.*momentum)
+                        ys[region].append(1.*c)
+                        print(' {:}: {:1.4f}'.format(region, c), end='')
+                    print()
+                cgrs = {}
+                ireg = -1
+                for region in xs:
+                    ireg = ireg + 1
+                    print(xs[region], ys[region])
+                    col = ROOT.kBlue - ireg
+                    if 'TS0' in region:
+                        col = ROOT.kMagenta - ireg
+                    cgrs[region] = MakeGraphNoErrs(xs[region], ys[region], col, 20 + (ireg % 4))
+
+        if calibOnly:
+            canname = 'WCTEJuly2023_CalibTS'
+            ccan = ROOT.TCanvas(canname, canname, 200, 200, 1100, 800)
+            cans.append(ccan)
+            ccan.cd()
+            opt = 'PL'
+            hname = 'calibGr'
+            htitle = ';p [MeV/c];rel. calib const.'
+            hh2 = ROOT.TH2D(hname, htitle, 100, 400., 1600., 100, 0.5, 1.7)
+            hh2.SetStats(0)
+            hh2.Draw()
+            cleg = ROOT.TLegend(0.79, 0.23, 0.89, 0.89)
+            cleg.SetBorderSize(0)
+            stuff.append(cleg)
+            for region,cgr in cgrs.items():
+                print(f'plotting calib graph for {region}')
+                cgr.Draw(opt)
+                cleg.AddEntry(cgr, region, 'PL')
+            cleg.Draw()
+            ROOT.gPad.Update()
+            # Then, using p and D, multi-fit individual 8 regions 00..13 usin the calibration, or apply calibration 'constants' in event Loop?
+            # are these really constants? Don't thet include some delta electrons physics and momemntum dependence, too?
+            # fit peaks, and not use means of projections?
+            # End of relative calibration using electrons
+
+    ##########################
+    #  Now run the multifit! #
+    ##########################
     step = 0.01
-    debug = 0
+    debug = 1
     pars, parerrs = doTheFit(GrsBeta, step, debug)
 
     # TODO: analyze the fitter parameters
     
     # plot individual subfits over data in each region!
 
+
+    # ...
+
+
+    # End of multifit
+    
+    # And just print all canvases;)
     for cans in Cans:
         for can in cans:
-            can.cd()
-            if 'vs' in can.GetName():
-                pnote.Draw()            
-            can.Update()
-            can.Print(pngdir + can.GetName() + '.png')
-            can.Print(pdfdir + can.GetName() + '.pdf')
+            try:
+                can.cd()
+                if 'vs' in can.GetName():
+                    pnote.Draw()            
+                can.Update()
+                can.Print(pngdir + can.GetName() + '.png')
+                can.Print(pdfdir + can.GetName() + '.pdf')
+            except:
+                print('ERROR printing canvas!')
     
     if not gBatch:
         ROOT.gApplication.Run()
