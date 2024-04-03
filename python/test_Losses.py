@@ -13,6 +13,14 @@ PrintMaterials()
 
 print('***************************************************')
 
+
+myMat = 'Polystyrene'
+dX = 1. # cm
+
+myMat = 'Al'
+dX = 1.e-2 # cm
+
+
 pairs = [ #['Alpha', 'Si'],
           #['Deuteron', 'Si'],
           #['Proton', 'Si'],
@@ -21,13 +29,13 @@ pairs = [ #['Alpha', 'Si'],
           #['Muon', 'Si'],
           #['Electron', 'Si'],
           #['Positron', 'Si'],
-    
-    ['Electron', 'Polystyrene'],
-    ['Positron', 'Polystyrene'],
-    ['Muon', 'Polystyrene'],
-    ['Pion', 'Polystyrene'],
-    ['Proton', 'Polystyrene'],
-    ['Deuteron', 'Polystyrene'],
+
+    ['Electron', myMat],
+    ['Positron', myMat],
+    ['Muon', myMat],
+    ['Pion', myMat],
+    ['Proton', myMat],
+    ['Deuteron', myMat],
 
 ]
 
@@ -48,6 +56,8 @@ for pair in pairs:
     T = 0.
 
     useHigherCorrs = False
+    # MIP:
+    # SomeEnergy  = 370. # MeV
     SomeEnergy  = 540. # MeV
     
     if KeepSameMomentum:
@@ -67,19 +77,21 @@ for pair in pairs:
         p = bg*M
 
     pname = particle.GetName()
-    print('*** {:} in {:} '.format(pname, material.GetName()))
+    print('*** {:} in {:} using dX={:f}cm'.format(pname, material.GetName(), dX))
     # print bg, beta, gamma
     print('    BEFORE:    T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(T, p, E, beta, gamma, beta*gamma))
     #print(beta, particle, material, useHigherCorrs)
     dedx, halflog = dEdX(beta, particle, material, useHigherCorrs)
-    newE = E - dedx
+    dE = dedx*dX
+    newE = E - dE
     newp = sqrt(newE*newE - M*M)
     newT = newE - M
-    fracEloss = dedx / E
+    fracEloss = dE / E
     newbeta = newp / newE
     newgamma = newE/M
-    print('    AFTER 1cm: T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(newT, newp, newE, newbeta, newgamma, newbeta*newgamma))
+    print('    AFTER dX={:}cm: T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(dX, newT, newp, newE, newbeta, newgamma, newbeta*newgamma))
     print('    Ionization losses                                      : {:1.3f} MeV/cm'.format(dedx))
+    print('    Ionization losses                                      : {:1.3f} MeV'.format(dE))
     #print('    New momentum after 1cm of the material                 : {:3.1f}'.format(newp))
     #print('    New energy after 1cm of the material                   : {:3.1f}'.format(newE))
     #print('    New kinetic energy after 1cm of the material           : {:3.1f}'.format(newT))

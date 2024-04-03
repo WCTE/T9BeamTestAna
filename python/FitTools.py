@@ -11,7 +11,7 @@ from array import array
 
 from tofUtil import ms
 from Losses import *
-from Brems import *
+#from Brems import *
 
 
 kBadP0 = -1
@@ -128,7 +128,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 
                 useHigherCorrs = False
                 material = gMaterials['Polystyrene']
-                print(beta, particle, material, useHigherCorrs)
+                #print(beta, particle, material, useHigherCorrs)
                 fullName = 'e'
                 if particle == 'p':
                     fullName = 'Proton'
@@ -136,9 +136,10 @@ def getFitVal(region, x, npars, pars, debug = 0):
                     fullName = 'Deuteron'
                 if particle == 'T':
                     fullName = 'Tritium'
-                    
-                theorydE , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
-                print(theorydE)
+                theorydEdX , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
+                dX = 1. # cm!
+                theorydE = theorydEdX*dX
+                #print(theorydE)
                 newE = E0 - theorydE
                 newp = sqrt(newE*newE - m*m)
                 newT = newE - m
@@ -146,7 +147,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 newbeta = newp / newE
                 newgamma = newE / m
                 
-                if debug: print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV, dE={dE:1.1f} MeV, beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
+                if debug: print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV; using dX={dX:1.1f}cm theorydE={theorydE:1.1f} MeV, actual dE={dE:1.1f} MeV, dE/theorydE ratio: {dE/theorydE:1.3f}; beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
                 if gamma1 > 1.:
                     beta = sqrt( 1. - 1./pow(gamma1,2))
                 else:
