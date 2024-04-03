@@ -31,9 +31,9 @@ myParts = {
 }
 
 # MeV/c:
-p1 = 220.
+p1 = 200.
 p2 = 1200.
-N = 100
+N = 200
 dp = (p2-p1) / N
 ps = [ p1 + i*dp for i in range(0,N+1) ]
 
@@ -184,7 +184,18 @@ for mname,dX in myMat.items():
     stuff.append([hs, hcps, legs])
 
 
-                
-                
+# And just print all canvases;)
+pngdir = 'png_results/'
+pdfdir = 'pdf_results/'
+
+for mname, can in cans.items():
+    try:
+        can.cd()
+        can.Update()
+        can.Print(pngdir + can.GetName() + '.png')
+        can.Print(pdfdir + can.GetName() + '.pdf')
+    except:
+        print('ERROR printing canvas!')          
+
                 
 ROOT.gApplication.Run()
