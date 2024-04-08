@@ -91,7 +91,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   }
   
   _actChargeMin = 0.0;
-  _actChargeMax = 2.*PEsfACT; // /2. 1.1* 2.*
+  _actChargeMax = 6.*PEsfACT; // /2. 1.1* 2.*
   _actAmplitudeMax =  2.;     // 2.
 
   _PbGAmplitudeMin =  0.;     // 2.
@@ -441,10 +441,10 @@ void MakeAllDataPlots::InitChargedHistos()
   
   //lead glass vs act 2 and 3 - identify particles
   _histos2d["hRef_pbA_act23A"] = new TH2D("hRef_pbA_act23A", "; Pb-glass Amplitude ; (ACT2+ACT3)/2 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., 2*_actAmplitudeMax);
-  _histos2d["hRef_pbC_act23C"] = new TH2D("hRef_pbC_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Charge", 200, _actChargeMin, _actChargeMax, 400, 0., 2*_actAmplitudeMax);
+  _histos2d["hRef_pbC_act23C"] = new TH2D("hRef_pbC_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Charge", 200, _actChargeMin, _actChargeMax, 400, 0., 2*_actChargeMax);
 
   _histos2d["hRef_pbC_act23A"] = new TH2D("hRef_pbC_act23A", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, 0., _actAmplitudeMax, 400, 0., 2*_actAmplitudeMax);
-  _histos2d["hRef_pbA_act23C"] = new TH2D("hRef_pbA_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., 2*_actAmplitudeMax);
+  _histos2d["hRef_pbA_act23C"] = new TH2D("hRef_pbA_act23C", "; Pb-glass Charge ; (ACT2+ACT3)/2 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., 2*_actChargeMax);
 
   _histos2d["hRef_pbA_act0A"] = new TH2D("hRef_pbA_act0A", "; Pb-glass Amplitude ; ACT0 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., ACT0Gain*_actAmplitudeMax);
   _histos2d["hRef_pbC_act0C"] = new TH2D("hRef_pbC_act0C", "; Pb-glass Charge ; ACT1 Charge", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., ACT0Gain*_actChargeMax);
@@ -553,6 +553,8 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos2d["hACT2CACT1C"] = new TH2D("hRef_ACT2CACT1C", "; ACT2 Charge; ACT1 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
   _histos2d["hACT3CACT2C"] = new TH2D("hRef_ACT3CACT2C", "; ACT3 Charge; ACT2 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
   _histos2d["hACT1CACT3C"] = new TH2D("hRef_ACT1CACT3C", "; ACT1 Charge; ACT3 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
+  // 5.4.2024:
+  _histos2d["hACT1CACT23C"] = new TH2D("hRef_ACT1CACT23C", "; ACT1 Charge; (ACT2+ACT3)/2 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
 
   _outFile -> cd("../");
 
@@ -1235,6 +1237,7 @@ void MakeAllDataPlots::FillChargedHistos()
     _histos2d["hACT1CACT3C"]->Fill(_act1c, _act3c);
     _histos2d["hACT3CACT2C"]->Fill(_act3c, _act2c);
     _histos2d["hACT2CACT1C"]->Fill(_act2c, _act1c);
+    _histos2d["hACT1CACT23C"]->Fill(_act1c, _act23cAver);
 
     // acraplet - weird electrons which do not see anything in the ACT
     if (_act23aAver != 1.5 && _tof >= 13.5 && _tof <= 16.5) {

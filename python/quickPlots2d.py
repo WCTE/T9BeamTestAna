@@ -136,6 +136,7 @@ def main(argv):
     #             ]
     #dummy = [
 
+                 'hRef_ACT1CACT23C',
                  'hRef_pbC_TrigScintC',
                  #'hRef_pbC_TrigScintA',
                  'hRef_pbA_TrigScintC',
@@ -195,7 +196,7 @@ def main(argv):
             rdir = pbasedir
         elif 'nonZero' in hname or 'Xmap' in hname:
             rdir = chbasedir
-        elif 'hRef_TOFPb' in hname:
+        elif 'hRef_TOFPb' in hname or 'hRef_ACT' in hname:
             rdir = chbasedir
         h = rfile.Get(rdir + hname)
         try:

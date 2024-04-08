@@ -137,7 +137,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 if particle == 'T':
                     fullName = 'Tritium'
                 theorydEdX , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
-                dX = 1. # cm!
+                dX = 0.6 # cm!
                 theorydE = theorydEdX*dX
                 #print(theorydE)
                 newE = E0 - theorydE

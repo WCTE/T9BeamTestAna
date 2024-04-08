@@ -386,8 +386,10 @@ def main(argv):
         #'' # both trigger scintillators
         # NOW supported:
         # individual TS PMTs:
-        '00','01','02','03',
-        '10','11','12','13',
+        #'00',
+        '01','02','03',
+        '10','11','12',
+        #'13',
     ]
     particles = [ 'e', # for calibration
                   'p', # protons
