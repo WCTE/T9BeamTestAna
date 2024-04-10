@@ -398,7 +398,7 @@ def main(argv):
     #fun.SetParameters(0.1, 1.)
     #fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
     #fun.SetParameters(2., 10., 0.5)
-    fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2)', 0.1, 1.)
+    fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x*x/(1-x*x)) - x^2)', 0.1, 1.)
     fun.SetParameters(2., 10., 0.5)
     fun.SetParName(0, 'A')
     fun.SetParName(1, 'B')

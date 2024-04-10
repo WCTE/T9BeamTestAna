@@ -16,6 +16,7 @@ from Losses import *
 
 kBadP0 = -1
 kEpsilon = 1.e-5
+gme = 0.511e6
 
 #gPars = []
 gInitPars = {}
@@ -29,8 +30,9 @@ gDataPoints = {}
 
 ##################################################################
 def initGlobalPars():
-    gInitPars['A'] = [1., 500.,]
-    gInitPars['B'] = [1., 20.]
+    gInitPars['A'] = [1., 50.,]
+    gInitPars['I'] = [20., 100e3]
+    gInitPars['C'] = [-100., 100.]
     gInitPars['Krel'] = [1., 10.]
     gInitPars['Conv'] = [1e-6, 1. ] #1.e-1]
     return
@@ -65,19 +67,19 @@ def prepareData(grs):
             gDataPoints[region].append(cPoint(x.value, y.value, 1.*ey))
 
             
-    # basic one region fit, parameters A, B
-    npars = 2
+    # basic one region fit, parameters A, I, C
+    npars = 3
     if haveTS0 and haveTS1: # expect we fit split of TS0 and TS1 for one or more particle types
-        npars = 4
+        npars = 5
     print('  initialized {} graph regions'.format(len(grs)))
     return npars
 
 ##################################################################
-def getBaseFit(beta, A, B, debug = 0):
+def getBaseFit(beta, A, I, C, debug = 0):
     fval = 0.
     if beta > 0. and beta < 1.:
         # Bethe-Bloch ansatz:
-        fval = A / pow(beta,2) * (log(B*beta/sqrt(1-pow(beta,2))) - pow(beta,2))
+        fval = A / pow(beta,2) * ( log(2*gme/I*beta*beta/(1-pow(beta,2))) - pow(beta,2) ) + C
     else:
         print('ERROR in getBaseFit: beta out of physically allowed range!')
     #if debug: print(f'fval={fval}')
@@ -85,15 +87,14 @@ def getBaseFit(beta, A, B, debug = 0):
 
 ##################################################################
 def getFitVal(region, x, npars, pars, debug = 0):
-    #A = gPars[0]
-    #B = gPars[1]
     A = pars[0]
-    B = pars[1]
+    I = pars[1]
+    C = pars[2]
 
     beta = 1.*x
     Krel = 1.
     # dEdX congversion par
-    C = 0.
+    Conv = 0.
     particle = ''
 
     # names: Trigger Scintillator TS 0 or 1
@@ -101,10 +102,10 @@ def getFitVal(region, x, npars, pars, debug = 0):
     #if npars > 3 and (region == gTS1p or region == gTS1D or region == gTS1T):
     if npars > 3 and 'TS1' in region:
         # constant to equalize TS1 to TS0, or to shift them based on dE/dX beta dependence
-        Krel = pars[2]
+        Krel = pars[3]
         # conversion from integrated charge in p.e. to MeV
         #print('converting')
-        C = pars[3]
+        Conv = pars[4]
         if 'p' == region[-1]:
             particle = 'p'
         elif 'D' == region[-1]:
@@ -117,9 +118,10 @@ def getFitVal(region, x, npars, pars, debug = 0):
             m = ms[particle]
         except:
             print('Failed getting particle mass and correct the beta!')
-        if debug: print(f'  m={m:1.1f} A={A:1.1f} B={B:1.1f} Krel={Krel:1.3f} C={C:1.4f}')
+        if debug: print(f'  m={m:1.1f} A={A:1.1f} I={I:1.1f} Krel={Krel:1.3f} C={C:1.4f} Conv={Conv:1.4f}')
         if m > 0.:
-            dE = C * getBaseFit(x, A, B, debug) / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
+            # evaluate the fitted lossed in TS0
+            dE = Conv * getBaseFit(x, A, I, C, debug) / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
             if dE > 0:
                 gamma0 = 1./sqrt(1. - pow(beta,2))
                 E0 = m*gamma0
@@ -136,6 +138,8 @@ def getFitVal(region, x, npars, pars, debug = 0):
                     fullName = 'Deuteron'
                 if particle == 'T':
                     fullName = 'Tritium'
+
+                # theory losses:
                 theorydEdX , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
                 dX = 0.6 # cm!
                 theorydE = theorydEdX*dX
@@ -157,7 +161,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 if debug:
                     print('ERROR, negative energy correction!')
         
-    fval = Krel*getBaseFit(beta, A, B, debug)
+    fval = Krel*getBaseFit(beta, A, I, C, debug)
     return fval
 
 ##################################################################
@@ -289,10 +293,11 @@ def minimizeChi2(npars, step = 0.01, debug = 0):
         fitter.Config().ParSettings(ipar).SetLimits(parLimits[0], parLimits[1])
 
     fitter.Config().ParSettings(0).SetName("A")
-    fitter.Config().ParSettings(1).SetName("B")
+    fitter.Config().ParSettings(1).SetName("I")
+    fitter.Config().ParSettings(2).SetName("C")
     if npars > 3:
-        fitter.Config().ParSettings(2).SetName("Krel")
-        fitter.Config().ParSettings(3).SetName("Conv")
+        fitter.Config().ParSettings(3).SetName("Krel")
+        fitter.Config().ParSettings(4).SetName("Conv")
     
     fitter.FitFCN(globalChi2Functor) #, 0, dataSize, True)
 

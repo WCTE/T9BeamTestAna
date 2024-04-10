@@ -45,6 +45,7 @@ def GetX0(M, z, Z, A):
 ##########################################
 # more material helper functions:
 
+# Critical energy, solids
 # TODO: gas vs liquid?!
 def GetEC(Z):
     return 610.4 / (Z + 1.24)
@@ -54,7 +55,7 @@ def GetEC(Z):
 def GetX0Ele(A, Z):
     return 716.4 * Z / ( Z*(Z+1)*math.log(287./math.sqrt(Z)) )
 
-
+# plasma energy
 def GetHomega(rho, ZoverA):
     return sqrt(rho*ZoverA)*homega0*1.e-6 # MeV;)
 
