@@ -27,6 +27,7 @@ using namespace std;
 const int nMaxChannels = 32;
 
 
+
 class MakeAllDataPlots
 {
 
@@ -108,7 +109,11 @@ class MakeAllDataPlots
   double _act3x;
   
   // cuts
-  map<int, map<TString,double > > _cutsMap;
+  double _elPbGChargeCenter;
+  double _elPbGChargeSigma;
+  
+  // map<int, map<TString,double > > _cutsMap;
+  map <int, std::pair<double, double>> _ElectronPbGcutsMap;
 
   // IO
   
@@ -214,6 +219,8 @@ class MakeAllDataPlots
   MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode = "", bool useWindowIntCharge = false);
   ~MakeAllDataPlots();
 
+  bool PassedPbGcuts(double pbc, int nSigmas);
+  
   int getHighestPeakIndex(channelReadClass *reader, bool useCharges);
   void Init(bool noAct1Cuts);
   void InitReaders();

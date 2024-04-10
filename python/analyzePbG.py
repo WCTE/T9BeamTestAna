@@ -21,6 +21,15 @@ cans = []
 stuff = []
 lines = []
 
+####################################################################################
+
+class cFitPeak:
+    def __init__(self, p, x0, sigma):
+        self.p = p
+        self.x0 = x0
+        self.sigma = sigma
+    
+
 
 ####################################################################################
 def readInputFiles():
@@ -100,7 +109,7 @@ def main(argv):
     if gBatch:
         ROOT.gROOT.SetBatch(1)
 
-    if len(argv) < 2:
+    if len(argv) < 1:
         PrintUsage(argv)
         return
 
@@ -121,58 +130,62 @@ def main(argv):
 
     rfiles = readInputFiles()
     stuff.append(rfiles)
-    
-    for rfile in rfiles:
-        filename = rfile.GetName()
-    
-        momentum = None
-        runindex = -1;
-        srun = ''
-        try:
-            runindex = filename.index('run')
-            srun = filename[runindex+6:runindex+9]
-        except:
-            runindex = filename.index('000')
-            srun = filename[runindex+3:runindex+6]
-        if momentum == None:
-            momentum = getMomentum(srun)
-        if momentum == None:
-            momentum = getMergedMomentum(srun)
-        print(srun,momentum)
 
-        Hs = []
-        Txts = []
-        ftag = filename.split('/')[-1].replace('output_','').replace('_plots.root','')
 
-        os.system('mkdir -p pdf png')
-        hs = []
-        txts = []
-        hnames2d = [ 
-                     'hRef_pbC_TrigScintC',
-                    ]
-        pbasedirs = ['TrigScint_e/',
-                     #'TrigScint_p/'
-                    ]
+    os.system('mkdir -p pdf png')
+    hnames2d = [ 
+        'hRef_pbC_TrigScintC',
+    ]
+    pbasedirs = [
+        #'TrigScint_p/',
+        'TrigScint_e/',
+    ]
 
-        meanXmap = OrderedDict()
+    ican = -1
+    hs = []
+    fitPeaks = {}
+    for pbasedir in pbasedirs:
+        
+        suff = '-like'
+        particle = ''
+        if '_e/' in pbasedir:
+            particle = 'e'
+        if '_p/' in pbasedir:
+            particle = 'p'
+        if '_pi/' in pbasedir:
+            particle = 'pi'
+        if '_mu/' in pbasedir:
+            particle = 'mu'
+        if '_D/' in pbasedir:
+            particle = 'D'
+        if '_T/' in pbasedir:
+            particle = 'T'
+        suff = '_' + particle + suff
 
-        for pbasedir in pbasedirs:
+        fitPeaks[particle] = {}
+        for rfile in rfiles:
+            filename = rfile.GetName()
 
-            suff = '-like'
-            if '_e/' in pbasedir:
-                suff = '_e' + suff 
-            if '_p/' in pbasedir:
-                suff = '_p' + suff 
-            if '_pi/' in pbasedir:
-                suff = '_pi' + suff 
-            if '_mu/' in pbasedir:
-                suff = '_mu' + suff
-            if '_D/' in pbasedir:
-                suff = '_D' + suff 
-            if '_T/' in pbasedir:
-                suff = '_T' + suff 
+            momentum = None
+            runindex = -1;
+            srun = ''
+            try:
+                runindex = filename.index('run')
+                srun = filename[runindex+6:runindex+9]
+            except:
+                runindex = filename.index('000')
+                srun = filename[runindex+3:runindex+6]
+            if momentum == None:
+                momentum = getMomentum(srun)
+            if momentum == None:
+                momentum = getMergedMomentum(srun)
+            print(srun,momentum)
 
+            ftag = filename.split('/')[-1].replace('output_','').replace('_plots.root','')
+      
             for hname in hnames2d:
+                ican = ican + 1
+                
                 h = rfile.Get(pbasedir + hname + suff)
                 try:
                     #print('ok, got ', h.GetName())
@@ -209,11 +222,21 @@ def main(argv):
                 projX = h.ProjectionX(srun + hname + suff + '_projX')
 
                 canname = canname + '_projX'
-                can = ROOT.TCanvas(canname, canname, 300, 300, 800, 600)
+                can = ROOT.TCanvas(canname, canname, ican*30, ican*30, 800, 600)
                 cans.append(can)
                 can.cd()
                 projX.Draw('hist')
+                if particle == 'e':
+                    chmin = 90.# + (abs(momentum) - 500)*25.
+                    if abs(momentum) < 600:
+                        chmin = 50.
+                    print(f'momentum: {momentum}, chmin={chmin}')
+                    projX.GetXaxis().SetRangeUser(chmin,projX.GetXaxis().GetXmax())
+                if particle == 'p':
+                    projX.GetXaxis().SetRangeUser(0., 200.)
                 ibx = projX.GetMaximumBin()
+                if particle == 'e':
+                    projX.GetXaxis().SetRangeUser(0.,projX.GetXaxis().GetXmax())
                 print(ibx)
                 xmax = projX.GetBinCenter(ibx)
                 rms = projX.GetStdDev()
@@ -225,10 +248,10 @@ def main(argv):
                 fun.SetParameters(projX.GetMaximum()/2, xmax, 2.)
                 projX.Fit(fitname, '', '', x1, x2)
                 x0 = fun.GetParameter(1)
-                sigma = fun.GetParameter(2)
-                sf = 1.5
+                sigma = abs(fun.GetParameter(2))
+                sf = 1.1
                 if x0 > 50:
-                    sf = 2.
+                    sf = 1.
                 xx1, xx2 = x0 - sf*sigma, x0 + sf*sigma
                 print(xx1,xx2)
                 projX.Fit(fitname, '', '', xx1, xx2)
@@ -236,9 +259,11 @@ def main(argv):
                 stuff.append(fun)
 
                 x0 = fun.GetParameter(1)
-                sigma = fun.GetParameter(2)
+                sigma = abs(fun.GetParameter(2))
                 print(f'MOMENTUM {momentum} PART {suff} FITTED MAIN PEAK MEAN {x0} RMS {sigma}')
+                fitPeaks[particle][momentum] = cFitPeak(momentum, x0, sigma)
 
+                
                 #adjustStats(h)
                 #ROOT.gPad.Update()
                 cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
@@ -246,6 +271,8 @@ def main(argv):
                 #pnote.Draw()
                 pnote2 = makeMomentumLabel(srun, momentum, 0.12, 0.92)
                 pnote2.Draw()
+                ROOT.gPad.Update()
+                
                 if 'TOF' in hname:
                     parts = ['e', 'mu', 'pi', 'K', 'p', 'D', 'T']
                     lines = makeLines(h, 0., parts, momentum, True)
@@ -257,7 +284,10 @@ def main(argv):
 #       plots all the canvas     #
 ##################################
 
- 
+    for particle in fitPeaks:
+        for momentum in fitPeaks[particle]:
+            fitPeak = fitPeaks[particle][momentum]
+            print('  {' + '{}, {:.3f}, {:.3f}'.format(fitPeak.p, fitPeak.x0, fitPeak.sigma) + '}, ')
     
     for can in cans:
         try:

@@ -5,7 +5,36 @@
 
 using namespace std;
 
-// ______________________________________________________________
+// ______________________________________________________________w
+// JK 10.4.2024
+
+bool MakeAllDataPlots::PassedPbGcuts(double pbc, int nSigmas)
+{
+
+  
+  if (_elPbGChargeCenter > 0. && _elPbGChargeSigma > 0.) {
+    /*
+      cout << " momentum=" << momentum
+      << " pbc=" << pbc
+      << " nSigmas=" << nSigmas
+      << " x0=" << x0
+      << " sigma=" << sigma
+      << endl;
+    */
+    if ( fabs(pbc - _elPbGChargeCenter) < _elPbGChargeSigma*nSigmas) {
+      //cout << "Passed PbG charge electron cuts!" << endl;
+      return true;
+    } else {
+      //cout << "Did not pass PbG charge electron cuts!" << endl;
+      return false;
+    }
+  }
+  // cout << "Did not find electrin PbG charge cuts for momentum " << momentum << endl;
+  return true;
+  
+}
+
+// ______________________________________________________________w
 
 
 MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode, bool useWindowIntCharge ) {
@@ -53,7 +82,7 @@ MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodosco
   cout << "Estimated Trigger Scintillators dimensions: " << 2*rx << endl;
   
   _tofutil = new tofUtil();
-  
+
 }
 // ______________________________________________________________
 
@@ -119,6 +148,34 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   _outFile = new TFile(outFileName.Data(), "RECREATE");
   _outFile -> cd();
 
+  // JK 10.4.2024
+  // obtained from running
+  // ./python/analyzePbG.py
+  
+  _ElectronPbGcutsMap = { {1200, {190.123, 21.149}}, 
+			  {1120, {176.886, 19.172}}, 
+			  {1060, {163.732, 18.382}}, 
+			  {1000, {152.799, 16.634}}, 
+			  {940, {141.516, 14.916}}, 
+			  {900, {134.523, 13.933}}, 
+			  {800, {116.468, 11.329}}, 
+			  {700, {98.943, 9.494}}, 
+			  {600, {86.303, 8.238}}, 
+			  {540, {75.073, 6.995}}, 
+			  {500, {68.317, 6.277}}
+  };
+
+  if (_ElectronPbGcutsMap.find(_momentum) != _ElectronPbGcutsMap.end()) {
+    _elPbGChargeCenter = _ElectronPbGcutsMap[_momentum].first;
+    _elPbGChargeSigma = _ElectronPbGcutsMap[_momentum].second;
+  } else {
+    _elPbGChargeCenter = -1.;
+    _elPbGChargeSigma = -1.;
+  }
+  
+
+  
+  /*
   _cutsMap[900] = {   { "tof_t0_cut", 4.9}, 
 		      { "tof_t1_cut", 6}, 
 		      { "act23_pi_minA", 0.4}, 
@@ -126,7 +183,8 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 		      { "pb_min", 0.1}, 
 		      { "actThresh", 0.5},
   };
-
+  */
+  
   cout << "Initialized with: " << endl;
   cout << "  noAct1Cuts: " << _noAct1Cuts << endl;
     
@@ -1144,8 +1202,6 @@ void MakeAllDataPlots::FillChargedHistos()
       _histos2d["hRef_act0RA_act1RA_nonZero"]->Fill(_Amplitudes["ACT0R"], _Amplitudes["ACT1R"] );
     }
 
-
-    
     _act0x = 0;
     _act1x = 0;
     _act2x = 0;
@@ -1270,7 +1326,9 @@ void MakeAllDataPlots::FillChargedHistos()
     if ( fabs(_tof - TtofExp) < tsigma) {
       this -> FillTrigScintHistos("_T-like");
     } else
-      if ( fabs(_tof - etofExp) < tsigma) {
+      // JK 10.4.2024
+      // require also 2*sigma around the electron peak in PbG charge
+      if ( fabs(_tof - etofExp) < tsigma && this->PassedPbGcuts(_pbc, 2.)) {
       this -> FillTrigScintHistos("_e-like");
     } else
       if ( fabs(_tof - mutofExp) < tsigma) {
