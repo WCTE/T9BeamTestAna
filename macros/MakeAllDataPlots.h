@@ -219,7 +219,8 @@ class MakeAllDataPlots
   MakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, TString peakMode = "", bool useWindowIntCharge = false);
   ~MakeAllDataPlots();
 
-  bool PassedPbGcuts(double pbc, int nSigmas);
+  bool PassedElectronPbGcuts(double pbc, int nSigmas);
+  bool PassedMIPPbGcuts(double pbc, int nSigmas);
   
   int getHighestPeakIndex(channelReadClass *reader, bool useCharges);
   void Init(bool noAct1Cuts);
@@ -227,6 +228,8 @@ class MakeAllDataPlots
   void InitTofHistos();
   void InitGeneralHistos();
   void InitTrigScintHistos(TString dirname, TString selTag, TString selTit);
+  void FillPIDHistos(TString selTag);
+  void InitPIDHistos(TString dirname, TString selTag, TString selTit);
   void InitChargedHistos();
   void InitHodoscopeHistos();
 

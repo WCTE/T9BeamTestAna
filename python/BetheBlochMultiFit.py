@@ -37,17 +37,17 @@ def PrintUsage(argv):
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
-        'peakAnalysed_timeCorr_windInt_-16_45_000403_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000396_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000394_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000393_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000392_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000398_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000399_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000402_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000449_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000436_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000435_plots_f.root'
+        'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000394_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000393_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000392_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000398_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000399_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000402_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000449_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000436_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000435_plots_f.root'
     ]
     rfiles = []
     for filename in filenames:

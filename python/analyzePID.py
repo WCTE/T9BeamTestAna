@@ -35,17 +35,27 @@ class cFitPeak:
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
-        'peakAnalysed_timeCorr_windInt_-16_45_000403_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000396_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000394_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000393_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000392_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000398_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000399_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000402_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000449_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000436_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000435_plots_f.root'
+        'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000394_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000393_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000392_plots_f.root',
+        
+        # 900:
+        'peakAnalysed_timeCorr_windInt_000398_plots_f.root',
+        #'peakAnalysed_timeCorr_windInt_000453_plots_f.root'
+        # add 370??
+        
+        'peakAnalysed_timeCorr_windInt_000399_plots_f.root',
+
+        # 700:
+        'peakAnalysed_timeCorr_windInt_000402_plots_f.root',
+        #'peakAnalysed_timeCorr_windInt_000438_plots_f.root',
+        #'peakAnalysed_timeCorr_windInt_000457_plots_f.root',
+        
+        'peakAnalysed_timeCorr_windInt_000449_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000436_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000435_plots_f.root'
     ]
     rfiles = []
     for filename in filenames:
@@ -134,13 +144,19 @@ def main(argv):
 
     os.system('mkdir -p pdf png')
 
-    # more histos NOT supported!
-    hnames2d = [ 
-        'hRef_pbC_TrigScintC',
+    hnames2d = [
+        'hRef_pbC_act23C',
+        'hRef_pbC_act1C',
+        'hRef_ACT1CACT23C'
     ]
+
+
+    
     pbasedirs = [
+        #'Charged/'
+        'Charged_nonp/'
         #'TrigScint_p/',
-        'TrigScint_e/',
+        #'TrigScint_e/',
     ]
 
 
@@ -152,65 +168,56 @@ def main(argv):
     allsame = ''
     allleg = ROOT.TLegend(0.7, 0.6, 0.88, 0.88)
 
-    canname = 'WCTEJuly2023_Quick2D_PbG_fits'
-    can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
-    can.Divide(4,3)
-    cans.append(can)
-
     
-    ican = -1
     hs = []
     fitPeaks = {}
     for pbasedir in pbasedirs:
-        
-        suff = '-like'
-        particle = ''
-        if '_e/' in pbasedir:
-            particle = 'e'
-        if '_p/' in pbasedir:
-            particle = 'p'
-        if '_pi/' in pbasedir:
-            particle = 'pi'
-        if '_mu/' in pbasedir:
-            particle = 'mu'
-        if '_D/' in pbasedir:
-            particle = 'D'
-        if '_T/' in pbasedir:
-            particle = 'T'
-        suff = '_' + particle + suff
 
-        allleg.SetHeader(f'Particle: {particle}')
-        
-        fitPeaks[particle] = {}
-        for rfile in rfiles:
-            filename = rfile.GetName()
-
-            momentum = None
-            runindex = -1;
-            srun = ''
-            try:
-                runindex = filename.index('run')
-                srun = filename[runindex+6:runindex+9]
-            except:
-                runindex = filename.index('000')
-                srun = filename[runindex+3:runindex+6]
-            if momentum == None:
-                momentum = getMomentum(srun)
-            if momentum == None:
-                momentum = getMergedMomentum(srun)
-            print(srun,momentum)
-
-            ftag = filename.split('/')[-1].replace('output_','').replace('_plots.root','')
-      
-            for hname in hnames2d:
-                ican = ican + 1
+        pTag = pbasedir.replace('Charged_','').replace('Charged','').replace('/','')
+        selTag = ''
+        if len(pTag) > 0:
+            selTag = '_' + pTag + '-like'
+        print(f'pTag: {pTag} selTag: {selTag}')
+        jcan = -1
+                    
+        for hname in hnames2d:
+            jcan = jcan + 1
                 
-                h = rfile.Get(pbasedir + hname + suff)
+
+            canname = f'WCTEJuly2023_Quick2D_PID_{hname}_{selTag}'
+            can = ROOT.TCanvas(canname, canname, jcan*100, jcan*100, 1200+200, 800)
+            #can.Divide(4,3)
+            can.Divide(2,1)
+            cans.append(can)
+        
+       
+            ican = -1
+            for rfile in rfiles:
+                filename = rfile.GetName()
+                ican = ican + 1
+                momentum = None
+                runindex = -1;
+                srun = ''
+                try:
+                    runindex = filename.index('run')
+                    srun = filename[runindex+6:runindex+9]
+                except:
+                    runindex = filename.index('000')
+                    srun = filename[runindex+3:runindex+6]
+                if momentum == None:
+                    momentum = getMomentum(srun)
+                if momentum == None:
+                    momentum = getMergedMomentum(srun)
+                print(srun,momentum)
+
+                ftag = filename.split('/')[-1].replace('output_','').replace('_plots.root','')
+
+                h = rfile.Get(pbasedir + hname + selTag)
                 try:
                     #print('ok, got ', h.GetName())
                     tmp = h.GetName()
                 except:
-                    print('ERROR getting histo {}{}!'.format(pbasedir,hname + suff))
+                    print('ERROR getting histo {}{}!'.format(pbasedir,hname))
                     continue
 
                 #print('Pushing ', ich, hname)
@@ -218,7 +225,7 @@ def main(argv):
 
 
                 """
-                canname = 'WCTEJuly2023_Quick2D_{}_{}'.format(ftag, hname + suff)
+                canname = 'WCTEJuly2023_Quick2D_{}_{}'.format(ftag, hname)
                 canname = canname.replace('_list_root','').replace('_ntuple','').replace('.root','')
                 cw = 1100
                 ch = 800
@@ -227,26 +234,52 @@ def main(argv):
                 cans.append(can)
                 #can.Divide(8,4)
                 #h.Rebin2D(2,2)
+                """
+
+                
+                can.cd(ican+1)
                 opt = 'colz'
                 is2d = True
                 h.SetStats(0)
+                if hname == 'hRef_ACT1CACT23C':
+                    h.GetXaxis().SetRangeUser(0, 30.)
+                    h.GetYaxis().SetRangeUser(0, 40.)
+                else:
+                    h.GetXaxis().SetRangeUser(0, 500.)
+                    if hname == 'hRef_pbC_act1C':
+                        h.GetYaxis().SetRangeUser(0, 30.)
+                    else:
+                        h.GetYaxis().SetRangeUser(0, 50.)
+                    
                 h.Draw(opt)
+                ROOT.gPad.SetLogz(1)
+
+                #ROOT.gPad.Update()
+                cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
+                #cnote.Draw()
+                #pnote.Draw()
+                pnote2 = makeMomentumLabel(srun, momentum, 0.12, 0.92)
+                pnote2.Draw()
+                ROOT.gPad.Update()
+                stuff.append([cnote, pnote, pnote2])
+                
                 rho = h.GetCorrelationFactor()
                 rtxt = ROOT.TLatex(0.76, 0.85, '#rho={:1.2f}'.format(rho))
                 rtxt.SetNDC()
                 rtxt.SetTextSize(0.04)
                 rtxt.Draw()
                 stuff.append(rtxt)
-                """
                 
-                projX = h.ProjectionX(srun + hname + suff + '_projX')
+                projX = h.ProjectionX(srun + hname + '_projX')
+                projY = h.ProjectionX(srun + hname + '_projY')
 
                 """
                 canname = canname + '_projX'
                 can = ROOT.TCanvas(canname, canname, ican*30, ican*30, 800, 600)
                 cans.append(can)
                 """
-                
+
+                """
                 can.cd(ican+1)
                 projX.Draw('hist')
                 allcan.cd()
@@ -260,23 +293,14 @@ def main(argv):
                 stuff.append(projXcp)
                 #ca.cd()
                 can.cd(ican+1)
-                if particle == 'e':
-                    chmin = 90.# + (abs(momentum) - 500)*25.
-                    if abs(momentum) < 600:
-                        chmin = 50.
-                    print(f'momentum: {momentum}, chmin={chmin}')
-                    projX.GetXaxis().SetRangeUser(chmin,projX.GetXaxis().GetXmax())
-                if particle == 'p':
-                    projX.GetXaxis().SetRangeUser(0., 200.)
                 ibx = projX.GetMaximumBin()
-                if particle == 'e':
-                    projX.GetXaxis().SetRangeUser(0.,projX.GetXaxis().GetXmax())
+                #projX.GetXaxis().SetRangeUser(0.,projX.GetXaxis().GetXmax())
                 print(ibx)
                 xmax = projX.GetBinCenter(ibx)
                 rms = projX.GetStdDev()
                 x1 = xmax - rms/5.
                 x2 = xmax + rms/5.
-                fitname = 'fit_{}_{}_{}_{}'.format(srun, momentum, hname, suff)
+                fitname = 'fit_{}_{}_{}'.format(srun, momentum, hname)
                 fun = ROOT.TF1(fitname, '[0]*exp(-(x-[1])^2/(2*[2]^2))', projX.GetXaxis().GetXmin(), projX.GetXaxis().GetXmax())
                 fun.SetNpx(1000)
                 fun.SetParameters(projX.GetMaximum()/2, xmax, 2.)
@@ -294,24 +318,17 @@ def main(argv):
 
                 x0 = fun.GetParameter(1)
                 sigma = abs(fun.GetParameter(2))
-                print(f'MOMENTUM {momentum} PART {suff} FITTED MAIN PEAK MEAN {x0} RMS {sigma}')
-                fitPeaks[particle][momentum] = cFitPeak(momentum, x0, sigma)
-
-                
                 adjustStats(projX)
                 #ROOT.gPad.Update()
-                cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
-                #cnote.Draw()
-                #pnote.Draw()
-                pnote2 = makeMomentumLabel(srun, momentum, 0.12, 0.92)
-                pnote2.Draw()
-                ROOT.gPad.Update()
-                
+
+               
+                """
+
                 if 'TOF' in hname:
                     parts = ['e', 'mu', 'pi', 'K', 'p', 'D', 'T']
                     lines = makeLines(h, 0., parts, momentum, True)
                     stuff.append(lines)
-                stuff.append([cnote, pnote, pnote2])
+                
 
         
     ##################################
@@ -320,11 +337,6 @@ def main(argv):
 
     allcan.cd()
     allleg.Draw()
-    
-    for particle in fitPeaks:
-        for momentum in fitPeaks[particle]:
-            fitPeak = fitPeaks[particle][momentum]
-            print('  {' + '{}, {:.3f}, {:.3f}'.format(fitPeak.p, fitPeak.x0, fitPeak.sigma) + '}, ')
     
     for can in cans:
         try:
