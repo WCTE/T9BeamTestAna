@@ -40,33 +40,34 @@ public :
 
   // Declaration of leaf types
 
-  // Alie's branches: // 8.2.2024
-  // more, 21.3.2024:
-  // Declaration of leaf types
-   Double_t        Pedestal;
+  Double_t        Pedestal;
    Double_t        PedestalSigma;
    Double_t        MaxVoltage;
    Double_t        WholeWaveformInt;
+   Double_t        DigiTimingOffset;
    Int_t           nPeaks;
-   Double_t        PeakVoltage[maxnPeaks];   //[nPeaks]
-   Double_t        PeakTime[maxnPeaks];   //[nPeaks]
-   Double_t        SignalTime[maxnPeaks];   //[nPeaks]
-   Double_t        IntCharge[maxnPeaks];   //[nPeaks]
-   Double_t        IntPE[maxnPeaks];   //[nPeaks]
-   Double_t        SignalTimeCorrected[maxnPeaks];   //[nPeaks]
+   Double_t        PeakVoltage[5];   //[nPeaks]
+   Double_t        PeakTime[5];   //[nPeaks]
+   Double_t        SignalTime[5];   //[nPeaks]
+   Double_t        IntCharge[5];   //[nPeaks]
+   Double_t        IntPE[5];   //[nPeaks]
+   Double_t        SignalTimeCorrected[5];   //[nPeaks]
    Int_t           nWindowPeaks;
-   Double_t        WindowIntCharge[maxnPeaks];   //[nWindowPeaks]
-   Double_t        WindowIntPE[maxnPeaks];   //[nWindowPeaks]
+   Double_t        WindowIntCharge[3];   //[nWindowPeaks]
+   Double_t        WindowIntPE[3];   //[nWindowPeaks]
+   Double_t        SignalTimeMatchedTOF1[3];   //[nWindowPeaks]
+   Double_t        SignalTimeMatchedTOF0[3];   //[nWindowPeaks]
    UInt_t          timeStamp;
    UInt_t          triggerTime;
    UInt_t          spillNumber;
-    
+
+      
   // List of branches
-  // + Alie's branches: // 8.2.2024, 21.3.2024
    TBranch        *b_Pedestal;   //!
    TBranch        *b_PedestalSigma;   //!
    TBranch        *b_MaxVoltage;   //!
    TBranch        *b_WholeWaveformInt;   //!
+   TBranch        *b_DigiTimingOffset;   //!
    TBranch        *b_nPeaks;   //!
    TBranch        *b_PeakVoltage;   //!
    TBranch        *b_PeakTime;   //!
@@ -77,12 +78,13 @@ public :
    TBranch        *b_nWindowPeaks;   //!
    TBranch        *b_WindowIntCharge;   //!
    TBranch        *b_WindowIntPE;   //!
+   TBranch        *b_SignalTimeMatchedTOF1;   //!
+   TBranch        *b_SignalTimeMatchedTOF0;   //!
    TBranch        *b_timeStamp;   //!
    TBranch        *b_triggerTime;   //!
    TBranch        *b_spillNumber;   //!
 
-
-
+  
   channelReadClass(TFile *infile, TString treeName, bool isExtendedWindowAnalysis = false);
    virtual ~channelReadClass();
    virtual Int_t    Cut(Long64_t entry);
@@ -170,11 +172,14 @@ void channelReadClass::Init(TTree *tree)
    // Alie's branches  // 8.2.2024
    if (m_isExtendedWindowAnalysis) {
      fChain->SetBranchAddress("WholeWaveformInt", &WholeWaveformInt, &b_WholeWaveformInt);
+     fChain->SetBranchAddress("DigiTimingOffset", &DigiTimingOffset, &b_DigiTimingOffset);
      fChain->SetBranchAddress("IntPE", IntPE, &b_IntPE);
      fChain->SetBranchAddress("SignalTimeCorrected", SignalTimeCorrected, &b_SignalTimeCorrected);
      fChain->SetBranchAddress("nWindowPeaks", &nWindowPeaks, &b_nWindowPeaks);
      fChain->SetBranchAddress("WindowIntCharge", WindowIntCharge, &b_WindowIntCharge);
      fChain->SetBranchAddress("WindowIntPE", WindowIntPE, &b_WindowIntPE);
+     fChain->SetBranchAddress("SignalTimeMatchedTOF1", SignalTimeMatchedTOF1, &b_SignalTimeMatchedTOF1);
+     fChain->SetBranchAddress("SignalTimeMatchedTOF0", SignalTimeMatchedTOF0, &b_SignalTimeMatchedTOF0);
      fChain->SetBranchAddress("timeStamp", &timeStamp, &b_timeStamp);
      fChain->SetBranchAddress("triggerTime", &triggerTime, &b_triggerTime);
      fChain->SetBranchAddress("spillNumber", &spillNumber, &b_spillNumber);

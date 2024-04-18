@@ -35,7 +35,7 @@ class cFitPeak:
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
-        'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
+        #'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000394_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000393_plots_f.root',
@@ -45,9 +45,14 @@ def readInputFiles():
         'peakAnalysed_timeCorr_windInt_000398_plots_f.root',
         #'peakAnalysed_timeCorr_windInt_000453_plots_f.root'
         # add 370??
-        
-        'peakAnalysed_timeCorr_windInt_000399_plots_f.root',
 
+        'peakAnalysed_timeCorr_windInt_000454_plots_f.root',
+        
+        #'peakAnalysed_timeCorr_windInt_000399_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000371_plots_f.root',
+
+        'peakAnalysed_timeCorr_windInt_000456_plots_f.root',
+        
         # 700:
         'peakAnalysed_timeCorr_windInt_000402_plots_f.root',
         #'peakAnalysed_timeCorr_windInt_000438_plots_f.root',
@@ -55,7 +60,7 @@ def readInputFiles():
         
         'peakAnalysed_timeCorr_windInt_000449_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000436_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_000435_plots_f.root'
+        #'peakAnalysed_timeCorr_windInt_000435_plots_f.root'
     ]
     rfiles = []
     for filename in filenames:
@@ -154,7 +159,8 @@ def main(argv):
     
     pbasedirs = [
         #'Charged/'
-        'Charged_nonp/'
+        'Charged_nonp/',
+        'Charged_MIP/'
         #'TrigScint_p/',
         #'TrigScint_e/',
     ]
@@ -186,8 +192,9 @@ def main(argv):
 
             canname = f'WCTEJuly2023_Quick2D_PID_{hname}_{selTag}'
             can = ROOT.TCanvas(canname, canname, jcan*100, jcan*100, 1200+200, 800)
-            #can.Divide(4,3)
-            can.Divide(2,1)
+            can.Divide(4,4)
+            #can.Divide(3,3)
+            #can.Divide(2,1)
             cans.append(can)
         
        

@@ -7,10 +7,6 @@ using namespace std;
 
 // ______________________________________________________________
 // JK 10.4.2024
-// TO BE USED!
-
-
-// ______________________________________________________________
 
 bool MakeAllDataPlots::PassedElectronPbGcuts(double pbc, int nSigmas)
 {
@@ -35,7 +31,6 @@ bool MakeAllDataPlots::PassedElectronPbGcuts(double pbc, int nSigmas)
   return true;
 }
 // ______________________________________________________________
-// TO BE USED!!!
 bool MakeAllDataPlots::PassedMIPPbGcuts(double pbc, int nSigmas)
 {
   if (_elPbGChargeCenter > 0. && _elPbGChargeSigma > 0.) {
@@ -585,6 +580,7 @@ void MakeAllDataPlots::InitChargedHistos()
   //lead glass vs act 2 and 3 - identify particles
   this -> InitPIDHistos("Charged", "", "");
   this -> InitPIDHistos("Charged_nonp", "_nonp-like", " nonp-like");
+  this -> InitPIDHistos("Charged_MIP", "_MIP-like", " MIP-like");
   //this -> InitPIDHistos("Charged", "", "");
   //this -> InitPIDHistos("Charged", "", "");
   //this -> InitPIDHistos("Charged", "", "");
@@ -1372,9 +1368,10 @@ void MakeAllDataPlots::FillChargedHistos()
     
     // cout << " momentum: " << _momentum << " tof=" << _tof << " ptofExp=" << ptofExp <<  " " << fabs(_tof - ptofExp) << " " <<  tsigma << endl;
     if ( fabs(_tof - ptofExp) < tsigma) {
+      // protons
       this -> FillTrigScintHistos("_p-like");
     } else {
-
+      // non protons
       this -> FillPIDHistos("_nonp-like");
       
       if ( fabs(_tof - DtofExp) < tsigma) {
@@ -1391,7 +1388,15 @@ void MakeAllDataPlots::FillChargedHistos()
 	} else if ( fabs(_tof - pitofExp) < tsigma) {
 	  this -> FillTrigScintHistos("_pi-like");
 	}
+      
+      if (PassedMIPPbGcuts(_pbc, 3.)) {
+	this -> FillPIDHistos("_MIP-like");
+      }
+      
+      
     } // nonp-like
+
+
     
 
     // times
