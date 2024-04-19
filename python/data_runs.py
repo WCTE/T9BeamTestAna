@@ -27,6 +27,25 @@ def isBeryllium(run):
     else:
         return True
 
+def getTargetFullName(run):
+    target = getTarget(run)
+    tm = ''
+    if target == 'Target3':
+        tm = 'T3 Al'
+    if target == 'Target1':
+        tm = 'T1 Be+W'
+    return tm
+
+
+####################################################################
+def getSlitPerc(srun):
+    slitperc = -1
+    try:
+        slitperc = runsSlitDict[int(srun)]
+    except:
+        print('ERROR getting the slit information for run {}'.format(srun))
+    return slitperc
+
 ####################################################################
 
 def getMergedMomentum(srun):

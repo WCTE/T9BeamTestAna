@@ -35,7 +35,7 @@ class cFitPeak:
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
-        #'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
+        #'peakAnalysed_timeCorr_windInt_000403_plots_f.root', ???
         'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000394_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000393_plots_f.root',
@@ -61,9 +61,13 @@ def readInputFiles():
         'peakAnalysed_timeCorr_windInt_000449_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000436_plots_f.root',
         #'peakAnalysed_timeCorr_windInt_000435_plots_f.root'
+
+        'peakAnalysed_timeCorr_windInt_000532_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000439_plots_f.root',
+        
     ]
     rfiles = []
-    for filename in filenames:
+    for filename in filenames[-3:-1]:
         rfile = ROOT.TFile(dirname + filename, 'read')
         if not rfile.IsZombie():
             rfiles.append(rfile)
@@ -80,7 +84,7 @@ def PrintUsage(argv):
 
 ##########################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-def main(argv):
+def main(argv, Zoom = False):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
 
@@ -160,7 +164,7 @@ def main(argv):
     pbasedirs = [
         #'Charged/'
         'Charged_nonp/',
-        'Charged_MIP/'
+        #'Charged_MIP/'
         #'TrigScint_p/',
         #'TrigScint_e/',
     ]
@@ -192,9 +196,26 @@ def main(argv):
 
             canname = f'WCTEJuly2023_Quick2D_PID_{hname}_{selTag}'
             can = ROOT.TCanvas(canname, canname, jcan*100, jcan*100, 1200+200, 800)
-            can.Divide(4,4)
+            N = len(rfiles)
+            if N < 3:
+                can.Divide(2,1)
+            elif N < 5:
+                can.Divide(2,2)
+            elif N < 7:
+                can.Divide(3,2)
+            elif N < 10:
+                can.Divide(3,3)
+            elif N < 13:
+                can.Divide(4,3)
+            elif N < 17:
+                can.Divide(4,4)
+            else:
+                n = int(sqrt(N)) + 1
+                can.Divide(n,2)
+
+            #can.Divide(4,4)
             #can.Divide(3,3)
-            #can.Divide(2,1)
+
             cans.append(can)
         
        
@@ -248,15 +269,16 @@ def main(argv):
                 opt = 'colz'
                 is2d = True
                 h.SetStats(0)
-                if hname == 'hRef_ACT1CACT23C':
-                    h.GetXaxis().SetRangeUser(0, 30.)
-                    h.GetYaxis().SetRangeUser(0, 40.)
-                else:
-                    h.GetXaxis().SetRangeUser(0, 500.)
-                    if hname == 'hRef_pbC_act1C':
-                        h.GetYaxis().SetRangeUser(0, 30.)
+                if Zoom:
+                    if hname == 'hRef_ACT1CACT23C':
+                        h.GetXaxis().SetRangeUser(0, 30.)
+                        h.GetYaxis().SetRangeUser(0, 40.)
                     else:
-                        h.GetYaxis().SetRangeUser(0, 50.)
+                        h.GetXaxis().SetRangeUser(0, 500.)
+                        if hname == 'hRef_pbC_act1C':
+                            h.GetYaxis().SetRangeUser(0, 30.)
+                        else:
+                            h.GetYaxis().SetRangeUser(0, 50.)
                     
                 h.Draw(opt)
                 ROOT.gPad.SetLogz(1)

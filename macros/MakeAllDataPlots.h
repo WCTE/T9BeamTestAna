@@ -115,6 +115,12 @@ class MakeAllDataPlots
   // map<int, map<TString,double > > _cutsMap;
   map <int, std::pair<double, double>> _ElectronPbGcutsMap;
 
+  // parameters for the linear cut in the ACT2+3/2 vs ACT1 plane
+  double _fita;
+  double _fitb;
+  double _fitc;
+  double _pimuSepCut;
+  
   // IO
   
   string _fileName;

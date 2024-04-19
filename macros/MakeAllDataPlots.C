@@ -27,10 +27,12 @@ bool MakeAllDataPlots::PassedElectronPbGcuts(double pbc, int nSigmas)
       return false;
     }
   }
-  // cout << "Did not find electrin PbG charge cuts for momentum " << momentum << endl;
+  // cout << "Did not find electron PbG charge cuts for momentum " << momentum << endl;
   return true;
 }
+
 // ______________________________________________________________
+
 bool MakeAllDataPlots::PassedMIPPbGcuts(double pbc, int nSigmas)
 {
   if (_elPbGChargeCenter > 0. && _elPbGChargeSigma > 0.) {
@@ -193,8 +195,35 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
     _elPbGChargeSigma = -1.;
   }
   
+ if (_elPbGChargeCenter < 0. || _elPbGChargeSigma > 0.) {
+  cout << "ERROR initializing the electron/MIP ID PbG charge cuts!!!" << endl;
+ }
 
-  
+
+ // parameters for the linear cut in the ACT2+3/2 plane vs ACT1, to separate electrons from MIPs:
+
+ // b:
+ // p0                        =      16.6463   +/-   0.732123    
+ // p1                        =  -0.00136167   +/-   0.000851055 
+ double p0 =  16.6463;
+ double p1 =  -0.00136167;
+ _fitb = p0 + p1*fabs(_momentum);
+
+ // c:
+ // p0                        =      11.9766   +/-   0.732123    
+ // p1                        =  -0.00240202   +/-   0.000851055
+ p0 = 11.9766;
+ p1 = -0.00240202;
+ _fitc = p0 + p1*fabs(_momentum);
+ _fita = 0.;
+ if (_fitc > 0) {
+   _fita = -_fitb / _fitc;
+ }
+
+ // ...and also mu/pi separation cut:
+ _pimuSepCut = 8.; 
+
+   
   /*
   _cutsMap[900] = {   { "tof_t0_cut", 4.9}, 
 		      { "tof_t1_cut", 6}, 
@@ -206,7 +235,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   */
   
   cout << "Initialized with: " << endl;
-  cout << "  noAct1Cuts: " << _noAct1Cuts << endl;
+  cout << "  noAct1Cuts (for low momentum tTOF only): " << _noAct1Cuts << endl;
     
 }
 
@@ -376,6 +405,11 @@ void MakeAllDataPlots::InitTofHistos()
   _histos1d["hTOFEl"] = new TH1D("hTOFEl", ";t_{TOF}^{e} [ns]", _ntofbins, _tofmin, _tofmax);
   _histos1d["hTOFOther"] = new TH1D("hTOFOther", ";t_{TOF}^{non-e} [ns]", _ntofbins, _tofmin, _tofmax);
   _histos1d["hTOFOther_act1cuts"] = new TH1D("hTOFOther_act1cuts", ";t_{TOF}^{non-e} [ns]", _ntofbins, _tofmin, _tofmax);
+
+
+  _histos1d["hTOFElectronID"] = new TH1D("hTOFElectronID", ";t_{TOF}^{e-ID} [ns]", _ntofbins, _tofmin, _tofmax);
+  _histos1d["hTOFMuonID"] = new TH1D("hTOFMuonID", ";t_{TOF}^{#mu-ID} [ns]", _ntofbins, _tofmin, _tofmax);
+  _histos1d["hTOFPionID"] = new TH1D("hTOFPionID", ";t_{TOF}^{#pi-ID} [ns]", _ntofbins, _tofmin, _tofmax);
   
   
   _histos1d["hTOFAllLow"] = new TH1D("hTOFAllLow", ";t_{TOF}^{All} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
@@ -383,6 +417,11 @@ void MakeAllDataPlots::InitTofHistos()
   _histos1d["hTOFOtherLow"] = new TH1D("hTOFOtherLow", ";t_{TOF}^{non-e} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
   _histos1d["hTOFOtherLow_act1cuts"] = new TH1D("hTOFOtherLow_act1cuts", ";t_{TOF}^{non-e} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
 
+  _histos1d["hTOFElectronIDLow"] = new TH1D("hTOFElectronIDLow", ";t_{TOF}^{e-ID} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
+  _histos1d["hTOFMuonIDLow"] = new TH1D("hTOFMuonIDLow", ";t_{TOF}^{#mu-ID} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
+  _histos1d["hTOFPionIDLow"] = new TH1D("hTOFPionIDLow", ";t_{TOF}^{#pi-ID} [ns]", _ntofbinslow, _tofminlow, _tofmaxlow);
+
+  
   _histos1d["hT0"] = new TH1D("hRef_T0", "", 270, 50, 320);
   _histos1d["hT1"] = new TH1D("hRef_T1", "", 270, 50, 320);
 
@@ -414,7 +453,7 @@ void MakeAllDataPlots::InitTofHistos()
 
 // ______________________________________________________________
 
-// TDirectory name for ourput file, and selection tak for histo name and selection title
+// TDirectory name for output file, and selection tak for histo name and selection title
 
 void MakeAllDataPlots::InitTrigScintHistos(TString dirname, TString selTag, TString selTit)
 {
@@ -430,11 +469,11 @@ void MakeAllDataPlots::InitTrigScintHistos(TString dirname, TString selTag, TStr
 
   // map between name of a region and a x axis SF:
   std::map<TString,int> regions = {
-    {TString(""), 8},
-    {TString("0"), 4},
-    {TString("1"), 4},
-    {TString("0R"), 2},
-    {TString("0L"), 2},
+    {TString(""), 8}, // all 8 PMTs in TS0 and TS1
+    {TString("0"), 4}, // 4 PMTs in TS0
+    {TString("1"), 4}, // 4 PMTs in TS1
+    {TString("0R"), 2}, // only 2 right PMTs in TS0
+    {TString("0L"), 2}, // ...
     {TString("1R"), 2},
     {TString("1L"), 2},
     {TString("00"), 1},
@@ -1388,10 +1427,42 @@ void MakeAllDataPlots::FillChargedHistos()
 	} else if ( fabs(_tof - pitofExp) < tsigma) {
 	  this -> FillTrigScintHistos("_pi-like");
 	}
-      
-      if (PassedMIPPbGcuts(_pbc, 3.)) {
+
+      bool passedMIPPbGcuts = PassedMIPPbGcuts(_pbc, 3.);
+      if (passedMIPPbGcuts) {
 	this -> FillPIDHistos("_MIP-like");
       }
+
+
+      double cutline = fabs(_momentum)*_fita + _fitb;
+      if (_act23cAver > cutline && !passedMIPPbGcuts) {
+	// ePID
+	_histos1d["hTOFElectronID"]->Fill(_tof);
+	_histos1d["hTOFElectronIDLow"]->Fill(_tof);
+      }
+
+      if (_act23cAver >= cutline && passedMIPPbGcuts) {
+	// mu or pi:
+	// repeat here the PbG MIP cut!!
+	// TODO!!!
+	
+	if (_act23cAver > _pimuSepCut) {
+	  // rough possible muon cut, see
+	  // https://docs.google.com/presentation/d/1T6LfW4C-gwceiP4itlxEtSr_ZwjFm_YQWoF_7YskIQI/edit?usp=sharing
+	  // muons:
+	  // TO FILL ToF etc!
+	  _histos1d["hTOFMuonID"]->Fill(_tof);
+	  _histos1d["hTOFMuonIDLow"]->Fill(_tof);
+	} else {
+	  // pions
+	  // TO FILL ToF etc!
+	  _histos1d["hTOFPionID"]->Fill(_tof);
+	  _histos1d["hTOFPionIDLow"]->Fill(_tof);
+	  
+	}
+	
+      } // MIP and ACT cuts
+
       
       
     } // nonp-like
@@ -1496,14 +1567,8 @@ void MakeAllDataPlots::FillChargedHistos()
 	_histos2d["hRef_pbA_act1A_act1cuts"]->Fill(_pba, _act1a);
 	_histos1d["hTOFOther_act1cuts"]->Fill(_tof);
 	_histos1d["hTOFOtherLow_act1cuts"]->Fill(_tof);
-      
-	
       }
-      
-      
-
     }
-
 	
 	 //default: {
 	//        if (ientry < 10)
