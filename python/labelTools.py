@@ -23,6 +23,19 @@ ChNamesHodo =  {    0 : "ACT0L",    1: "ACT0R",
             }
 
 ##########################################
+def DivideCan(can, N):
+    if N < 3:                can.Divide(2,1)
+    elif N < 5:              can.Divide(2,2)
+    elif N < 7:              can.Divide(3,2)
+    elif N < 10:             can.Divide(3,3)
+    elif N < 13:             can.Divide(4,3)
+    elif N < 17:             can.Divide(4,4)
+    else:
+        n = int(sqrt(N)) + 1
+        can.Divide(n,2)
+    retun
+    
+##########################################
 def makeLine(x1, y1, x2, y2, col = ROOT.kBlack, lst = 1, lw = 1):
     line = ROOT.TLine(x1, y1, x2, y2)
     line.SetLineColor(col)

@@ -2,7 +2,7 @@
 
 // jk 29.7.2023
 
-void runMakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, bool noAct1Cuts, TString peakMode = "", bool useWindowIntCharge = false) {
+void runMakeAllDataPlots(string fileName, int momentum, bool isHodoscopeRun, bool noAct1Cuts, TString peakMode = "", bool useWindowIntCharge = true) {
 
   MakeAllDataPlots *analysis = new MakeAllDataPlots(fileName, momentum, isHodoscopeRun, peakMode, useWindowIntCharge);
   analysis -> Init(noAct1Cuts);

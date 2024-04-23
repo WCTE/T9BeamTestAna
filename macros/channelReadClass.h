@@ -46,17 +46,17 @@ public :
    Double_t        WholeWaveformInt;
    Double_t        DigiTimingOffset;
    Int_t           nPeaks;
-   Double_t        PeakVoltage[5];   //[nPeaks]
-   Double_t        PeakTime[5];   //[nPeaks]
-   Double_t        SignalTime[5];   //[nPeaks]
-   Double_t        IntCharge[5];   //[nPeaks]
-   Double_t        IntPE[5];   //[nPeaks]
-   Double_t        SignalTimeCorrected[5];   //[nPeaks]
+   Double_t        PeakVoltage[maxnPeaks];   //[nPeaks]
+   Double_t        PeakTime[maxnPeaks];   //[nPeaks]
+   Double_t        SignalTime[maxnPeaks];   //[nPeaks]
+   Double_t        IntCharge[maxnPeaks];   //[nPeaks]
+   Double_t        IntPE[maxnPeaks];   //[nPeaks]
+   Double_t        SignalTimeCorrected[maxnPeaks];   //[nPeaks]
    Int_t           nWindowPeaks;
-   Double_t        WindowIntCharge[3];   //[nWindowPeaks]
-   Double_t        WindowIntPE[3];   //[nWindowPeaks]
-   Double_t        SignalTimeMatchedTOF1[3];   //[nWindowPeaks]
-   Double_t        SignalTimeMatchedTOF0[3];   //[nWindowPeaks]
+   Double_t        WindowIntCharge[maxnPeaks];   //[nWindowPeaks]
+   Double_t        WindowIntPE[maxnPeaks];   //[nWindowPeaks]
+   Double_t        SignalTimeMatchedTOF1[maxnPeaks];   //[nWindowPeaks]
+   Double_t        SignalTimeMatchedTOF0[maxnPeaks];   //[nWindowPeaks]
    UInt_t          timeStamp;
    UInt_t          triggerTime;
    UInt_t          spillNumber;
@@ -170,7 +170,8 @@ void channelReadClass::Init(TTree *tree)
    fChain->SetBranchAddress("IntCharge", IntCharge, &b_IntCharge);
    
    // Alie's branches  // 8.2.2024
-   if (m_isExtendedWindowAnalysis) {
+   //if (m_isExtendedWindowAnalysis) {
+     
      fChain->SetBranchAddress("WholeWaveformInt", &WholeWaveformInt, &b_WholeWaveformInt);
      fChain->SetBranchAddress("DigiTimingOffset", &DigiTimingOffset, &b_DigiTimingOffset);
      fChain->SetBranchAddress("IntPE", IntPE, &b_IntPE);
@@ -183,7 +184,7 @@ void channelReadClass::Init(TTree *tree)
      fChain->SetBranchAddress("timeStamp", &timeStamp, &b_timeStamp);
      fChain->SetBranchAddress("triggerTime", &triggerTime, &b_triggerTime);
      fChain->SetBranchAddress("spillNumber", &spillNumber, &b_spillNumber);
-   }
+     //}
      
    Notify();
 }

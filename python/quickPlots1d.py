@@ -168,10 +168,13 @@ def main(argv):
 
             
             can.cd(ich % 8 + 1)
-            h.SetStats(0)
+            h.SetStats(1)
             #if not 'Time' in h.GetName():
-            if 'nPeaks' in h.GetName():
-                ROOT.gPad.SetLogy(1)
+            #if 'nPeaks' in h.GetName():
+            ROOT.gPad.SetLogy(1)
+            if 'TOF' in h.GetName():
+                h.Rebin(2)
+            
             #h.GetYaxis().SetRangeUser(1.e-4, h.GetYaxis().GetXmax())
             h.SetFillColor(hbasenames[hbasename])
             h.SetFillStyle(1111)

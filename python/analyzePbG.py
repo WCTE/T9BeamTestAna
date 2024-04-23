@@ -35,17 +35,17 @@ class cFitPeak:
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
-        'peakAnalysed_timeCorr_windInt_-16_45_000403_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000396_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000394_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000393_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000392_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000398_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000399_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000402_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000449_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000436_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_-16_45_000435_plots_f.root'
+        'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000394_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000393_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000392_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000398_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000399_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000402_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000449_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000436_plots_f.root',
+        'peakAnalysed_timeCorr_windInt_000435_plots_f.root'
     ]
     rfiles = []
     for filename in filenames:
@@ -139,8 +139,9 @@ def main(argv):
         'hRef_pbC_TrigScintC',
     ]
     pbasedirs = [
-        #'TrigScint_p/',
+        #'TrigScint_nonp/',
         'TrigScint_e/',
+        #'TrigScint_nonp/',
     ]
 
 
@@ -169,6 +170,8 @@ def main(argv):
             particle = 'e'
         if '_p/' in pbasedir:
             particle = 'p'
+        if '_nonp/' in pbasedir:
+            particle = 'nonp'
         if '_pi/' in pbasedir:
             particle = 'pi'
         if '_mu/' in pbasedir:
@@ -253,7 +256,9 @@ def main(argv):
                 projXcp = projX.DrawCopy('hist plc' + allsame)
                 projXcp.SetStats(0)
                 projXcp.SetLineWidth(2)
-                projXcp.Scale(1./projXcp.Integral(0,projXcp.GetXaxis().GetNbins()+1))
+                num = projXcp.Integral(0,projXcp.GetXaxis().GetNbins()+1)
+                if num > 0:
+                    projXcp.Scale(1./num)
                 allleg.AddEntry(projXcp, 'Run {}, p={} MeV/c'.format(srun, momentum), 'L')
                 allsame = 'same'
                 projXcp.SetMaximum(0.085)

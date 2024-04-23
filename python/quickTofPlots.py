@@ -80,20 +80,22 @@ def main(argv):
     hs = []
     funs = []
     hnames = ['hTOFAllLow', 'hTOFElectronIDLow', 'hTOFMuonIDLow', 'hTOFPionIDLow']
+    labels = ['All', 'e-ID', '#mu-ID', '#pi-IP']
 
     sameopt = ''
     opt = 'e1x0'
     cols = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue, ROOT.kGreen+2]
 
     canname = f'WCTEJuly2023_QuickTOF_{srun}'
-    canname = canname.replace('_list_root','').replace('_ntuple','')
     cw = 1000
     ch = 800
     can = ROOT.TCanvas(canname, canname, 0, 0, cw, ch)
     cans.append(can)
     can.cd()
     ROOT.gPad.SetLogy(1)
-    for col,hname in zip(cols,hnames):
+    leg = ROOT.TLegend(0.75,0.65,0.88,0.88)
+    leg.SetBorderSize(0)
+    for label,col,hname in zip(labels,cols,hnames):
         h = rfile.Get(basedir + hname)
         print('got {} I={:1.2f}'.format(h.GetName(), h.GetEntries()))
         h.SetStats(0)
@@ -103,6 +105,7 @@ def main(argv):
         h.SetMarkerStyle(20)
         h.SetLineWidth(2)
         h.Draw(opt + sameopt)
+        leg.AddEntry(h,label,'PL')
         if not 'All' in h.GetName():
             stddev = h.GetStdDev()
             sf = 2
@@ -118,14 +121,14 @@ def main(argv):
             fun.Draw('same')
         sameopt = 'same'
         hs.append(h)
+        
 
 
+    ##################################
+    #       plots all the canvas     #
+    ##################################
 
-##################################
-#       plots all the canvas     #
-##################################
-
- 
+    leg.Draw()
     pnote = makeMomentumLabel(srun, momentum, 0.12, 0.92)
     stuff.append(pnote)
     pnote.Draw()

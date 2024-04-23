@@ -142,7 +142,9 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   }
   
   _actChargeMin = 0.0;
-  _actChargeMax = 6.*PEsfACT; // /2. 1.1* 2.*
+  //_actChargeMax = 3;// HACK FOR RUN 502!!!!
+  _actChargeMax = 12.*PEsfACT; // /2. 1.1* 2.*
+  
   _actAmplitudeMax =  2.;     // 2.
 
   _PbGAmplitudeMin =  0.;     // 2.
@@ -153,6 +155,8 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 
   _trigScintChargeMin = 0.;
   _trigScintChargeMax = 2.*PEsfTOF;
+  // HACK for CALIBRATION RUN 502!!!
+  //  _trigScintChargeMax = 5.;
   _trigScintAmplitudeMin = 0.;
   _trigScintAmplitudeMax = 2.;//10.*PEsfTOF;
   
@@ -536,6 +540,8 @@ void MakeAllDataPlots::InitTrigScintHistos(TString dirname, TString selTag, TStr
 // ______________________________________________________________
 void MakeAllDataPlots::FillPIDHistos(TString selTag) {
 
+  // cout << " MakeAllDataPlots::FillPIDHistos selTag: " << selTag.Data() << endl;
+  
     // lead glass vs acts and tof
     _histos2d["hRef_pbA_act23A" + selTag]->Fill(_pba, _act23aAver);
     _histos2d["hRef_pbC_act23A" + selTag]->Fill(_pbc, _act23aAver);
@@ -568,11 +574,11 @@ void MakeAllDataPlots::InitPIDHistos(TString dirname, TString selTag, TString se
   _outFile -> cd(dirname);
  
 
-  _histos2d["hRef_pbA_act23A" + selTag] = new TH2D("hRef_pbA_act23A" + selTag, "; " + selTit + " Pb-glass Amplitude ; " + selTit + "(ACT2+ACT3)/2 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., 2*_actAmplitudeMax);
-  _histos2d["hRef_pbC_act23C" + selTag] = new TH2D("hRef_pbC_act23C" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "(ACT2+ACT3)/2 Charge", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., 2*_actChargeMax);
+  _histos2d["hRef_pbA_act23A" + selTag] = new TH2D("hRef_pbA_act23A" + selTag, "; " + selTit + " Pb-glass Amplitude ; " + selTit + "(ACT2+ACT3)/2 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., _actAmplitudeMax);
+  _histos2d["hRef_pbC_act23C" + selTag] = new TH2D("hRef_pbC_act23C" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "(ACT2+ACT3)/2 Charge", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., _actChargeMax);
 
-  _histos2d["hRef_pbC_act23A" + selTag] = new TH2D("hRef_pbC_act23A" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "(ACT2+ACT3)/2 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., 2*_actAmplitudeMax);
-  _histos2d["hRef_pbA_act23C" + selTag] = new TH2D("hRef_pbA_act23C" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "(ACT2+ACT3)/2 Amplitude", 200, _PbGAmplitudeMin, _PbGAmplitudeMax, 400, 0., 2*_actChargeMax);
+  _histos2d["hRef_pbC_act23A" + selTag] = new TH2D("hRef_pbC_act23A" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "(ACT2+ACT3)/2 Amplitude", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., _actAmplitudeMax);
+  _histos2d["hRef_pbA_act23C" + selTag] = new TH2D("hRef_pbA_act23C" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "(ACT2+ACT3)/2 Amplitude", 200, _PbGAmplitudeMin, _PbGAmplitudeMax, 400, 0., _actChargeMax);
 
   _histos2d["hRef_pbA_act0A" + selTag] = new TH2D("hRef_pbA_act0A" + selTag, "; " + selTit + " Pb-glass Amplitude ; " + selTit + "ACT0 Amplitude", 200, 0., _PbGAmplitudeMax, 400, 0., ACT0Gain*_actAmplitudeMax);
   _histos2d["hRef_pbC_act0C" + selTag] = new TH2D("hRef_pbC_act0C" + selTag, "; " + selTit + " Pb-glass Charge ; " + selTit + "ACT1 Charge", 200, _PbGChargeMin, _PbGChargeMax, 400, 0., ACT0Gain*_actChargeMax);
@@ -617,25 +623,44 @@ void MakeAllDataPlots::InitChargedHistos()
 
  
   //lead glass vs act 2 and 3 - identify particles
+  // BASED ON TOF:
   this -> InitPIDHistos("Charged", "", "");
   this -> InitPIDHistos("Charged_nonp", "_nonp-like", " nonp-like");
-  this -> InitPIDHistos("Charged_MIP", "_MIP-like", " MIP-like");
-  //this -> InitPIDHistos("Charged", "", "");
-  //this -> InitPIDHistos("Charged", "", "");
-  //this -> InitPIDHistos("Charged", "", "");
+  
+  this -> InitPIDHistos("Charged_e", "_e-like", " e-like");
+  this -> InitPIDHistos("Charged_mu", "_mu-like", " mu-like");
+  this -> InitPIDHistos("Charged_pi", "_pi-like", " pi-like");
+
+  // based on ACT and PbG
+  this -> InitPIDHistos("Charged_MIP", "_MIPID", " MIPID");
+  // BASED ON ID CUTS
+  this -> InitPIDHistos("Charged_eID", "_eID", " e-ID");
+  this -> InitPIDHistos("Charged_muID", "_muID", " #mu-ID");
+  this -> InitPIDHistos("Charged_piID", "_piID", " #pi-ID");
   // 5.3.2024
   // Trigger scintillators (unfortunatelly labelled as TOF all through out the code;-)
   // amplitude and charge vs tof:
   // all PID:
   this -> InitTrigScintHistos("TrigScint", "", "");
+
+  // BASED ON TOF:
+  
   // also for proton-like selections etc.
   this -> InitTrigScintHistos("TrigScint_nonp", "_nonp-like", " nonp-like");
   this -> InitTrigScintHistos("TrigScint_p", "_p-like", " p-like");
   this -> InitTrigScintHistos("TrigScint_D", "_D-like", " D-like");
   this -> InitTrigScintHistos("TrigScint_T", "_T-like", " T-like");
+  
   this -> InitTrigScintHistos("TrigScint_e", "_e-like", " e-like");
   this -> InitTrigScintHistos("TrigScint_mu", "_mu-like", " mu-like");
   this -> InitTrigScintHistos("TrigScint_pi", "_pi-like", " pi-like");
+
+  // based on ACT and PbG
+  this -> InitTrigScintHistos("TrigScint_MIPID", "_MIPID", " MIPID");
+  // BASED ON ID CUTS
+  this -> InitTrigScintHistos("TrigScint_eID", "_eID", " e-ID");
+  this -> InitTrigScintHistos("TrigScint_muID", "_muID", " mu-ID");
+  this -> InitTrigScintHistos("TrigScint_piID", "_piID", " pi-ID");
 
   //_outFile -> mkdir("Charged");
   _outFile -> cd("Charged");
@@ -679,8 +704,8 @@ void MakeAllDataPlots::InitChargedHistos()
   _histos1d["hRef_act0RC_minus_act1RC_nonZero"] = new TH1D("hRef_act0RC_minus_act1RC_nonZero", "; ACT0R Charge - ACT1R Charge", 200, -_actChargeMax*dsf, _actChargeMax*dsf);
 
   // (ACT2+ACT3)/2 vs TOF plots
-  _histos2d["hRef_TOFACT23A"] = new TH2D("hRef_TOFACT23A", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., 2*_actAmplitudeMax);
-  _histos2d["hRef_TOFACT23C"] = new TH2D("hRef_TOFACT23C", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, 2*_actChargeMax);
+  _histos2d["hRef_TOFACT23A"] = new TH2D("hRef_TOFACT23A", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Amplitude", _ntofbins2d, _tofmin, _tofmax, 200, 0., _actAmplitudeMax);
+  _histos2d["hRef_TOFACT23C"] = new TH2D("hRef_TOFACT23C", "; t_{1}-t_{0} [ns]; (ACT2+ACT3)/2 Charge", _ntofbins2d, _tofmin, _tofmax, 200, _actChargeMin, _actChargeMax);
 
   // also ACT 0 and 1, separately:
   /* seems they were already defined below...
@@ -761,8 +786,11 @@ int MakeAllDataPlots::getHighestPeakIndex(channelReadClass *reader, bool useChar
        if (_useWindowIntCharge) {
 	 // a = reader -> WindowIntCharge[ipeak];
 	 a = reader -> WindowIntPE[ipeak];
-       } else
+       } else {
 	 a = reader -> IntCharge[ipeak];
+	 // HACK for calibration using run 502!
+       	 // a = reader -> IntPE[ipeak];
+       }
      } else {
        a = reader -> PeakVoltage[ipeak];       
      }
@@ -770,7 +798,7 @@ int MakeAllDataPlots::getHighestPeakIndex(channelReadClass *reader, bool useChar
        maxA = a;
        imax = ipeak;
      }
-   }
+   } // for
    return imax;
    //   return 0; 
  }
@@ -955,6 +983,15 @@ void MakeAllDataPlots::ReadChannels()
       _PeakIDC[chname] = getHighestPeakIndex(_readerMap[chname], true);
       ipeak = _PeakIDC[chname];
       _NPeaksC[chname] = _readerMap[chname] -> nPeaks;
+      /*
+	if (chname.Contains("TOF")) {
+	cout << " ipeak=" << ipeak
+	<< " nPeaks=" << _readerMap[chname] -> nPeaks
+	<< " IntPE=" << _readerMap[chname] -> IntPE[ipeak]
+	<< endl;
+	}
+      */
+      
       if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
 	if (_useWindowIntCharge) { // && !chname.Contains("TOF"))
 	  // preferred, to compare PMTs
@@ -966,7 +1003,9 @@ void MakeAllDataPlots::ReadChannels()
 	  // _Charges[chname]     = _readerMap[chname] -> WindowIntCharge[ipeak]; 
 	  _SignalTimes[chname] = _readerMap[chname] -> SignalTimeCorrected[ipeak];
 	} else {
-	  _Charges[chname]     = _readerMap[chname] -> IntCharge[ipeak];
+	  /// _Charges[chname]     = _readerMap[chname] -> IntCharge[ipeak];
+	  // for calibration run 502!!!
+	  _Charges[chname]     = _readerMap[chname] -> IntPE[ipeak];
 	  _SignalTimes[chname] = _readerMap[chname] -> SignalTime[ipeak];
 	}
       } else {
@@ -996,8 +1035,8 @@ void MakeAllDataPlots::FillChannels()
 	_hVoltage.at(ich).Fill(_Amplitudes[chname]);
 	_hPedestalSigma.at(ich).Fill(_reader[ich] -> PedestalSigma);
       }
-
-      ipeak = _PeakIDC[chname];
+      if (_useWindowIntCharge)
+	ipeak = _PeakIDC[chname];
       int nn =  _useWindowIntCharge ? _readerMap[chname] -> nWindowPeaks : _readerMap[chname] -> nPeaks;
       _hnPeaksC.at(ich).Fill(nn);
       if ( ipeak >= 0 && ipeak < nn) {
@@ -1400,10 +1439,7 @@ void MakeAllDataPlots::FillChargedHistos()
     _histos2d["hRef_TOFPbA"]->Fill(_tof, _pba);
     _histos2d["hRef_TOFPbC"]->Fill(_tof, _pbc);
 
-
-    
     this -> FillPIDHistos("");
-
     
     // cout << " momentum: " << _momentum << " tof=" << _tof << " ptofExp=" << ptofExp <<  " " << fabs(_tof - ptofExp) << " " <<  tsigma << endl;
     if ( fabs(_tof - ptofExp) < tsigma) {
@@ -1420,51 +1456,68 @@ void MakeAllDataPlots::FillChargedHistos()
       } else
 	// JK 10.4.2024
 	// require also 2*sigma around the electron peak in PbG charge
-	if ( fabs(_tof - etofExp) < tsigma && this->PassedElectronPbGcuts(_pbc, 2.)) {
+
+	if ( fabs(_tof - etofExp) < tsigma ) {
 	  this -> FillTrigScintHistos("_e-like");
-	} else if ( fabs(_tof - mutofExp) < tsigma) {
-	  this -> FillTrigScintHistos("_mu-like");
-	} else if ( fabs(_tof - pitofExp) < tsigma) {
-	  this -> FillTrigScintHistos("_pi-like");
-	}
-
-      bool passedMIPPbGcuts = PassedMIPPbGcuts(_pbc, 3.);
-      if (passedMIPPbGcuts) {
-	this -> FillPIDHistos("_MIP-like");
-      }
-
-
-      double cutline = fabs(_momentum)*_fita + _fitb;
-      if (_act23cAver > cutline && !passedMIPPbGcuts) {
-	// ePID
-	_histos1d["hTOFElectronID"]->Fill(_tof);
-	_histos1d["hTOFElectronIDLow"]->Fill(_tof);
-      }
-
-      if (_act23cAver >= cutline && passedMIPPbGcuts) {
-	// mu or pi:
-	// repeat here the PbG MIP cut!!
-	// TODO!!!
-	
-	if (_act23cAver > _pimuSepCut) {
-	  // rough possible muon cut, see
-	  // https://docs.google.com/presentation/d/1T6LfW4C-gwceiP4itlxEtSr_ZwjFm_YQWoF_7YskIQI/edit?usp=sharing
-	  // muons:
-	  // TO FILL ToF etc!
-	  _histos1d["hTOFMuonID"]->Fill(_tof);
-	  _histos1d["hTOFMuonIDLow"]->Fill(_tof);
-	} else {
-	  // pions
-	  // TO FILL ToF etc!
-	  _histos1d["hTOFPionID"]->Fill(_tof);
-	  _histos1d["hTOFPionIDLow"]->Fill(_tof);
+	} 
 	  
-	}
 	
-      } // MIP and ACT cuts
+	if ( fabs(_tof - etofExp) < tsigma && this->PassedElectronPbGcuts(_pbc, 2.)) {
+	  this -> FillTrigScintHistos("_eID");
+	  this -> FillPIDHistos("_eID");
+	}
 
-      
-      
+	// NO ELSE HERE!
+	if ( fabs(_tof - mutofExp) < tsigma) {
+	  this -> FillTrigScintHistos("_mu-like");
+	  this -> FillPIDHistos("_mu-like");
+	}
+	if ( fabs(_tof - pitofExp) < tsigma) {
+	  this -> FillTrigScintHistos("_pi-like");
+	  this -> FillPIDHistos("_pi-like");
+	}
+
+	bool passedMIPPbGcuts = PassedMIPPbGcuts(_pbc, 3.);
+
+	// ACT 2+3 cut
+	double cutline = fabs(_momentum)*_fita + _fitb;
+	if (_act23cAver > cutline && !passedMIPPbGcuts) {
+	  // ePID
+	  _histos1d["hTOFElectronID"]->Fill(_tof);
+	  _histos1d["hTOFElectronIDLow"]->Fill(_tof);
+	}
+
+	if (_act23cAver <= cutline && passedMIPPbGcuts) {
+	  // mu or pi:
+	  // repeat here the PbG MIP cut!!
+	  this -> FillTrigScintHistos("_MIPID");
+	  this -> FillPIDHistos("_MIPID");       
+	  
+	  if (_act23cAver > _pimuSepCut) {
+	    // rough possible muon cut, see
+	    // https://docs.google.com/presentation/d/1T6LfW4C-gwceiP4itlxEtSr_ZwjFm_YQWoF_7YskIQI/edit?usp=sharing
+	    // muons:
+	    // TO FILL ToF etc!
+	    this -> FillTrigScintHistos("_muID"); 
+	    this -> FillPIDHistos("_muID");	   	    
+	    _histos1d["hTOFMuonID"]->Fill(_tof);
+	    _histos1d["hTOFMuonIDLow"]->Fill(_tof);
+	  } else {
+	    // pions
+	    
+	    // TO FILL ToF etc!
+	    // add also the PID, as a check?
+	    this -> FillTrigScintHistos("_piID"); 
+	    this -> FillPIDHistos("_piID");
+	    _histos1d["hTOFPionID"]->Fill(_tof);
+	    _histos1d["hTOFPionIDLow"]->Fill(_tof);
+	    
+	  }
+	  
+	} // MIP and ACT cuts
+	
+	
+	
     } // nonp-like
 
 

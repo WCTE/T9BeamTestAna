@@ -192,32 +192,13 @@ def main(argv, Zoom = False):
                     
         for hname in hnames2d:
             jcan = jcan + 1
-                
 
             canname = f'WCTEJuly2023_Quick2D_PID_{hname}_{selTag}'
             can = ROOT.TCanvas(canname, canname, jcan*100, jcan*100, 1200+200, 800)
-            N = len(rfiles)
-            if N < 3:
-                can.Divide(2,1)
-            elif N < 5:
-                can.Divide(2,2)
-            elif N < 7:
-                can.Divide(3,2)
-            elif N < 10:
-                can.Divide(3,3)
-            elif N < 13:
-                can.Divide(4,3)
-            elif N < 17:
-                can.Divide(4,4)
-            else:
-                n = int(sqrt(N)) + 1
-                can.Divide(n,2)
-
+            DivideCan(can,len(rfiles))
             #can.Divide(4,4)
             #can.Divide(3,3)
-
             cans.append(can)
-        
        
             ican = -1
             for rfile in rfiles:

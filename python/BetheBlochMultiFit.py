@@ -165,7 +165,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
 
         h = rfile.Get(pbasedir + hname)
         try:
-            print('   ...ok, got {} from file {}'.format(h.GetName(), rfile.GetName()))
+            print('   ...ok, got {} from file {}, I={}'.format(h.GetName(), rfile.GetName(), h.Integral()))
             tmp = h.GetName()
             #print('meanX: {1.2f}'.format(h.GetMean(1)))
             #print('meanY: {1.2f}'.format(h.GetMean(2)))
@@ -488,7 +488,7 @@ def main(argv):
             opt = 'PL'
             hname = 'calibGr'
             htitle = ';p [MeV/c];rel. calib const.'
-            hh2 = ROOT.TH2D(hname, htitle, 100, 400., 1600., 100, 0.5, 1.7)
+            hh2 = ROOT.TH2D(hname, htitle, 100, 400., 1600., 100, 0., 1.7)
             hh2.SetStats(0)
             hh2.Draw()
             cleg = ROOT.TLegend(0.79, 0.23, 0.89, 0.89)
