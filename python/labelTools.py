@@ -5,12 +5,15 @@ import ROOT
 from data_runs import *
 from tofUtil import *
 
-ChNamesCharged =  {0: 'ACT-00', 1: 'ACT-01', 2: 'ACT-10', 3: 'ACT-11', 4: 'ACT-20', 5: 'ACT-21', 6: 'ACT-30', 7: 'ACT-31',
-                   8: 'TOF-00', 9: 'TOF-01', 10: 'TOF-10', 11: 'TOF-11', 12: 'TOF-20', 13: 'TOF-21', 14: 'TOF-30', 15: 'TOF-31',
-                   16: 'HC-00', 17: 'HC-10', 18: 'LG-00',
+ChNamesCharged =  {
+    #0: 'ACT-00', 1: 'ACT-01', 2: 'ACT-10', 3: 'ACT-11', 4: 'ACT-20', 5: 'ACT-21', 6: 'ACT-30', 7: 'ACT-31',
+    #8: 'TOF-00', 9: 'TOF-01', 10: 'TOF-10', 11: 'TOF-11', 12: 'TOF-20', 13: 'TOF-21', 14: 'TOF-30', 15: 'TOF-31',
+    #16: 'HC-00', 17: 'HC-10', 18: 'LG-00',
+                   0: "ACT0L",    1: "ACT0R",    2: "ACT1L",    3: "ACT1R",    4: "ACT2L", 	5: "ACT2R",    6: "ACT3L", 	7: "ACT3R",
+                   8: "TOF00", 	9: "TOF01", 	10: "TOF02", 	11: "TOF03",    12: "TOF10", 	13: "TOF11", 	14: "TOF12", 	15: "TOF13",
+                   16: "Hole0", 	17: "Hole1", 	18: "PbGlass",
                    19: 'X', 20: 'X', 21: 'X', 22: 'X', 23: 'X',
                    24: 'X', 25: 'X', 26: 'X', 27: 'X', 28: 'X', 29: 'X', 30: 'X', 31: 'X' }
-
 
 ChNamesHodo =  {    0 : "ACT0L",    1: "ACT0R",
                     2: "ACT1L",    3: "ACT1R",
@@ -32,7 +35,7 @@ def DivideCan(can, N):
     elif N < 17:             can.Divide(4,4)
     else:
         n = int(sqrt(N)) + 1
-        can.Divide(n,2)
+        can.Divide(n,n)
     retun
     
 ##########################################
