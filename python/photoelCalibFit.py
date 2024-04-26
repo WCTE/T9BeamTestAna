@@ -230,7 +230,7 @@ def main(argv):
             if ich == 18:
                 x1, x2 = 1.7, 5.
 
-            # CLOSURE:
+            # CLOSURE range HACK
             x1,x2 = 0.5, 1.5
             
             fname = 'fit_' + h.GetName()

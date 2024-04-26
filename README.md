@@ -1,6 +1,74 @@
 # T9BeamTestAna
 Analysis package for the T9 beam test
 
+2024
+
+
+Information about run or getting a list of runs for momentum:
+./python/getRunInfo.py 402
+./python/getRunListForMomentum.py -260
+
+
+Electron vs MIP PbG custs fit and determination:
+./python/analyzePbG.py
+Cut linear parameters points put manually into and fitted over momentum by:
+./python/PIDcutPointsFits.py
+
+Print expected dE/dX losses:
+./python/test_Losses.py
+Plot expected dE/dX losses:
+./python/PlotBetheLosses.py
+
+Separate fots to protons dE/dX:
+./python/protonPlots2d.py
+
+Simultaneous fit to dE/dX of protons and deuterons:
+./python/BetheBlochMultiFit.py
+
+General plotting examples:
+# overall A, Ch nPeaks per channel:
+./python/quickPlots1d.py histos/windowpe_analyzed/peakAnalysed_timeCorr_windInt_000490_plots_f.root
+# 2D plots, also beam position and bias study:
+./python/quickPlots2d.py histos/windowpe_analyzed/peakAnalysed_timeCorr_windInt_000490_plots_f.root
+# no fit, but useful to see, expected TOF linesL
+./python/quickTofPlots.py histos/windowpe_analyzed/peakAnalysed_timeCorr_windInt_000490_plots_f.root
+USEFUL to design PID cuts, use runs you want, see the file!
+./python/analyzePID.py 
+
+TOF
+
+March/April 2024
+# check no dry run in and run:
+./python/run_allRunsAnalysis_window.py
+Merge same setups for low momentum TOF fits:
+./python/haddChargedForTof.py
+Fit individual tofs:
+
+Then clean fitres/:
+cd fitres/ ; ./clean.sh ; cd -
+
+Then run
+./python/run_momentumScan_window.py
+ -- TO FINISH testing and running!
+TOF fit results are in fitres/
+
+
+TO FINISH:
+./python/plotNsPerSpill.py
+./python/plotMomentumBias.py
+
+
+
+25.4.20245 Calibration to the Npe level using special run 502
+For this one, the peakAnalysed_timeCorr_windInt_000502.root preprocessed file was obtained running a config with "checkCoincidence" : false ! 
+Make sure there is not the CLOSURE fit range hack in
+python/photoelCalibFit.py histos/windowpe_analyzed/peakAnalysed_timeCorr_windInt_000502_orig_plots.root
+Closure:
+python/photoelCalibFit.py histos/windowpe_analyzed/peakAnalysed_timeCorr_windInt_000502_plots.root
+
+
+Study of slit varied runs:
+./python/run_SlitRuns_window.py
 
 2023
 ## Quick and dirty start:

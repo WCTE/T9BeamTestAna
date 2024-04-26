@@ -15,7 +15,7 @@ os.system('mkdir -p pdf/')
 #prefix='ntuple_'
 
 dirname='windowpe_analyzed/'
-prefix='windowPE_-16ns_45ns_run'
+prefix='peakAnalysed_timeCorr_windInt_'
 useWindowIntCharge = 'true'
 
 
@@ -27,9 +27,9 @@ for srun in runs:
     cmd = 'root -l -b -q "macros/runMakeAllDataPlots.C(\\"{}{}000{}.root\\", {}, false, true, \\"{}\\", {})"'.format(dirname, prefix, srun, p, selection, useWindowIntCharge)
     print(cmd)
     #os.system(cmd)
-    outfile = 'windowPE_-16ns_45ns_run000{}_plots.root'.format(srun)
+    outfile = 'peakAnalysed_timeCorr_windInt_000{}_plots.root'.format(srun)
     if len(selection) > 0:
-        outfile = 'windowPE_-16ns_45ns_run000{}_plots_{}.root'.format(srun, selection)
+        outfile = 'peakAnalysed_timeCorr_windInt_000{}_plots_{}.root'.format(srun, selection)
         
     #cmd = './python/quickPlots1d.py histos/windowpe_analyzed/' + outfile
     cmd = './python/slowPlots1d.py histos/windowpe_analyzed/' + outfile

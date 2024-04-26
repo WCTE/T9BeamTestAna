@@ -115,7 +115,9 @@ def main(argv):
     os.system('mkdir -p pdf png')
     hs = []
     txts = []
-    hnames2d = [ #'hRef_TOFPbA
+    hnames2d = [
+                 'hRef_pbC_act23C',
+        #'hRef_TOFPbA
                  'hRef_TOFPbC',
                  
                  'hRef_TOF_TrigScintC',
@@ -196,7 +198,7 @@ def main(argv):
             rdir = pbasedir
         elif 'nonZero' in hname or 'Xmap' in hname:
             rdir = chbasedir
-        elif 'hRef_TOFPb' in hname or 'hRef_ACT' in hname:
+        elif 'hRef_TOFPb' in hname or 'hRef_ACT' in hname or 'hRef_pbC_act' in hname:
             rdir = chbasedir
         h = rfile.Get(rdir + hname)
         try:
@@ -205,7 +207,7 @@ def main(argv):
         except:
             print('ERROR getting histo {}{}!'.format(rdir,hname))
             continue
-
+        
         #print('Pushing ', ich, hname)
         hs.append(h)
 

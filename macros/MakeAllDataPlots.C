@@ -147,7 +147,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   }
   
   _actChargeMin = 0.0;
-  _actChargeMax = 12.*PEsfACT; // /2. 1.1* 2.*
+  _actChargeMax = 24.*PEsfACT; // /2. 1.1* 2.*
   
   _actAmplitudeMax =  2.;     // 2.
 
@@ -183,6 +183,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
     if (Nn) {
       TObjString *olast = (TObjString*)(tokens -> At(Nn-1));
       last = olast->GetString();
+      last = last.ReplaceAll(".root","");
       //cout << "last token: \"" << last.Data() << "\"" << endl;
     }
   }

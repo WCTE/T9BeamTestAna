@@ -36,7 +36,7 @@ def DivideCan(can, N):
     else:
         n = int(sqrt(N)) + 1
         can.Divide(n,n)
-    retun
+    return
     
 ##########################################
 def makeLine(x1, y1, x2, y2, col = ROOT.kBlack, lst = 1, lw = 1):
@@ -52,7 +52,7 @@ def makeLines(h, eoff, parts, momentum, useYaxis = False):
     lines = []
     #y1 = h.GetYaxis().GetXmin()
     #y2 = h.GetYaxis().GetXmax()
-    print("LINE MOMENTUM: ", momentum)
+    #print("LINE MOMENTUM: ", momentum)
     y1 = 1.05*h.GetMaximum()
     y2 = h.GetMinimum()
     if useYaxis:

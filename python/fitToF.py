@@ -176,8 +176,8 @@ def main(argv):
     ### https://www.tutorialspoint.com/python/python_command_line_arguments.htm
     ### https://pymotw.com/2/getopt/
     ### https://docs.python.org/3.1/library/getopt.html
-    #gBatch = False
-    gBatch = True
+    gBatch = False
+    #gBatch = True
     momentum = None
     n_spill = 1
     target = 'tun'
@@ -433,7 +433,7 @@ def main(argv):
             print("error :", err_mu, err_e)
 
         #mom_pred = TofToMomentum(t_mu+t_e-getTof(ms['e'], momentum),ms['mu'])
-        mom_pred = TofDiffToMomentum(t_mu-t_e,ms['mu'])
+        mom_pred,mom_pred_err = TofDiffToMomentum(t_mu-t_e,ms['mu'])
 
         # #integrate the gaussians
         print("Integral fits[1]", fits[1].Integral(10, 20)/ hTOFOther.GetBinWidth(1))
@@ -451,6 +451,7 @@ def main(argv):
         tex = ROOT.TLatex(0.35, 0.8, 'e: t= ' + '{:1.2f}'.format(t_e) + 'ns, N= ' + '{:1.0f}'.format(n_e) + '#pm' + '{:1.0f}'.format(n_e*err_e) + ', n/spill= ' + '{:1.1f}'.format(n_e/n_spill) + '#pm' + '{:1.1f}'.format(n_e/n_spill*err_e))
         tex2 = ROOT.TLatex(0.35, 0.7, '#mu+#pi: t= ' + '{:1.2f}'.format(t_mu) + 'ns, N= ' + '{:1.0f}'.format(n_mu) + '#pm' + '{:1.0f}'.format(n_mu*err_mu) + ', n/spill= ' + '{:1.1f}'.format(n_mu/n_spill)  + '#pm' + '{:1.2f}'.format(n_mu/n_spill*err_mu))
 
+        print(mom_pred)
         tex3 = ROOT.TLatex(0.35, 0.6, 'Mom_{pred} from t_{#mu} = ' + '{:1.1f}'.format(mom_pred) + ' MeV/c')
         tex2.SetTextSize(txtSize)
         tex3.SetTextSize(txtSize)
