@@ -278,7 +278,7 @@ def main(argv):
             #h.Rebin2D(2,2)
             projY.Rebin(4)
         
-        hcp = h.DrawCopy('scat' + opt)
+        hcp = h.DrawCopy('box' + opt)
         if opt == '':
             hcp.GetXaxis().SetRangeUser(t1, t2)
             hcp.GetYaxis().SetRangeUser(scint1, scint2)

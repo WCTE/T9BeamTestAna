@@ -5,6 +5,7 @@
 
 using namespace std;
 
+
 // ______________________________________________________________
 // JK 10.4.2024
 
@@ -66,6 +67,10 @@ MakeAllDataPlots::MakeAllDataPlots(string fileName, int momentum, bool isHodosco
   _peakMode = peakMode;
   _isHodoscopeRun = isHodoscopeRun;
   _useWindowIntCharge = useWindowIntCharge;
+  if (_useWindowIntCharge)
+    _chUnit = "[p.e.]";
+  else
+    _chUnit = "[pC]";
   _debug = 0;
 
   // Luan, 7.3.2024
@@ -142,7 +147,6 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   }
   
   _actChargeMin = 0.0;
-  //_actChargeMax = 3;// HACK FOR RUN 502!!!!
   _actChargeMax = 12.*PEsfACT; // /2. 1.1* 2.*
   
   _actAmplitudeMax =  2.;     // 2.
@@ -155,22 +159,39 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
 
   _trigScintChargeMin = 0.;
   _trigScintChargeMax = 2.*PEsfTOF;
-  // HACK for CALIBRATION RUN 502!!!
-  //  _trigScintChargeMax = 5.;
   _trigScintAmplitudeMin = 0.;
   _trigScintAmplitudeMax = 2.;//10.*PEsfTOF;
+
+  // 23.4.2024
+  // HACK for 2nd CALIBRATION using RUN 502 or 503!!!
+  //_actChargeMax = 5.;
+  //_trigScintChargeMax = 5.;
   
   gSystem->Exec("mkdir -p histos/");
-
-  _infile = new TFile(_fileName.c_str(), "READ");
+  gSystem->Exec("mkdir -p histos/windowpe_analyzed/");
   
+  _infile = new TFile(_fileName.c_str(), "READ");
+  TString inFileName = _infile -> GetName();
+  TString last = "";
   TString peakModeTag = "";
   if (_peakMode != "")
     peakModeTag = "_" + _peakMode;
-  TString outFileName = TString(_fileName.substr(0, _fileName.size()-5).c_str()) + "_plots" + peakModeTag + ".root";
-  outFileName = outFileName.ReplaceAll("output/", "histos/").ReplaceAll("ntuple_files/","histos/").ReplaceAll("windowpe_analyzed/","histos/windowpe_analyzed/");
-  outFileName = outFileName.ReplaceAll("data", "histos");
+  TObjArray* tokens = tokenizeTString(inFileName, "/");
+  if (tokens) {
+    int Nn = tokens -> GetEntries();
+    //cout << "Tokens: " << Nn << endl;
+    if (Nn) {
+      TObjString *olast = (TObjString*)(tokens -> At(Nn-1));
+      last = olast->GetString();
+      //cout << "last token: \"" << last.Data() << "\"" << endl;
+    }
+  }
+  TString outFileName = TString("histos/windowpe_analyzed/") + TString(last) + "_plots" + peakModeTag + ".root";
+  
+  cout << "Opening output file " << outFileName.Data() << endl;
 
+  
+  
   _outFile = new TFile(outFileName.Data(), "RECREATE");
   _outFile -> cd();
 
@@ -296,7 +317,7 @@ void MakeAllDataPlots::InitGeneralHistos() {
     TString name7 = Form("hRef_Pedestal%i", i);
     TString name8 = Form("hRef_PedestalNbPeaks%i", i);
 
-    TString title1 = Form("Channel %i", i) + TString("; Charge [nC]; Triggers"); 
+    TString title1 = Form("Channel %i", i) + TString("; Charge [" + _chUnit + "]; Triggers"); 
     TString title2 = Form("Channel %i", i) + TString("; Total Amplitude [V]; Triggers");
     TString title3 = Form("Channel %i", i) + TString("; Hits per trigger; Triggers");
     TString title4 = Form("Channel %i", i) + TString("; #sigma_{ped} [V]; Triggers");
@@ -789,7 +810,7 @@ int MakeAllDataPlots::getHighestPeakIndex(channelReadClass *reader, bool useChar
        } else {
 	 a = reader -> IntCharge[ipeak];
 	 // HACK for calibration using run 502!
-       	 // a = reader -> IntPE[ipeak];
+	 // a = reader -> IntPE[ipeak];
        }
      } else {
        a = reader -> PeakVoltage[ipeak];       

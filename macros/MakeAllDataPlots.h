@@ -37,6 +37,7 @@ class MakeAllDataPlots
   bool _isHodoscopeRun;
   bool _noAct1Cuts; // for ToF fits
   bool _useWindowIntCharge;
+  TString _chUnit;
   
   Double_t peakVoltage[nMaxChannels][1];
   Double_t peakTime[nMaxChannels][1];

@@ -44,8 +44,8 @@ def main(argv):
     
     pngdir = 'png_results/'
     pdfdir = 'pdf_results/'
-    os.system(f'mkdir {pngdir}')
-    os.system(f'mkdir {pdfdir}')
+    os.system(f'mkdir -p {pngdir}')
+    os.system(f'mkdir -p {pdfdir}')
 
     opt2d = 'colz'
     

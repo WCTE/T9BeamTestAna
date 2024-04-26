@@ -6,8 +6,8 @@ from data_runs import *
 import os
 
 
-#isDryRun = False
-isDryRun = True
+isDryRun = False
+#isDryRun = True
 
 
 selection = 'f'

@@ -8,6 +8,6 @@
 
 double GetBeta(double mass, double momentum);
 
-
+TObjArray * tokenizeTString(const TString& inputString, const TString& delimiter);
 
 #endif

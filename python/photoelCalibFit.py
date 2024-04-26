@@ -1,6 +1,6 @@
 #!/snap/bin/pyroot
 
-#/usr/bin/python3
+# /usr/bin/python3
 
 # jk
 # 20/09/2022
@@ -73,8 +73,8 @@ def main(argv):
 
     pngdir = 'png_results/'
     pdfdir = 'pdf_results/'
-    os.system(f'mkdir {pngdir}')
-    os.system(f'mkdir {pdfdir}')
+    os.system(f'mkdir -p {pngdir}')
+    os.system(f'mkdir -p {pdfdir}')
 
     opt2d = 'colz'
 
@@ -128,6 +128,7 @@ def main(argv):
     
     #filename = 'output_300n_plots.root'
     filename = argv[1]
+    print(f"Opening file '{filename}'")
     rfile = ROOT.TFile(filename, 'read')
     hbasenames = {
         #'hRef_Time' : ROOT.kGreen,
@@ -173,6 +174,9 @@ def main(argv):
         #can = ROOT.TCanvas(canname, canname, 0, 0, 1600, 800)
         #cans.append(can)
         #can.Divide(8,4)
+
+        relCsDict = {}
+        relCs = []
         for h in hs:
             try:
                 #print('ok, got ', h.GetName())
@@ -209,9 +213,11 @@ def main(argv):
             #h.GetYaxis().SetRangeUser(1.e-4, h.GetYaxis().GetXmax())
             h.SetFillColor(hbasenames[hbasename])
             h.SetFillStyle(1111)
-            h.SetTitle(ChNames[hs.index(h)])
+            chname = ChNames[hs.index(h)]
+            h.SetTitle(chname)
             
             h.Rebin(2)
+            h.GetXaxis().SetTitle('Charge [uncalibrated p.e.]')
             h.Draw('hist')
 
             x1,x2 = 0.5, 2.5
@@ -224,6 +230,9 @@ def main(argv):
             if ich == 18:
                 x1, x2 = 1.7, 5.
 
+            # CLOSURE:
+            x1,x2 = 0.5, 1.5
+            
             fname = 'fit_' + h.GetName()
             fun = ROOT.TF1(fname, "[0]*exp(-(x-[1])^2/(2*[2]^2))", x1, x2)
             A, mu, sigma = getParEst(h, x1, x2)
@@ -238,16 +247,35 @@ def main(argv):
                 pars.append(fun.GetParameter(i))
             sf = 1.5
             h.Fit(fname, "", "0", pars[1] - sf*pars[2], pars[1] + sf*pars[2])
-            calibC = fun.GetParameter(1)
+            gain = fun.GetParameter(1)
+            gainErr = fun.GetParError(1)
             y1, y2 = h.GetMinimum(), h.GetMaximum()
-            lines = [ makeLine(calibC, y1, calibC, y2, ROOT.kRed, 1, 2), makeLine(1., y1, 1., y2, ROOT.kBlue, 2, 2) ]
+            lines = [ makeLine(gain, y1, gain, y2, ROOT.kRed, 1, 2),
+                      makeLine(gain - gainErr, y1, gain - gainErr, y2, ROOT.kRed, 2, 2),
+                      makeLine(gain + gainErr, y1, gain + gainErr, y2, ROOT.kRed, 2, 2),
+                      makeLine(1., y1, 1., y2, ROOT.kBlue, 2, 2) ]
             stuff.append(lines)
-                
+
+            relCsDict[ChNames[hs.index(h)]] = gain
+            relCs.append(gain)
             
             fun.Draw('same')
 
             ROOT.gPad.Update()
-
+        oldCs = [  0.30446, 0.6183148, 0.2150617, 0.316799, 0.2275831, 0.171613, 0.2256, 0.295012,
+                   0.04457263158, 0.049545, 0.04662082192, 0.03502604651, 0.03854842105, 0.06932761905, 0.06069396226, 0.06920426087,
+                   0.03495, 0.04052, 1.]
+        print(relCsDict)
+        newCs = []
+        for oldC,relC in zip(oldCs,relCs):
+            newCs.append(oldC*relC)
+        print('OLD CALIBRATION CONSTANTS:')
+        print(oldCs)
+        print('NEW CALIBRATION CONSTANTS:')
+        print(newCs)
+        for oC,nC in zip(oldCs,newCs):
+            print(f'oldC: {oC:1.3f}  newC: {nC:1.3f}')
+        
 ##################################
 #       plots all the canvas     #
 ##################################
