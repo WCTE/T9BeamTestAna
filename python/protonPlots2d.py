@@ -111,7 +111,7 @@ def main(argv):
 
     TStag = ''
     #TStag = '0'
-    #TStag = '1'
+    TStag = '1'
     tstag = 'TS' + TStag
     if tstag == 'TS':
         tstag = 'bothTS'
@@ -154,24 +154,6 @@ def main(argv):
     bmin = 0.3
     bmax = 0.85
 
-
-    """
-    dirname = 'histos/'
-    filenames = [
-        'ntuple_000403_plots.root',
-        'ntuple_000396_plots.root',
-        'ntuple_000394_plots.root',
-        'ntuple_000393_plots.root',
-        'ntuple_000392_plots.root',
-        'ntuple_000398_plots.root',
-        'ntuple_000399_plots.root',
-        'ntuple_000402_plots.root',
-        'ntuple_000449_plots.root',
-        'ntuple_000436_plots.root',
-        'ntuple_000435_plots.root'
-    ]
-    """
-    
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
         'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
@@ -198,25 +180,6 @@ def main(argv):
     pbasedir = 'TrigScint_{}/'.format(particle)
     hname = 'hRef_TOF_TrigScint{}C_{}-like'.format(TStag, particle)
     
-     #'hRef_TOFPbA',
-     #'hRef_TOFPbC',
-     
-     
-     #'hRef_TOF_TrigScint0C',
-     #'hRef_TOF_TrigScint1C',
-     
-     #'hRef_TOF_TrigScint001C',
-     #'hRef_TOF_TrigScint023C',
-     #'hRef_TOF_TrigScint101C',
-     #'hRef_TOF_TrigScint123C',
-     
-     #'hRef_pbC_TrigScintC',
-     #'hRef_pbC_TrigScintA',
-     #'hRef_pbA_TrigScintC',
-     #'hRef_pbA_TrigScintA',
-
-
-
     can = None
     opt = ''
     rfiles = []

@@ -58,10 +58,16 @@ def readInputFiles():
 
 ####################################################################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
-def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 100., Opt1d = 'hist', Opt2d = 'box'):
+def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 100., Opt1d = 'hist', Opt2d = 'box', drawElAnyway = False):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
     cans = []
+    reltag = ''
+    if len(calibCs) > 0:
+        print('calibCs:')
+        print(calibCs)
+        refmomentum = 1000
+        reltag = '_eRelCalib{}'.format(len(calibCs[refmomentum]))
 
     ROOT.gStyle.SetOptFit(111)
     ROOT.gStyle.SetPadLeftMargin(0.15)
@@ -141,6 +147,8 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
             ROOT.kOrange+1, ROOT.kYellow, ROOT.kYellow+2, ROOT.kCyan+1, ROOT.kTeal-7,
             ROOT.kAzure, ROOT.kGray+2, ROOT.kGreen+1, ROOT.kBlue, ROOT.kMagenta]
     ifile = -1
+    pcans = {}
+    popt = {}
     for rfile,col in zip(rfiles,cols):
         ifile = ifile + 1
         filename = rfile.GetName()
@@ -174,12 +182,13 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
             continue
 
         hs.append(h)
-        if can == None and not calibOnly:
-            canname = 'WCTEJuly2023_BetheBloch_SingleFit_{}_{}'.format(particle, tstag)
+        if can == None and (drawElAnyway or not calibOnly):
+            canname = 'WCTEJuly2023_BetheBloch_SingleFit_{}_{}{}'.format(particle, tstag, reltag)
             canname = canname.replace('_list_root','').replace('_ntuple','')
             can = ROOT.TCanvas(canname, canname, 0, 0, 1100, 800)
             cans.append(can)
             #can.Divide(8,4)
+        
         h.SetStats(0)
 
         projY = h.ProjectionY()
@@ -189,25 +198,32 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         if particle == 'D' or particle == 'T':
             #h.Rebin2D(2,2)
             projY.Rebin(4)
+        if particle == 'p':
+            #h.Rebin2D(2,2)
+            projY.Rebin(2)
+
         beta = getBeta(ms[particle], momentum)
         betagamma = getBetaGamma(ms[particle], momentum)
 
         hcp = None
-        if not calibOnly:
+        if  drawElAnyway or not calibOnly:
+            can.cd()
+            alpha = 0.10
+            h.SetFillStyle(1111)
+            h.SetMarkerSize(2)
+            h.SetMarkerStyle(20)
+            h.SetMarkerColorAlpha(col, alpha)
+            h.SetLineColorAlpha(col, alpha)
+            h.SetFillColorAlpha(col,1)
+            h.SetFillStyle(1111)
+            h.SetMarkerSize(0.1)
+            h.SetMarkerStyle(6)
+
             hcp = h.DrawCopy(Opt2d + opt)
             if opt == '':
                 hcp.GetXaxis().SetRangeUser(t1, t2)
                 hcp.GetYaxis().SetRangeUser(scint1, scint2)
-            alpha = 0.10
-            hcp.SetMarkerColorAlpha(col, alpha)
-            hcp.SetLineColorAlpha(col, alpha)
-            hcp.SetMarkerSize(0.1)
-            hcp.SetMarkerStyle(6)
             ROOT.gPad.Update()
-            h.SetFillColorAlpha(hcp.GetMarkerColor(),1)
-            h.SetFillStyle(1111)
-            h.SetMarkerSize(2)
-            h.SetMarkerStyle(20)
             hscp.append(hcp)
             leg.AddEntry(h, 'p = {:4} MeV/c #beta={:1.2f}'.format(str(momentum), beta), 'F')
 
@@ -219,6 +235,19 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         x2 = projY.GetXaxis().GetXmax()
         x1 = max(projY.GetXaxis().GetXmin(), meanfull - sigmafull)
         projYcp.GetXaxis().SetRangeUser(x1, x2)
+
+
+        if  drawElAnyway or not calibOnly:
+            try:
+                pcan = pcans[momentum]
+            except:
+                canname = 'WCTEJuly2023_LandauProfiles_{}_{}{}'.format(particle, momentum, reltag)
+                #pcans[momentum] = ROOT.TCanvas(canname, canname, 300, 300, 1000, 800)
+                popt[momentum] = ''
+            #pcans[momentum].cd()
+            #projY.Draw(popt[momentum] + ' hist')
+            popt[momentum] = 'same'
+        
         if projY.GetEntries() > minEntries:
             relcal = 1.
             # we expect we get a region like TS01p, so we remove the particle,
@@ -249,7 +278,8 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         opt = 'same'
         #adjustStats(h)
         #ROOT.gPad.Update()
-    if not calibOnly:
+    if  drawElAnyway or not calibOnly:
+        can.cd()
         leg.Draw()
         cnote, pnote = makePaperLabel(srun, momentum, 0.12, 0.92)
         #cnote.Draw()
@@ -265,8 +295,8 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
     ####################################################################################
     canp = None
     legp = None
-    if not calibOnly:
-        canname = 'WCTEJuly2023_LandauProfiles_{}_{}'.format(particle, tstag)
+    if drawElAnyway or not calibOnly:
+        canname = 'WCTEJuly2023_LandauProfiles_{}_{}{}'.format(particle, tstag, reltag)
         canp = ROOT.TCanvas(canname, canname, 200, 200, 1000, 800)
         canp.cd()
         opt = ''
@@ -274,6 +304,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         legp.SetBorderSize(0)
         stuff.append(legp)
         for h,col,projY,momentum,beta in zip(hs,cols,projYs,momenta,betas):
+            hname = h.GetName()
             #print(f'col: {col}')
             projY.SetLineColor(col)
             projY.SetFillColorAlpha(col, 0.3)
@@ -285,6 +316,8 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
             if val > 0.:
                 projY.Scale(1./val)
             projY.SetMaximum(projY.GetMaximum()*1.2)
+            if 'D' in hname:
+                projY.SetMaximum(projY.GetMaximum()*1.2)
             projY.SetStats(0)
             projY.Draw(Opt1d + opt)
             if opt == '':
@@ -298,9 +331,9 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
     gcan = None
     grb = None
     grbg = None
-    if not calibOnly:
+    if drawElAnyway or not calibOnly:
     ####################################################################################
-        canname = 'BetaGraph_{}_{}'.format(particle, tstag)
+        canname = 'BetaGraph_{}_{}{}'.format(particle, tstag, reltag)
         gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
         gcan.Divide(2,1)
         print('* betas, ebetas, ys, eys:')
@@ -354,7 +387,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         gcan.Update()
 
     
-    return momenta, grb, grbg, cans, projYs, projYcps, leg, legp
+    return momenta, grb, grbg, cans, pcans, projYs, projYcps, leg, legp
 
 ###################################
 ###################################
@@ -389,10 +422,12 @@ def main(argv):
         #'' # both trigger scintillators
         # NOW supported:
         # individual TS PMTs:
-        #'00',
-        '01','02','03',
+        '00',
+        '01',
+        '02',
+        '03',
         '10','11','12',
-        #'13',
+        '13',
     ]
     particles = [ 'e', # for calibration
                   'p', # protons
@@ -415,10 +450,10 @@ def main(argv):
         for TStag in TStags:
             region = 'TS' + TStag + particle
             print(f'Adding region {region}')
-            momenta, grbeta, grbg, cans, projYs, projYcps, leg, legp = singleFit(sys.argv, rfiles, TStag, particle, calibOnly, calibCs)
+            momenta, grbeta, grbg, cans, pcans, projYs, projYcps, leg, legp = singleFit(sys.argv, rfiles, TStag, particle, calibOnly, calibCs)
             if not calibOnly:
                 GrsBeta[region] = grbeta
-            stuff.append([grbeta, grbg, cans, leg, legp])
+            stuff.append([grbeta, grbg, cans, pcans, leg, legp])
             projs[region] = [projYs, projYcps]
             Cans.append(cans)
 
@@ -481,7 +516,7 @@ def main(argv):
                     cgrs[region] = MakeGraphNoErrs(xs[region], ys[region], col, 20 + (ireg % 4))
 
         if calibOnly:
-            canname = 'WCTEJuly2023_CalibTS'
+            canname = 'WCTEJuly2023_CalibTS_eRelCalib{}'.format(len(cgrs))
             ccan = ROOT.TCanvas(canname, canname, 200, 200, 1100, 800)
             cans.append(ccan)
             ccan.cd()
@@ -510,7 +545,8 @@ def main(argv):
     ##########################
     step = 0.01
     debug = 1
-    pars, parerrs = doTheFit(GrsBeta, step, debug)
+    refmomentum = 1000
+    pars, parerrs = doTheFit(GrsBeta, len(calibCs[refmomentum]), step, debug)
 
     # TODO: analyze the fitter parameters
     

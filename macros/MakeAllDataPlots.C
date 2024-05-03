@@ -529,8 +529,13 @@ void MakeAllDataPlots::InitTrigScintHistos(TString dirname, TString selTag, TStr
 							   _ntofbins2d, _tofmin, tofmax, nbs, axisSF*_trigScintChargeMin, axisSF*_trigScintChargeMax);
     _histos2d["hRef_TOF_TrigScint" + key + "A" + selTag] = new TH2D("hRef_TOF_TrigScint" + key + "A" + selTag, "; " + selTit + "  t_{1}-t_{0} [ns]; " + selTit + " Trig. scint. " + key + " Amplitude",
 								    _ntofbins2d, _tofmin, tofmax, nbs, axisSF*_trigScintAmplitudeMin, axisSF*_trigScintAmplitudeMax);
-}
+  } // for
 
+
+  //  0-1
+  _histos2d["hRef_TrigScint0C_TrigScint1C" + selTag] = new TH2D("hRef_TrigScint0C_TrigScint1C" + selTag, "; " + selTit + " Trig. scint. 0 Charge; " + selTit + " Trig. scint. 1 Charge", nbs, 4*_trigScintChargeMin, 4*_trigScintChargeMax, nbs, 4*_trigScintChargeMin, 4*_trigScintChargeMax);
+
+  
   // L-R
   _histos2d["hRef_TrigScint0RC_TrigScint0LC" + selTag] = new TH2D("hRef_TrigScint0RC_TrigScint0LC" + selTag, "; " + selTit + " Trig. scint. 0 R Charge; " + selTit + " Trig. scint. 0 L Charge", nbs, 2*_trigScintChargeMin, 2*_trigScintChargeMax, nbs, 2*_trigScintChargeMin, 2*_trigScintChargeMax);
   
@@ -1246,7 +1251,9 @@ void MakeAllDataPlots::FillTrigScintHistos(TString selTag)
     _histos2d["hRef_TOF_TrigScint" + key + "C" + selTag]->Fill(_tof, _Charges[Key]);
     _histos2d["hRef_TOF_TrigScint" + key + "A" + selTag]->Fill(_tof, _Amplitudes[Key]);
   }
-  
+
+  _histos2d["hRef_TrigScint0C_TrigScint1C" + selTag]->Fill(_trigScint0C, _trigScint1C);
+
     _histos2d["hRef_pbC_TrigScintC" + selTag]->Fill(_pbc, _trigScintC);
     _histos2d["hRef_pbA_TrigScintC" + selTag]->Fill(_pba, _trigScintC);
     _histos2d["hRef_pbC_TrigScintA" + selTag]->Fill(_pbc, _trigScintA);

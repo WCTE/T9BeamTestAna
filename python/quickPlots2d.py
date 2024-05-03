@@ -116,6 +116,13 @@ def main(argv):
     hs = []
     txts = []
     hnames2d = [
+
+
+                 'hRef_TrigScint0C_TrigScint1C',
+                 'hRef_TrigScint0C_TrigScint1C_p-like',
+        'hRef_TrigScint0C_TrigScint1C_D-like',
+
+        
                  'hRef_pbC_act23C',
         #'hRef_TOFPbA
                  'hRef_TOFPbC',
@@ -142,6 +149,7 @@ def main(argv):
                  'hRef_pbC_TrigScintC',
                  #'hRef_pbC_TrigScintA',
                  'hRef_pbA_TrigScintC',
+        
                  #'hRef_pbA_TrigScintA',
                  
                  'hRef_TrigScint0RC_TrigScint0LC',
@@ -188,6 +196,7 @@ def main(argv):
     
     basedir = 'TrigScint/'
     pbasedir = 'TrigScint_p/'
+    Dbasedir = 'TrigScint_D/'
     chbasedir = 'Charged/'
 
     meanXmap = OrderedDict()
@@ -196,6 +205,8 @@ def main(argv):
         rdir = basedir
         if 'p-like' in hname:
             rdir = pbasedir
+        if 'D-like' in hname:
+            rdir = Dbasedir
         elif 'nonZero' in hname or 'Xmap' in hname:
             rdir = chbasedir
         elif 'hRef_TOFPb' in hname or 'hRef_ACT' in hname or 'hRef_pbC_act' in hname:

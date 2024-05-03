@@ -1,0 +1,154 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% JK 3.5.2024
+
+\documentclass{article}[a4paper,12pt]
+
+% \usepackage[utf8]{inputenc}
+% \usepackage[latin2,utf8]{inputenc}
+
+\textwidth 155mm
+\textheight 23cm
+\topmargin -0.5cm
+\evensidemargin 0.225cm
+\oddsidemargin 0.225cm 
+
+\newcommand{\ttof}{\ensuremath{t_\mathrm{TOF}}}
+\usepackage{graphicx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ionization losses}
+
+This documents descripts the attempt to fit the ionization losses of protons and deuterons in trigger scintillators 0 and 0.
+Electron charge distributions means are used for an additional relative calibration of the 8 PMTs on both T0 and T1.
+
+Assuming TS material of polystyrene of thickness 0.6~cm.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[p]
+    \centering
+  \setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{ccc}
+    \includegraphics[width=0.33\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib8.pdf} &
+    \includegraphics[width=0.33\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib6.pdf} &
+    \includegraphics[width=0.33\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib5.pdf} \\
+ \end{tabular}
+  \caption{Derived using the mean charge of the electron peak, the relative calibration constants are plotted as function of the positive beam momenta for different number of PMTs included in the fit.}
+  \label{fig_p_Landau}
+\end{figure}
+
+
+\clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Charge distributions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}[!h]
+    \centering
+  \setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{cccc}
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS00.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS01.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS02.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS03.pdf} \\
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS10.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS11.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS12.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS13.pdf} \\
+  \end{tabular}
+  \caption{Profiles of the protons charge distribution in individual PMTs of the T0 and T1 scintillators.}
+  \label{fig_p_Landau}
+\end{figure}
+
+%\clearpage
+\begin{figure}[!h]
+  \setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{cccc}
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS00.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS01.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS02.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS03.pdf} \\
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS10.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS11.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS12.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS13.pdf} \\
+  \end{tabular}
+  \caption{Profiles of the deuterons charge distribution in individual PMTs of the T0 and T1 scintillators.}
+  \label{fig_D_Landau}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\clearpage
+
+\begin{figure}[!h]
+    \centering
+  \setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{cccc}
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS00.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS01.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS02.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS03.pdf} \\
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS10.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS11.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS12.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS13.pdf} \\
+  \end{tabular}
+  \caption{Protons charge profiles versus $t_\mathrm{TOF}$ for various momenta.}
+  \label{fig_p}
+\end{figure}
+
+%\clearpage
+\begin{figure}[!h]
+  \centering
+    \setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{cccc}
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS00.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS01.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS02.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS03.pdf} \\
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS10.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS11.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS12.pdf} & 
+\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS13.pdf} \\
+  \end{tabular}
+  \caption{Deuterons charge profiles versus $t_\mathrm{TOF}$ for various momenta.}
+  \label{fig_D}
+\end{figure}
+
+
+\clearpage{}
+\subsection{Fit results}
+
+\begin{table}[!h]
+  \input{fitpars_eRelCalib8.tex}
+  \caption{Fit results using all 8 PMTs in the fit, using both protons and deuterons.}
+  \label{tab_fitres_8}
+\end{table}
+  
+\begin{table}[!h]
+\input{fitpars_eRelCalib6.tex}
+  \caption{Fit results using 6 PMTs in the fit, using both protons and deuterons.}
+  \label{tab_fitres_6}
+\end{table}
+
+\begin{table}[!h]
+\input{fitpars_eRelCalib5.tex}
+  \caption{Fit results using 5 PMTs in the fit, using both protons and deuterons.}
+  \label{tab_fitres_5}
+\end{table}
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%

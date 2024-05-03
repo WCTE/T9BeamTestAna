@@ -224,7 +224,7 @@ def mySimpleFcn(npars, x):
 
 
 ##################################################################
-def minimizeChi2(npars, step = 0.01, debug = 0):
+def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
 
     # https://root-forum.cern.ch/t/numerical-minimization-with-root-math-functor/13286#p58684
 
@@ -334,10 +334,15 @@ def minimizeChi2(npars, step = 0.01, debug = 0):
     print('Fit status {}, chi2/ndf={:1.3f}/{:}'.format(status, chi2, ndf))
     if ndf > 0:
         print('              chi2/ndf={:1.3f}'.format(chi2/ndf))
+    outtex = open('tex/fitpars_eRelCalib{}.tex'.format(nCalibCs), 'w')
+    outtex.write(r'\begin{tabular}{l|ll}' + '\n')
+    outtex.write(r'Parameter & value & uncertainty \\ \hline' + '\n')
     for ipar in range(0, result.NPar()):
         pname = result.ParName(ipar)
         print('Parameter {:} {:1.3f} +/- {:1.3f}'.format(pname, bestPars[ipar], parErrs[ipar]))
-    
+        outtex.write(' {:} & {:1.3f} & {:1.3f} \\\\ \n'.format(pname, bestPars[ipar], parErrs[ipar]))
+    outtex.write(r'\end{tabular}' + '\n')
+    outtex.close()
     pars = []
     parerrs = []
     ## get the minimized parameter:
@@ -361,7 +366,7 @@ def minimizeChi2(npars, step = 0.01, debug = 0):
 
 ##################################################################
 # support both 1D and 2D versions on demand
-def doTheFit(grs, step = 0.001, debug = 0):
+def doTheFit(grs, nCalibCs, step = 0.001, debug = 0):
 
     gInitPars = {}
     #del gPars[:]
@@ -373,7 +378,7 @@ def doTheFit(grs, step = 0.001, debug = 0):
         print(f'  Region {region}')
         for dpoint in gDataPoints[region]:
             print('    beta={} y={} ey={}'.format(dpoint.x, dpoint.y, dpoint.ey))
-    pars, parerrs = minimizeChi2(npars, step, debug)
+    pars, parerrs = minimizeChi2(npars, nCalibCs, step, debug)
     return pars, parerrs
 
 ##################################################################
