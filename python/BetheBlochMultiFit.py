@@ -81,7 +81,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
     #scint1 = 4.
     #scint2 = 22.
     scint1 = 0.
-    scint2 = 2500.
+    scint2 = 500.
     t1 = 13.
     t2 = 35.
     if particle == 'D':
@@ -333,9 +333,14 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
     grbg = None
     if drawElAnyway or not calibOnly:
     ####################################################################################
+        drawBetaOnly = True
+        cw = 600
+        if not drawBetaOnly:
+            cw = 1200
         canname = 'BetaGraph_{}_{}{}'.format(particle, tstag, reltag)
-        gcan = ROOT.TCanvas(canname, canname, 100, 100, 1200, 600)
-        gcan.Divide(2,1)
+        gcan = ROOT.TCanvas(canname, canname, 100, 100, cw, 600)
+        if not drawBetaOnly:
+            gcan.Divide(2,1)
         print('* betas, ebetas, ys, eys:')
         print(betas, ebetas, ys, eys)
         grb = MakeGraph(betas, ebetas, ys, eys)
@@ -347,13 +352,14 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         htmpbg.SetStats(0)
         htmpbg.GetXaxis().SetMoreLogLabels()
 
-        gcan.cd(1)
-        htmpbg.Draw()
-        ROOT.gStyle.SetOptTitle(0)
-        #ROOT.gPad.SetLogx()
-        ROOT.gPad.SetGridx(1)
-        ROOT.gPad.SetGridy(1)
-        grbg.Draw("P")
+        if not drawBetaOnly:
+            gcan.cd(1)
+            htmpbg.Draw()
+            ROOT.gStyle.SetOptTitle(0)
+            #ROOT.gPad.SetLogx()
+            ROOT.gPad.SetGridx(1)
+            ROOT.gPad.SetGridy(1)
+            grbg.Draw("P")
 
         hn = 'tmpb' + tstag + particle
         ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
@@ -361,7 +367,8 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         htmpb.SetStats(0)
         htmpb.GetXaxis().SetMoreLogLabels()
 
-        gcan.cd(2)
+        if not drawBetaOnly:
+            gcan.cd(2)
         htmpb.Draw()
         ROOT.gStyle.SetOptTitle(0)
         #ROOT.gPad.SetLogx()
@@ -373,7 +380,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         #fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
         #fun.SetParameters(2., 10., 0.5)
         fun = ROOT.TF1('fun', '[0]/x^2*(log([3]*x*x/[1]/(1-x*x)) - x^2) + [2]', 0.1, 1.)
-        fun.SetParameters(2, 700., 10.)
+        fun.SetParameters(10, 700., 10.)
         fun.SetParName(0, 'A')
         fun.SetParName(1, 'I')
         fun.SetParName(2, 'C')

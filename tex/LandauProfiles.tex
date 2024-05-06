@@ -32,6 +32,12 @@ Electron charge distributions means are used for an additional relative calibrat
 
 Assuming TS material of polystyrene of thickness 0.6~cm.
 
+Fit formula
+
+$$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} - \beta^2 \right) + C $$
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[p]
     \centering
@@ -126,8 +132,50 @@ Assuming TS material of polystyrene of thickness 0.6~cm.
 \end{figure}
 
 
+
+\clearpage
+\subsection{Individual fits}
+
+\clearpage
+\begin{figure}[!h]
+  \centering
+    \setlength{\tabcolsep}{-2pt}
+  \begin{tabular}{cccc}
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS00_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS01_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS02_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS03_eRelCalib8.pdf} \\
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS10_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS11_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS12_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS13_eRelCalib8.pdf} \\
+  \end{tabular}
+  \caption{Protons individual fits to charge profiles versus $\beta$.}
+  \label{fig_p_beta}
+\end{figure}
+
+
+\clearpage
+\begin{figure}[!h]
+  \centering
+    \setlength{\tabcolsep}{-2pt}
+  \begin{tabular}{cccc}
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS00_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS01_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS02_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS03_eRelCalib8.pdf} \\
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS10_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS11_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS12_eRelCalib8.pdf} & 
+\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS13_eRelCalib8.pdf} \\
+  \end{tabular}
+  \caption{Deuterons individual fits to charge profiles versus $\beta$.}
+  \label{fig_D_beta}
+\end{figure}
+
+
 \clearpage{}
-\subsection{Fit results}
+\subsection{Simultaneous fit results}
 
 \begin{table}[!h]
   \input{fitpars_eRelCalib8.tex}

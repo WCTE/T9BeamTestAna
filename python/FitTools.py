@@ -341,6 +341,10 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
         pname = result.ParName(ipar)
         print('Parameter {:} {:1.3f} +/- {:1.3f}'.format(pname, bestPars[ipar], parErrs[ipar]))
         outtex.write(' {:} & {:1.3f} & {:1.3f} \\\\ \n'.format(pname, bestPars[ipar], parErrs[ipar]))
+    if ndf > 0:
+        outtex.write(r' \hline' + '\n')
+        outtex.write(r' $\chi^2/\mathrm{ndf}$ & ' + '{:1.3f}/{:}'.format(chi2, ndf) + r' & \\' + '\n')
+        outtex.write(r' $\chi^2/\mathrm{ndf}$ & ' + '{:1.3f}'.format(chi2/ndf) + r' & \\' + '\n')
     outtex.write(r'\end{tabular}' + '\n')
     outtex.close()
     pars = []
