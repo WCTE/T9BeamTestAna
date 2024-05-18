@@ -5,9 +5,8 @@
 # jk
 # 20/09/2022
 # 14.7.2023
-# 5.3.2024
-
-#from __future__ import print_function
+#  5.3.2024
+# 15.5.2024
 
 import ROOT
 from math import sqrt, pow, log, exp
@@ -17,20 +16,28 @@ from collections import OrderedDict
 
 from labelTools import *
 
+MeV = 1.
+
 cans = []
 stuff = []
 lines = []
 
+def SetStyle(gr, mst, msz, mc):
+    gr.SetMarkerStyle(mst)
+    gr.SetMarkerSize(msz)
+    gr.SetMarkerColor(mc)
+    gr.SetLineColor(mc)
+
 ####################################################################################
 
 class cFitPeak:
-    def __init__(self, p, x0, sigma):
+    def __init__(self, p, x0, muerr, sigma, sigmaErr):
         self.p = p
         self.x0 = x0
+        self.muerr = muerr
         self.sigma = sigma
+        self.sigmaErr = sigmaErr
     
-
-
 ####################################################################################
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
@@ -54,8 +61,7 @@ def readInputFiles():
             rfiles.append(rfile)
     return rfiles
 
-
-
+####################################################################################
 def PrintUsage(argv):
     print('Usage:')
     print('{} filename_plots.root [-b]'.format(argv[0]))
@@ -63,8 +69,11 @@ def PrintUsage(argv):
     print('{} output_300n_plots.root -b'.format(argv[0]))
     return
 
-##########################################
+####################################################################################
+####################################################################################
+####################################################################################
 # https://www.tutorialspoint.com/python/python_command_line_arguments.htm
+
 def main(argv):
     #if len(sys.argv) > 1:
     #  foo = sys.argv[1]
@@ -117,16 +126,11 @@ def main(argv):
     print('*** Settings:')
     print('tag={:}, batch={:}'.format(gTag, gBatch))
 
-
+    ROOT.gStyle.SetPadLeftMargin(0.15)
+        
     #ROOT.gStyle.SetPalette(ROOT.kSolar)
     ROOT.gStyle.SetPalette(ROOT.kRainBow)
     #ROOT.gStyle.SetPalette(1)
-
-    
-    #filename = 'output_300n_plots.root'
-    #filename = argv[1]
-    #rfile = ROOT.TFile(filename, 'read')
-
 
     rfiles = readInputFiles()
     stuff.append(rfiles)
@@ -144,7 +148,6 @@ def main(argv):
         #'TrigScint_nonp/',
     ]
 
-
     canname = 'WCTEJuly2023_Quick2D_all_PbG'
     cw = 1100
     ch = 800
@@ -154,14 +157,13 @@ def main(argv):
     allleg = ROOT.TLegend(0.7, 0.6, 0.88, 0.88)
 
     canname = 'WCTEJuly2023_Quick2D_PbG_fits'
-    can = ROOT.TCanvas(canname, canname, 0, 0, 1200, 800)
+    can = ROOT.TCanvas(canname, canname, 200, 200, 1200, 800)
     can.Divide(4,3)
     cans.append(can)
-
     
-    ican = -1
     hs = []
     fitPeaks = {}
+    ican = -1    
     for pbasedir in pbasedirs:
         
         suff = '-like'
@@ -298,10 +300,12 @@ def main(argv):
                 stuff.append(fun)
 
                 x0 = fun.GetParameter(1)
+                muerr = fun.GetParError(1)
                 sigma = abs(fun.GetParameter(2))
-                print(f'MOMENTUM {momentum} PART {suff} FITTED MAIN PEAK MEAN {x0} RMS {sigma}')
-                fitPeaks[particle][momentum] = cFitPeak(momentum, x0, sigma)
+                sigmaErr = abs(fun.GetParError(2))
 
+                print(f'MOMENTUM {momentum} PART {suff} FITTED MAIN PEAK MEAN {x0} RMS {sigma}')
+                fitPeaks[particle][momentum] = cFitPeak(momentum, x0, muerr, sigma, sigmaErr)
                 
                 adjustStats(projX)
                 #ROOT.gPad.Update()
@@ -320,17 +324,87 @@ def main(argv):
 
         
     ##################################
-    #       plots all the canvas     #
+    #       plot all the canvas     #
     ##################################
 
     allcan.cd()
     allleg.Draw()
+
+    canname = 'PbGResolution'
+    cw = 1200
+    ch = 400
+    canreso = ROOT.TCanvas(canname, canname, 0, 0, cw, ch)
+    canreso.Divide(3,1)
+    cans.append(canreso)
+    grsReso = {}
+    grsResoRel = {}
+    grsE = {}
     
     for particle in fitPeaks:
+        grsReso[particle] = ROOT.TGraphErrors()
+        grsResoRel[particle] = ROOT.TGraphErrors()
+        grsE[particle] = ROOT.TGraphErrors()
+
+        ip = -1
+        momenta = []
         for momentum in fitPeaks[particle]:
+            momenta.append(momentum)
+            ip = ip+1
             fitPeak = fitPeaks[particle][momentum]
             print('  {' + '{}, {:.3f}, {:.3f}'.format(fitPeak.p, fitPeak.x0, fitPeak.sigma) + '}, ')
-    
+
+            # resolution of fitted charges
+            grsReso[particle].SetPoint(ip, momentum, fitPeak.sigma)
+            grsReso[particle].SetPointError(ip, 0., fitPeak.sigmaErr)
+            SetStyle(grsReso[particle], 20, 1, ROOT.kBlue)
+
+            # relative resolution, w.r.t. the nominal momentum
+            #grsResoRel[particle].SetPoint(ip, momentum, fitPeak.sigma / momentum)
+            #grsResoRel[particle].SetPointError(ip, 0., fitPeak.sigmaErr / momentum)
+            grsResoRel[particle].SetPoint(ip, momentum, fitPeak.sigma / fitPeak.x0)
+            grsResoRel[particle].SetPointError(ip, 0., fitPeak.sigmaErr / fitPeak.x0)
+            SetStyle(grsResoRel[particle], 20, 1, ROOT.kGreen+2)
+
+            # fitted charges -- linearity check as function as nominal momentum
+            grsE[particle].SetPoint(ip, momentum, fitPeak.x0)
+            grsE[particle].SetPointError(ip, 0., fitPeak.muerr)
+            SetStyle(grsE[particle], 20, 1, ROOT.kRed)
+            
+
+    opt = 'P'
+    helphs = {}
+    dp = 60.*MeV
+    p1, p2 = min(momenta)-dp, max(momenta)+dp
+    calibFits = {}
+    for particle in fitPeaks:
+
+        helphs[particle] = []
+
+        canreso.cd(1)
+        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];#sigma_{Charge} [N_{p.e.}]', 100, p1, p2, 100, 0, 25.))
+        helphs[particle][-1].SetStats(0)
+        helphs[particle][-1].Draw()
+        grsReso[particle].Draw(opt)
+        
+        canreso.cd(2)
+        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];#sigma_{Charge} / Charge [-]', 100, p1, p2, 100, 0., 0.129))
+        helphs[particle][-1].SetStats(0)
+        helphs[particle][-1].Draw()
+        grsResoRel[particle].Draw(opt)
+
+        canreso.cd(3)        
+        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];Fitted mean charge [N_{p.e.}]', 100, p1, p2, 100, 0., 400))
+        helphs[particle][-1].SetStats(0)
+        helphs[particle][-1].Draw()
+        grsE[particle].Draw(opt)
+        fun1 = ROOT.TF1('fun1_' + particle, '[0] + [1]*x', p1, p2)
+        fun1.SetLineStyle(2)
+        calibFits[particle] = fun1
+        grsE[particle].Fit(fun1)
+        opt = 'P'
+
+            
+            
     for can in cans:
         try:
             can.cd()

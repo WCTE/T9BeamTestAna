@@ -31,8 +31,9 @@ gDataPoints = {}
 ##################################################################
 def initGlobalPars():
     gInitPars['A'] = [1., 50.,]
-    gInitPars['I'] = [20., 100e3]
-    gInitPars['C'] = [-100., 100.]
+    gInitPars['I'] = [20., 10e3]
+    gInitPars['C'] = [-50., 50.]
+    gInitPars['dXScale'] = [1., 2.]
     gInitPars['Krel'] = [1., 10.]
     gInitPars['Conv'] = [1e-6, 1. ] #1.e-1]
     return
@@ -68,9 +69,9 @@ def prepareData(grs):
 
             
     # basic one region fit, parameters A, I, C
-    npars = 3
+    npars = 4
     if haveTS0 and haveTS1: # expect we fit split of TS0 and TS1 for one or more particle types
-        npars = 5
+        npars = 6
     print('  initialized {} graph regions'.format(len(grs)))
     return npars
 
@@ -90,22 +91,22 @@ def getFitVal(region, x, npars, pars, debug = 0):
     A = pars[0]
     I = pars[1]
     C = pars[2]
+    dXScale = pars[3]
 
     beta = 1.*x
     Krel = 1.
-    # dEdX congversion par
+    # dEdX conversion par, for the moment zero, will be nonzero when needed for regions TS1X
     Conv = 0.
     particle = ''
 
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
-    #if npars > 3 and (region == gTS1p or region == gTS1D or region == gTS1T):
-    if npars > 3 and 'TS1' in region:
-        # constant to equalize TS1 to TS0, or to shift them based on dE/dX beta dependence
-        Krel = pars[3]
-        # conversion from integrated charge in p.e. to MeV
-        #print('converting')
-        Conv = pars[4]
+    if npars > 4 and 'TS1' in region:
+        # constant to shift charges between TS1 to TS0
+        Krel = pars[4]
+        # conversion from integrated charge in p.e. to MeV using the fitted dE/dx
+        # print('converting')
+        Conv = pars[5]
         if 'p' == region[-1]:
             particle = 'p'
         elif 'D' == region[-1]:
@@ -122,7 +123,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
         if m > 0.:
             # evaluate the fitted lossed in TS0
             dE = Conv * getBaseFit(x, A, I, C, debug) / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
-            if dE > 0:
+            if dE > 0 and beta > 0. and beta < 1.:
                 gamma0 = 1./sqrt(1. - pow(beta,2))
                 E0 = m*gamma0
                 p0 = sqrt(E0*E0 - m*m)
@@ -141,7 +142,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
 
                 # theory losses:
                 theorydEdX , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
-                dX = 0.6 # cm!
+                dX = dXScale*0.6 # cm!
                 theorydE = theorydEdX*dX
                 #print(theorydE)
                 newE = E0 - theorydE
@@ -295,9 +296,10 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     fitter.Config().ParSettings(0).SetName("A")
     fitter.Config().ParSettings(1).SetName("I")
     fitter.Config().ParSettings(2).SetName("C")
-    if npars > 3:
-        fitter.Config().ParSettings(3).SetName("Krel")
-        fitter.Config().ParSettings(4).SetName("Conv")
+    fitter.Config().ParSettings(3).SetName("dxScale")
+    if npars > 4:
+        fitter.Config().ParSettings(4).SetName("Krel")
+        fitter.Config().ParSettings(5).SetName("Conv")
     
     fitter.FitFCN(globalChi2Functor) #, 0, dataSize, True)
 

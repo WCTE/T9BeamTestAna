@@ -91,7 +91,7 @@ for mrun in multiruns:
         merged = dirname + base[:-3] + f'{runs}{suff}'
         cmd = f'hadd {merged} ' + cmd
         print(cmd)
-        ###os.system(cmd)
+        os.system(cmd)
     #else:
     #    fname = base + f'{run}.root'
     #    cmd = f'cd  ; ln -s ../{fname} . ; cd -'

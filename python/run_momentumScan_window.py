@@ -46,7 +46,7 @@ for srun in runs:
     thisprefix = prefix  + ''
     #if len() > 1:
     #    thisprefix = thisprefix + '000'
-    #cmd = 'root -l -b -q "macros/runMakeAllDataPlots.C(\\"{}{}000{}.root\\", {}, false, {}, \\"{}\\", {})"'.format(dirname, thisprefix, srun, p, noAct1Cuts, selection, useWindowIntCharge)
+    cmd = 'root -l -b -q "macros/runMakeAllDataPlots.C(\\"{}{}000{}.root\\", {}, false, {}, \\"{}\\", {})"'.format(dirname, thisprefix, srun, p, noAct1Cuts, selection, useWindowIntCharge)
 
     print(cmd)
     if not isDryRun:

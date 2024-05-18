@@ -9,7 +9,7 @@ Information about run or getting a list of runs for momentum:
 ./python/getRunListForMomentum.py -260
 
 
-Electron vs MIP PbG custs fit and determination:
+Electron vs MIP PbG cuts fit and params determination:
 ./python/analyzePbG.py
 Cut linear parameters points put manually into and fitted over momentum by:
 ./python/PIDcutPointsFits.py

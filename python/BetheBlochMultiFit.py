@@ -70,6 +70,12 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         reltag = '_eRelCalib{}'.format(len(calibCs[refmomentum]))
 
     ROOT.gStyle.SetOptFit(111)
+    #ROOT.gStyle.SetStatW(0.8*ROOT.gStyle.GetStatW())
+    #ROOT.gStyle.SetStatH(0.8*ROOT.gStyle.GetStatH())
+    ROOT.gStyle.SetStatW(0.21)
+    ROOT.gStyle.SetStatH(0.16)
+    ROOT.gStyle.SetStatX(0.87)
+    ROOT.gStyle.SetStatY(0.87)
     ROOT.gStyle.SetPadLeftMargin(0.15)
     print('*** Settings:')
 
@@ -335,8 +341,9 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
     ####################################################################################
         drawBetaOnly = True
         cw = 600
+        dw = 50
         if not drawBetaOnly:
-            cw = 1200
+            cw = 2*cw + dw
         canname = 'BetaGraph_{}_{}{}'.format(particle, tstag, reltag)
         gcan = ROOT.TCanvas(canname, canname, 100, 100, cw, 600)
         if not drawBetaOnly:
@@ -360,6 +367,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
             ROOT.gPad.SetGridx(1)
             ROOT.gPad.SetGridy(1)
             grbg.Draw("P")
+            #adjustStats(grbg)
 
         hn = 'tmpb' + tstag + particle
         ht = hn + ';#beta;Mean trig. scint. charge [a.u.];'
@@ -375,6 +383,7 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         ROOT.gPad.SetGridx(1)
         ROOT.gPad.SetGridy(1)
         grb.Draw("P")
+        #adjustStats(grb)
         #fun = ROOT.TF1('fun', '[0]/x^2 + [1]', 0.1, 1.)
         #fun.SetParameters(0.1, 1.)
         #fun = ROOT.TF1('fun', '[0]/x^2*(log([1]*x/sqrt(1-x*x)) - x^2) + [2]', 0.1, 1.)
@@ -429,12 +438,12 @@ def main(argv):
         #'' # both trigger scintillators
         # NOW supported:
         # individual TS PMTs:
-        '00',
+        #'00',
         '01',
         '02',
-        '03',
+        #?'03',
         '10','11','12',
-        '13',
+        #'13',
     ]
     particles = [ 'e', # for calibration
                   'p', # protons
