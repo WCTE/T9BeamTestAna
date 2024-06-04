@@ -13,10 +13,24 @@ from tofUtil import ms
 from Losses import *
 #from Brems import *
 
+# Define color codes
+RED = "\033[31m"
+LRED = "\033[91m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+CYAN = "\033[36m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
+LBLUE = "\033[94m"
+   
+gFitMeanLosses = True
 
 kBadP0 = -1
 kEpsilon = 1.e-5
 gme = 0.511e6
+gScintiThicknes = 0.6 # cm!
+gj = 0.200 # Landau most probable losses constant
 
 #gPars = []
 gInitPars = {}
@@ -28,12 +42,30 @@ gDataPoints = {}
 
 # https://root.cern/manual/python/#alternative-for-tpymultigenfunction-and-tpymultigradfunction
 
+
+##################################################################
+def printMatrix(corr, npars):
+  for i in range(0,npars):
+    for j in range(0,npars):
+        val = corr[i][j]
+        if i == j:
+            print(f'{BOLD}{GREEN}', end='')
+        else:
+            if val > 0:
+                print(f'{LRED}', end='')
+            else:
+                print(f'{CYAN}', end='')
+        print(f' {val:+1.5f}', end='')
+        print(f'{RESET}', end='')
+    print('')
+  return
+
 ##################################################################
 def initGlobalPars():
     gInitPars['A'] = [1., 50.,]
     gInitPars['I'] = [20., 10e3]
     gInitPars['C'] = [-50., 50.]
-    gInitPars['dXScale'] = [1., 2.]
+    #gInitPars['dXScale'] = [1., 2.]
     gInitPars['Krel'] = [1., 10.]
     gInitPars['Conv'] = [1e-6, 1. ] #1.e-1]
     return
@@ -69,20 +101,32 @@ def prepareData(grs):
 
             
     # basic one region fit, parameters A, I, C
-    npars = 4
+    npars = 3
     if haveTS0 and haveTS1: # expect we fit split of TS0 and TS1 for one or more particle types
-        npars = 6
+        npars = 5
     print('  initialized {} graph regions'.format(len(grs)))
     return npars
 
 ##################################################################
-def getBaseFit(beta, A, I, C, debug = 0):
+def getBaseMeanLossesFitVal(beta, A, I, C, debug = 0):
     fval = 0.
     if beta > 0. and beta < 1.:
         # Bethe-Bloch ansatz:
         fval = A / pow(beta,2) * ( log(2*gme/I*beta*beta/(1-pow(beta,2))) - pow(beta,2) ) + C
     else:
-        print('ERROR in getBaseFit: beta out of physically allowed range!')
+        print('ERROR in getBaseMeanLossesFitVal: beta out of physically allowed range!')
+    #if debug: print(f'fval={fval}')
+    return fval
+
+##################################################################
+def getBasePeakLossesFitVal(beta, A, I, C, dX, debug = 0):
+    fval = 0.
+    if beta > 0. and beta < 1.:
+        # Bethe-Bloch ansatz:
+        xi = A / 2. / pow(beta,2)
+        fval = xi  * ( log(2*gme/I*beta*beta/(1-pow(beta,2))) + log(xi/I) + gj - pow(beta,2) ) + C
+    else:
+        print('ERROR in getBasePeakLossesFitVal: beta out of physically allowed range!')
     #if debug: print(f'fval={fval}')
     return fval
 
@@ -91,7 +135,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
     A = pars[0]
     I = pars[1]
     C = pars[2]
-    dXScale = pars[3]
+    dXScale = 1. # cannot be a fit parametr as is completely correlated to Conv! # was: = pars[3]
 
     beta = 1.*x
     Krel = 1.
@@ -101,12 +145,12 @@ def getFitVal(region, x, npars, pars, debug = 0):
 
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
-    if npars > 4 and 'TS1' in region:
+    if npars > 3 and 'TS1' in region:
         # constant to shift charges between TS1 to TS0
-        Krel = pars[4]
+        Krel = pars[3]
         # conversion from integrated charge in p.e. to MeV using the fitted dE/dx
         # print('converting')
-        Conv = pars[5]
+        Conv = pars[4]
         if 'p' == region[-1]:
             particle = 'p'
         elif 'D' == region[-1]:
@@ -121,13 +165,15 @@ def getFitVal(region, x, npars, pars, debug = 0):
             print('Failed getting particle mass and correct the beta!')
         if debug: print(f'  m={m:1.1f} A={A:1.1f} I={I:1.1f} Krel={Krel:1.3f} C={C:1.4f} Conv={Conv:1.4f}')
         if m > 0.:
+            dX = dXScale*gScintiThicknes
             # evaluate the fitted lossed in TS0
-            dE = Conv * getBaseFit(x, A, I, C, debug) / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
+            dE = dX * Conv * getBaseMeanLossesFitVal(beta, A, I, C, debug) # ??? was NONSENSE???: / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
             if dE > 0 and beta > 0. and beta < 1.:
                 gamma0 = 1./sqrt(1. - pow(beta,2))
                 E0 = m*gamma0
                 p0 = sqrt(E0*E0 - m*m)
                 gamma1 = (E0 - dE) / m
+                fitFracEloss = dE / E0
                 
                 useHigherCorrs = False
                 material = gMaterials['Polystyrene']
@@ -141,28 +187,39 @@ def getFitVal(region, x, npars, pars, debug = 0):
                     fullName = 'Tritium'
 
                 # theory losses:
-                theorydEdX , halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
-                dX = dXScale*0.6 # cm!
-                theorydE = theorydEdX*dX
+                theorydEdX, halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
+                
+                theorydE = theorydEdX*gScintiThicknes*dXScale
                 #print(theorydE)
                 newE = E0 - theorydE
-                newp = sqrt(newE*newE - m*m)
-                newT = newE - m
-                fracEloss = theorydE / E0
-                newbeta = newp / newE
+                #newp = sqrt(newE*newE - m*m)
+                #newT = newE - m
+                theoryFracEloss = theorydE / E0
+                #newbeta = newp / newE
                 newgamma = newE / m
+                newbeta = sqrt( 1. - 1./pow(newgamma,2))
                 
-                if debug: print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV; using dX={dX:1.1f}cm theorydE={theorydE:1.1f} MeV, actual dE={dE:1.1f} MeV, dE/theorydE ratio: {dE/theorydE:1.3f}; beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
+                if debug:
+                    print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV; using dX={dX:1.2f}cm theorydE={theorydE:1.2f} MeV, actual dE={dE:1.2f} MeV, dE/theorydE ratio: {dE/theorydE:1.3f}; beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
                 if gamma1 > 1.:
+                    # HERE WE CHANGE THE BETA to adjust for energy losses after passing through T0!
+                    # we use the new energy after fitted losses, which then define the new gamma factor at T1, therefore called gamma1
                     beta = sqrt( 1. - 1./pow(gamma1,2))
                 else:
                     print('ERROR, negative gamma0!')
-                if debug: print(f'  beta1={beta:1.4f} theory dbeta = {newbeta - beta:1.4f}, actual dbeta = {x-beta:1.4f}')
+                if debug:
+                    print(f'  beta1={beta:1.4f} theory dbeta = {x - newbeta:1.4f}, actual dbeta = {x-beta:1.4f}')
+                    print(f'  fracEloss theory: {theoryFracEloss:1.5f}, actually fitted: {fitFracEloss:1.5f}')
             else:
                 if debug:
                     print('ERROR, negative energy correction!')
-        
-    fval = Krel*getBaseFit(beta, A, I, C, debug)
+
+    # EVALUATE THE ENERGY LOSSES, possibly with modified beta
+    fval = 0.
+    if gFitMeanLosses:
+        fval = Krel*getBaseMeanLossesFitVal(beta, A, I, C, debug)
+    else:
+        fval = Krel*getBasePeakLossesFitVal(beta, A, I, C, dX, debug)
     return fval
 
 ##################################################################
@@ -296,10 +353,10 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     fitter.Config().ParSettings(0).SetName("A")
     fitter.Config().ParSettings(1).SetName("I")
     fitter.Config().ParSettings(2).SetName("C")
-    fitter.Config().ParSettings(3).SetName("dxScale")
-    if npars > 4:
-        fitter.Config().ParSettings(4).SetName("Krel")
-        fitter.Config().ParSettings(5).SetName("Conv")
+    #fitter.Config().ParSettings(3).SetName("dxScale")
+    if npars > 3:
+        fitter.Config().ParSettings(3).SetName("Krel")
+        fitter.Config().ParSettings(4).SetName("Conv")
     
     fitter.FitFCN(globalChi2Functor) #, 0, dataSize, True)
 
@@ -321,8 +378,19 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
 
  
     result = fitter.Result()
-    result.Print(ROOT.std.cout)
     bestPars = result.Parameters()
+    npars = len(bestPars)
+    corr = ROOT.TMatrix(npars,npars)
+    cov = ROOT.TMatrix(npars,npars)
+    # https://root.cern/doc/v606/classROOT_1_1Fit_1_1FitResult.html
+    result.GetCorrelationMatrix(corr)
+    result.GetCovarianceMatrix(cov)
+    result.Print(ROOT.std.cout)
+    print('--- Correlation matrix:')
+    printMatrix(corr, npars)
+    print('--- Covariance matrix:')
+    printMatrix(cov, npars)
+            
     parErrs = result.Errors()
     # https://root.cern/doc/v610/classROOT_1_1Fit_1_1FitResult.html
     print('*** FIT RESULTS ***')

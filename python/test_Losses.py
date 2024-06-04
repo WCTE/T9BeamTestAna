@@ -15,10 +15,10 @@ print('***************************************************')
 
 
 myMat = 'Polystyrene'
-dX = 1. # cm
+dX = 0.6 # cm
 
-myMat = 'Al'
-dX = 1.e-2 # cm
+#myMat = 'Al'
+#dX = 1.e-2 # cm
 
 
 pairs = [ #['Alpha', 'Si'],

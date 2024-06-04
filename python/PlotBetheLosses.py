@@ -17,7 +17,7 @@ print('***************************************************')
 ROOT.gStyle.SetPadLeftMargin(0.2)
 
 # material: dX in cm
-myMat = {'Polystyrene' : 1.,
+myMat = {'Polystyrene' : 0.6,
           'Al' : 1.e-2
          }
 

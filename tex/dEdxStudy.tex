@@ -5,6 +5,7 @@
 
 % \usepackage[utf8]{inputenc}
 % \usepackage[latin2,utf8]{inputenc}
+\usepackage{hyperref}
 
 \textwidth 155mm
 \textheight 23cm
@@ -19,7 +20,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
 \begin{document}
+\newcommand\dedx{\ensuremath\mathrm{d}E/\mathrm{d}x}
 
 
 \tableofcontents
@@ -27,37 +30,69 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Ionization losses}
 
-This documents descripts the attempt to fit the ionization losses of protons and deuterons in trigger scintillators 0 and 0.
-Electron charge distributions means are used for an additional relative calibration of the 8 PMTs on both T0 and T1.
+This documents describes the possibility to fit the ionization losses of protons and deuterons in trigger scintillators T0 and T1 using the test beam data of 2023 from CERN's T9 beam line test measurements for the WCTE experiment.
 
-Assuming TS material of polystyrene of thickness 0.6~cm.
+We analyze runs 403, 396, 394, 393, 392, 398, 399, 402, 449, 436 and 435 corresponding to positively charged particle setups with momenta ranging from 1200~MeV$/$c down to 500~MeV$/c$.
 
-Fit formula
+Assuming TS material of polystyrene of thickness 0.6~cm, theoretical losses are...
 
-$$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} - \beta^2 \right) + C $$
+The general fit formula stemming from the Bethe-Bloch ansatz without relativistic corrections is
+$$ f(\beta|A,I,C) = \frac{A}{\beta^2} \left( \log \frac{2 m_e c^2 \beta^2}{I(1-\beta^2)} - \beta^2 \right) + C \,.$$
 
 
+We assume T0 and T1 deposited charge (in the analysis framework, using the \texttt{WindowIntPE} variable) reflects the event-by-event $\dedx$.
+Issues with this assumption are the following:
+\begin{itemize}
+  \item The distributions in individual PMTs do not have the same shape, some have tails towards larger charges as one would expect from the Landau profile, but some distributions have tails to smaller charges.
+  \item We know that the circular scintillator had to be manually polished and the surface non-uniformity in reflectivity and transparency is of a question.
+  \item Non-centered beam and asymmetric beam profile will also affect the observed charge profile.
+\end{itemize}
+
+Events were selected to contain exactly one peak in all waveforms in all trigger scintillator PMTs.
+Normalized profiles of the charge distributions are show in Figure~\ref{fig_p_Landau} for protons and in Figure~\ref{fig_D_Landau} for deuterons.
+The charge versus the measured time-of-flight across the distance between T0 and T1 of $3.49\,$m is shown in Figure~\ref{fig_tof_p} for protons and in Figure~\ref{fig_tof_D} for deuterons, where $t_\mathrm{TOF}$ is computed from the average times in T0 and T1 using all 4 PMTs in each trigger scintillator.
+
+We extract the mean of the charge distribution as the Bethe-Bloch formula predicts the mean ionization losses. We neglect other mechanisms of energy losses of protons and deuterons.
+
+We start with $\beta$ based on the nominal beam momentum to evaluate Bethe-Bloch ansatz in T0 over runs with different $\beta$’s.
+Electrons charge distributions means across the runs are used for an additional relative calibration of the 8 PMTs on both T0 and T1, see Fig.~\ref{fig_el_relative} for the graph of the relative calibration constants across the momenta.
+
+The simultaneous fit parameters are as follows:
+\begin{itemize}
+  \item $A$ -- Bethe-Bloch formula constant which also includes the density of the material.
+  \item $I$ -- them mean ionization energy
+  \item $C$ -- an additive constant is not in the physics formula but was introduced to possibly account for artifacts or miscallibration.
+  \item $K_\mathrm{rel}$: 	relative shift of mean charge in T1 w.r.t. T0; expected to be $> 1$.
+  \item Conv: a conversion constant, to translate from the observed charge in $N_\mathrm{p.e.}$ units (and after the electrons-based relative calibration) in T0 to the MeV level. This is needed in order to compute the average energy loss in T0 and average change in $\beta$ after passing through T0 in order to evaluate Bethe-Bloch ansatz in T1 at the smaller average $\beta$.
+\end{itemize}
+
+The multi-fit has been performed in following fit scenarios
+\begin{itemize}
+  \item[(a)] using all 8 PMTs;
+  \item[(b)] excluding PMTs T00 and T13 with a problematic charge deposit shape;
+  \item[(c)] excluding PMTs T00, T13 and T02 with a problematic charge deposit shape.
+\end{itemize}
+The results are compare in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[p]
     \centering
-  \setlength{\tabcolsep}{-4pt}
-  \begin{tabular}{ccc}
-    \includegraphics[width=0.33\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib8.pdf} &
-    \includegraphics[width=0.33\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib6.pdf} &
-    \includegraphics[width=0.33\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib5.pdf} \\
+  %\setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{c}
+    \includegraphics[width=0.53\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib8.pdf} \\
+    \includegraphics[width=0.53\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib6.pdf} \\
+    \includegraphics[width=0.53\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib5.pdf} \\
  \end{tabular}
-  \caption{Derived using the mean charge of the electron peak, the relative calibration constants are plotted as function of the positive beam momenta for different number of PMTs included in the fit.}
-  \label{fig_p_Landau}
+  \caption{Derived using the mean charge of the electron peak, the relative calibration constants are plotted as function of the positive beam momenta for different number of PMTs included in the fit, corresponding to fit scenarios (a)--(c), see text.}
+  \label{fig_el_relative}
 \end{figure}
 
-
-\clearpage
+%\clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Charge distributions}
+%\subsection{Charge distributions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{figure}[!h]
+\begin{figure}[p]
     \centering
   \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cccc}
@@ -70,12 +105,12 @@ $$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} -
 \includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS12.pdf} & 
 \includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS13.pdf} \\
   \end{tabular}
-  \caption{Profiles of the protons charge distribution in individual PMTs of the T0 and T1 scintillators.}
+  \caption{Normalized profiles of the protons charge distribution in individual PMTs of the T0 and T1 scintillators.}
   \label{fig_p_Landau}
 \end{figure}
 
 %\clearpage
-\begin{figure}[!h]
+\begin{figure}[p]
   \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cccc}
 \includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS00.pdf} & 
@@ -87,7 +122,7 @@ $$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} -
 \includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS12.pdf} & 
 \includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS13.pdf} \\
   \end{tabular}
-  \caption{Profiles of the deuterons charge distribution in individual PMTs of the T0 and T1 scintillators.}
+  \caption{Normalized profiles of the deuterons charge distribution in individual PMTs of the T0 and T1 scintillators.}
   \label{fig_D_Landau}
 \end{figure}
 
@@ -95,8 +130,7 @@ $$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} -
 
 
 \clearpage
-
-\begin{figure}[!h]
+\begin{figure}[p]
     \centering
   \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cccc}
@@ -109,12 +143,12 @@ $$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} -
 \includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS12.pdf} & 
 \includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS13.pdf} \\
   \end{tabular}
-  \caption{Protons charge profiles versus $t_\mathrm{TOF}$ for various momenta.}
-  \label{fig_p}
+  \caption{Protons deposited charge in individual trigger scintillators PMTs versus $t_\mathrm{TOF}$ for various momenta.}
+  \label{fig_tof_p}
 \end{figure}
 
 %\clearpage
-\begin{figure}[!h]
+\begin{figure}[p]
   \centering
     \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cccc}
@@ -127,16 +161,16 @@ $$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} -
 \includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS12.pdf} & 
 \includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS13.pdf} \\
   \end{tabular}
-  \caption{Deuterons charge profiles versus $t_\mathrm{TOF}$ for various momenta.}
-  \label{fig_D}
+  \caption{Deuterons deposited charge in individual trigger scintillators PMTs versus $t_\mathrm{TOF}$ for various momenta.}
+  \label{fig_tof_D}
 \end{figure}
 
 
 
-\clearpage
+%\clearpage
 \subsection{Individual fits}
+%\clearpage
 
-\clearpage
 \begin{figure}[!h]
   \centering
     \setlength{\tabcolsep}{-2pt}
@@ -154,8 +188,7 @@ $$ f(\beta|A,B,C) = \frac{A}{\beta^2} \left( \log \frac{B\beta^2}{{1-\beta^2}} -
   \label{fig_p_beta}
 \end{figure}
 
-
-\clearpage
+%\clearpage
 \begin{figure}[!h]
   \centering
     \setlength{\tabcolsep}{-2pt}
