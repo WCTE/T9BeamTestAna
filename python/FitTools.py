@@ -61,6 +61,31 @@ def printMatrix(corr, npars):
   return
 
 ##################################################################
+def printMatrixToFile(outfile, corr, npars, parNames):
+  ll = ''
+  for i in range(0,npars):
+    ll = ll + 'l'
+  outfile.write('\nCorrelation matrix:\n\n' + r'\begin{tabular}{l|' + ll + '} ' + '\n')
+  outfile.write(' & ')
+  for pn in parNames:
+    outfile.write(pn)
+    if pn != parNames[-1]:
+      outfile.write(' & ')
+  outfile.write(r' \\ \hline' + '\n')
+    
+  for i in range(0,npars):
+    outfile.write(f' {parNames[i]} & ')
+    for j in range(0,npars):
+        val = corr[i][j]
+        outfile.write(f'${val:+1.4f}$')
+        if j < npars-1:
+          outfile.write(' & ')
+    outfile.write(r' \\ ' + '\n')
+  outfile.write(r'\end{tabular}' + '\n')
+  return
+
+
+##################################################################
 def initGlobalPars():
     gInitPars['A'] = [1., 50.,]
     gInitPars['I'] = [20., 10e3]
@@ -305,7 +330,9 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     pars = []
     # ipar in range(0,npars):
     ipar = -1
+    parNames = []
     for parName,parLimits in gInitPars.items():
+        parNames.append(parName)
         ipar = ipar + 1
         if ipar >= npars:
             break
@@ -416,6 +443,8 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
         outtex.write(r' $\chi^2/\mathrm{ndf}$ & ' + '{:1.3f}/{:}'.format(chi2, ndf) + r' & \\' + '\n')
         outtex.write(r' $\chi^2/\mathrm{ndf}$ & ' + '{:1.3f}'.format(chi2/ndf) + r' & \\' + '\n')
     outtex.write(r'\end{tabular}' + '\n')
+    printMatrixToFile(outtex, corr, npars, parNames)
+    
     outtex.close()
     pars = []
     parerrs = []

@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-% JK 3.5.2024
+% JK 3.5.2024, 4.6.2024
 
 \documentclass{article}[a4paper,12pt]
 
@@ -28,13 +28,27 @@
 \tableofcontents
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Ionization losses}
+\section{Fit to Ionization Losses}
 
-This documents describes the possibility to fit the ionization losses of protons and deuterons in trigger scintillators T0 and T1 using the test beam data of 2023 from CERN's T9 beam line test measurements for the WCTE experiment.
+This section describes the possibility to fit the ionization losses of protons and deuterons in trigger scintillators T0 and T1 using the test beam data of 2023 from CERN's T9 beam line test measurements in the East Hall for the WCTE experiment.
+
+\subsection{The method}
 
 We analyze runs 403, 396, 394, 393, 392, 398, 399, 402, 449, 436 and 435 corresponding to positively charged particle setups with momenta ranging from 1200~MeV$/$c down to 500~MeV$/c$.
 
-Assuming TS material of polystyrene of thickness 0.6~cm, theoretical losses are...
+Assuming TS material of polystyrene of thickness 0.6~cm, theoretical losses for different particle species are plotted in Figure~\ref{fig_dEdx_theory}.
+For example, for $p=540\,$MeV$/c$ the proton and deuteron expected ionization energy losses are 3.48~MeV and 9.66~MeV, respectively. Losses in 0.01cm of Aluminum, which is the beam window at the end of the T9 beam pipe, are negligible (0.3~MeV for deuterons at the same reference momentum).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[!h]
+    \centering
+  %\setlength{\tabcolsep}{-4pt}
+    \includegraphics[width=0.75\textwidth]{TheoryBethe_Polystyrene.pdf}
+  \caption{Theoretical ionization energy losses (top left) for for 0.6~cm of polystyrene for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
+  \label{fig_dEdx_theory}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 The general fit formula stemming from the Bethe-Bloch ansatz without relativistic corrections is
 $$ f(\beta|A,I,C) = \frac{A}{\beta^2} \left( \log \frac{2 m_e c^2 \beta^2}{I(1-\beta^2)} - \beta^2 \right) + C \,.$$
@@ -72,20 +86,22 @@ The multi-fit has been performed in following fit scenarios
   \item[(b)] excluding PMTs T00 and T13 with a problematic charge deposit shape;
   \item[(c)] excluding PMTs T00, T13 and T02 with a problematic charge deposit shape.
 \end{itemize}
-The results are compare in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
+The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[p]
     \centering
   %\setlength{\tabcolsep}{-4pt}
   \begin{tabular}{c}
-    \includegraphics[width=0.53\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib8.pdf} \\
-    \includegraphics[width=0.53\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib6.pdf} \\
-    \includegraphics[width=0.53\textwidth]{../pdf_results/WCTEJuly2023_CalibTS_eRelCalib5.pdf} \\
+    \includegraphics[width=0.53\textwidth]{WCTEJuly2023_CalibTS_eRelCalib8.pdf} \\
+    \includegraphics[width=0.53\textwidth]{WCTEJuly2023_CalibTS_eRelCalib6.pdf} \\
+    \includegraphics[width=0.53\textwidth]{WCTEJuly2023_CalibTS_eRelCalib5.pdf} \\
  \end{tabular}
   \caption{Derived using the mean charge of the electron peak, the relative calibration constants are plotted as function of the positive beam momenta for different number of PMTs included in the fit, corresponding to fit scenarios (a)--(c), see text.}
   \label{fig_el_relative}
 \end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %\clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -95,15 +111,15 @@ The results are compare in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 \begin{figure}[p]
     \centering
   \setlength{\tabcolsep}{-4pt}
-  \begin{tabular}{cccc}
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS00.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS01.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS02.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS03.pdf} \\
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS10.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS11.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS12.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_p_TS13.pdf} \\
+  \begin{tabular}{ccc}
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS13.pdf} &
   \end{tabular}
   \caption{Normalized profiles of the protons charge distribution in individual PMTs of the T0 and T1 scintillators.}
   \label{fig_p_Landau}
@@ -112,15 +128,15 @@ The results are compare in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 %\clearpage
 \begin{figure}[p]
   \setlength{\tabcolsep}{-4pt}
-  \begin{tabular}{cccc}
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS00.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS01.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS02.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS03.pdf} \\
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS10.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS11.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS12.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/WCTEJuly2023_LandauProfiles_D_TS13.pdf} \\
+  \begin{tabular}{ccc}
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS13.pdf} &
   \end{tabular}
   \caption{Normalized profiles of the deuterons charge distribution in individual PMTs of the T0 and T1 scintillators.}
   \label{fig_D_Landau}
@@ -133,15 +149,15 @@ The results are compare in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 \begin{figure}[p]
     \centering
   \setlength{\tabcolsep}{-4pt}
-  \begin{tabular}{cccc}
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS00.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS01.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS02.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS03.pdf} \\
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS10.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS11.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS12.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_p_TS13.pdf} \\
+  \begin{tabular}{ccc}
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS13.pdf} &
   \end{tabular}
   \caption{Protons deposited charge in individual trigger scintillators PMTs versus $t_\mathrm{TOF}$ for various momenta.}
   \label{fig_tof_p}
@@ -151,78 +167,40 @@ The results are compare in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 \begin{figure}[p]
   \centering
     \setlength{\tabcolsep}{-4pt}
-  \begin{tabular}{cccc}
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS00.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS01.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS02.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS03.pdf} \\
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS10.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS11.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS12.pdf} & 
-\includegraphics[width=0.30\textwidth]{../pdf_results/WCTEJuly2023_BetheBloch_SingleFit_D_TS13.pdf} \\
+  \begin{tabular}{ccc}
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS13.pdf} &
   \end{tabular}
   \caption{Deuterons deposited charge in individual trigger scintillators PMTs versus $t_\mathrm{TOF}$ for various momenta.}
   \label{fig_tof_D}
 \end{figure}
 
 
-
-%\clearpage
-\subsection{Individual fits}
-%\clearpage
-
-\begin{figure}[!h]
-  \centering
-    \setlength{\tabcolsep}{-2pt}
-  \begin{tabular}{cccc}
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS00_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS01_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS02_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS03_eRelCalib8.pdf} \\
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS10_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS11_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS12_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_p_TS13_eRelCalib8.pdf} \\
-  \end{tabular}
-  \caption{Protons individual fits to charge profiles versus $\beta$.}
-  \label{fig_p_beta}
-\end{figure}
-
-%\clearpage
-\begin{figure}[!h]
-  \centering
-    \setlength{\tabcolsep}{-2pt}
-  \begin{tabular}{cccc}
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS00_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS01_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS02_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS03_eRelCalib8.pdf} \\
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS10_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS11_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS12_eRelCalib8.pdf} & 
-\includegraphics[width=0.27\textwidth]{../pdf_results/BetaGraph_D_TS13_eRelCalib8.pdf} \\
-  \end{tabular}
-  \caption{Deuterons individual fits to charge profiles versus $\beta$.}
-  \label{fig_D_beta}
-\end{figure}
-
-
-\clearpage{}
+\clearpage
 \subsection{Simultaneous fit results}
 
-\begin{table}[!h]
+\clearpage
+\begin{table}[p]
   \input{fitpars_eRelCalib8.tex}
   \caption{Fit results using all 8 PMTs in the fit, using both protons and deuterons.}
   \label{tab_fitres_8}
 \end{table}
-  
-\begin{table}[!h]
+
+\clearpage
+\begin{table}[p]
 \input{fitpars_eRelCalib6.tex}
   \caption{Fit results using 6 PMTs in the fit, using both protons and deuterons.}
   \label{tab_fitres_6}
 \end{table}
 
-\begin{table}[!h]
+\clearpage
+\begin{table}[p]
 \input{fitpars_eRelCalib5.tex}
   \caption{Fit results using 5 PMTs in the fit, using both protons and deuterons.}
   \label{tab_fitres_5}
