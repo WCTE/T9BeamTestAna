@@ -28,7 +28,7 @@ gFitMeanLosses = True
 
 kBadP0 = -1
 kEpsilon = 1.e-5
-gme = 0.511e6
+gme = 0.511e6 # eV!
 gScintiThicknes = 0.6 # cm!
 gj = 0.200 # Landau most probable losses constant
 
@@ -101,6 +101,13 @@ class cPoint:
         self.x = x
         self.y = y
         self.ey = ey
+        # fitted value to be computed after the fit
+        # to be used for fit residuals later
+        self.yfit = 0.
+        # fitted and theory deltaE after passing PMTs of T0X, X = 0,1,2,3
+        # in MeV
+        self.dEfit = 0.
+        self.dEtheory = 0.
 
 ##################################################################
 # expect a dictionary of dE/dX graphs in fit regions
@@ -167,6 +174,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
     # dEdX conversion par, for the moment zero, will be nonzero when needed for regions TS1X
     Conv = 0.
     particle = ''
+    dE, theorydE = 0., 0.
 
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
@@ -244,8 +252,11 @@ def getFitVal(region, x, npars, pars, debug = 0):
     if gFitMeanLosses:
         fval = Krel*getBaseMeanLossesFitVal(beta, A, I, C, debug)
     else:
-        fval = Krel*getBasePeakLossesFitVal(beta, A, I, C, dX, debug)
-    return fval
+      # this is not ready yet and not so simple to translate from peak to mean losses!!
+      # need a new function for this!
+      #fval = Krel*getBasePeakLossesFitVal(beta, A, I, C, dX, debug)
+      pass
+    return fval, beta, dE, theorydE
 
 ##################################################################
 def getChi2Term(region, dpoint, npars, pars, debug):
@@ -255,7 +266,7 @@ def getChi2Term(region, dpoint, npars, pars, debug):
     ey = dpoint.ey
     if ey <= 0.:
         return 0.
-    fitVal = getFitVal(region, x, npars, pars, debug)
+    fitVal, beta, dE, theorydE = getFitVal(region, x, npars, pars, debug)
     term = pow( (y - fitVal)/ey , 2) 
     return term
 
@@ -402,11 +413,19 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     #status = fitter.Result()
     # status = fitter.Result()
     #.Print(ROOT.std.cout, True)
-
  
     result = fitter.Result()
+
+    return fitter, result, npars, parNames
+
+##################################################################
+
+def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
+
+    npars = len(parNames)
     bestPars = result.Parameters()
-    npars = len(bestPars)
+    parErrs = result.Errors()  
+    
     corr = ROOT.TMatrix(npars,npars)
     cov = ROOT.TMatrix(npars,npars)
     # https://root.cern/doc/v606/classROOT_1_1Fit_1_1FitResult.html
@@ -418,7 +437,6 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     print('--- Covariance matrix:')
     printMatrix(cov, npars)
             
-    parErrs = result.Errors()
     # https://root.cern/doc/v610/classROOT_1_1Fit_1_1FitResult.html
     print('*** FIT RESULTS ***')
     chi2 = result.MinFcnValue() # .Chi2()
@@ -444,10 +462,60 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
         outtex.write(r' $\chi^2/\mathrm{ndf}$ & ' + '{:1.3f}'.format(chi2/ndf) + r' & \\' + '\n')
     outtex.write(r'\end{tabular}' + '\n')
     printMatrixToFile(outtex, corr, npars, parNames)
-    
     outtex.close()
-    pars = []
-    parerrs = []
+
+    # compute fit residuals:
+    rmax = 50.
+    hname = 'FitResiduals'
+    htitle = ';fit residuals [N_{p.e.}];data points'
+    nb = 100
+    hres = ROOT.TH1D(hname, htitle, nb, -rmax, rmax)
+    hres.SetLineWidth(2)
+    hres.SetLineColor(ROOT.kRed)
+
+    hname = 'dEratio'
+    htitle = ';#DeltaE^{fit}/#DeltaE^{theory};data points'
+    hdEFitOverTheory = ROOT.TH1D(hname, htitle, 50, 0., 2.)
+    hdEFitOverTheory.SetLineWidth(2)
+    hdEFitOverTheory.SetLineColor(ROOT.kBlue)
+    
+    canname = 'FitAnalysis{}'.format(nCalibCs)
+    canres = ROOT.TCanvas(canname, canname, 0, 0, 1200, 600)
+    canres.Divide(2,1)
+    
+    for region in gDataPoints:
+      for dpoint in gDataPoints[region]:
+
+        beta = dpoint.x
+        debug = 1
+        fitVal, beta, dE, theorydE = getFitVal(region, beta, len(bestPars), bestPars, debug)
+        print(fitVal, beta, dE, theorydE)
+        #A, I, C, Krel, Conv = bestPars[0], bestPars[1], bestPars[2], bestPars[3], bestPars[4]
+        dpoint.yfit = fitVal
+        dpoint.dEfit = dE
+        dpoint.dEtheory = theorydE
+        if  theorydE  > 0.:
+          dEfitOverTheory = dE/theorydE
+          hdEFitOverTheory.Fill(dEfitOverTheory)
+        residual = dpoint.y - dpoint.yfit
+        hres.Fill(residual)
+
+        
+        # hard to compute total fit unc. b.c of the formula and all correlations...
+        # dpoint.yfiterr = uff...;-)
+        # totalErr = sqrt( pow(dpoint.yerr,2) + dpoint.yfiterr)
+        # pull = residual / totalErr 
+    canres.cd(1)
+    hres.Draw()
+    canres.cd(2)
+    hdEFitOverTheory.Draw()
+
+
+    ## TODO: plot all data points and connect fit points in one canvas!
+
+    
+    #pars = []
+    #parerrs = []
     ## get the minimized parameter:
     #if status == 0:
     #    print('minimizeChi2 :: SUCCESSFUL MINIMIZATION! ;-)')
@@ -463,10 +531,7 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     #        print('minimizeChi2 fit result: par {}: {} +/- {}'.format(parname, par, parerr))
     #else:
     #    print('minimizeLhood :: FAILED MINIMIZATION! :-(')
-
-    return bestPars, parErrs
-
-
+    return canres, hres, hdEFitOverTheory
 ##################################################################
 # support both 1D and 2D versions on demand
 def doTheFit(grs, nCalibCs, step = 0.001, debug = 0):
@@ -481,8 +546,8 @@ def doTheFit(grs, nCalibCs, step = 0.001, debug = 0):
         print(f'  Region {region}')
         for dpoint in gDataPoints[region]:
             print('    beta={} y={} ey={}'.format(dpoint.x, dpoint.y, dpoint.ey))
-    pars, parerrs = minimizeChi2(npars, nCalibCs, step, debug)
-    return pars, parerrs
+    fitter, result, npars, parNames = minimizeChi2(npars, nCalibCs, step, debug)
+    return fitter, result, npars, parNames
 
 ##################################################################
 def ComputeZeroCompatibility(val, sigma):

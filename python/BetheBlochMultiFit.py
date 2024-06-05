@@ -438,12 +438,13 @@ def main(argv):
         #'' # both trigger scintillators
         # NOW supported:
         # individual TS PMTs:
-        #'00',
+        ##        '00',
         '01',
+        ##
         '02',
         '03',
         '10','11','12',
-        #'13',
+        ##'13',
     ]
     particles = [ 'e', # for calibration
                   'p', # protons
@@ -562,10 +563,12 @@ def main(argv):
     step = 0.01
     debug = 1
     refmomentum = 1000
-    pars, parerrs = doTheFit(GrsBeta, len(calibCs[refmomentum]), step, debug)
+    nCalibCs = len(calibCs[refmomentum])
+    fitter, result, npars, parNames = doTheFit(GrsBeta, nCalibCs, step, debug)
 
-    # TODO: analyze the fitter parameters
-    
+    # analyze the fitter parameters
+    canres, hres, hdEFitOverTheory = AnalyzeFitResults(fitter, result, nCalibCs, parNames)
+    cans.append(canres)
     # plot individual subfits over data in each region!
 
 
