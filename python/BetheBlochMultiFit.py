@@ -18,7 +18,7 @@ import os, sys, getopt
 from labelTools import *
 from tofUtil import *
 from FitTools import *
-from graphTools import *
+#from graphTools import *
 
 
 stuff = []
@@ -396,10 +396,13 @@ def singleFit(argv, rfiles, TStag, particle, calibOnly, calibCs, minEntries = 10
         fun.SetParName(3, 'me')
         fun.FixParameter(3, 2*0.511e6)
         #fun.SetParName(2, 'g')
-        grb.Fit('fun')
 
+        
+        ##grb.Fit('fun', '', '0')
+        ##fun.Draw('same')
+        
         cans.append(gcan)
-        stuff.append([momenta, grb, grbg, htmpb, htmpbg, projYs, projYcps])
+        stuff.append([momenta, grb, grbg, htmpb, htmpbg, projYs, projYcps, fun])
         gcan.Update()
 
     
@@ -438,13 +441,16 @@ def main(argv):
         #'' # both trigger scintillators
         # NOW supported:
         # individual TS PMTs:
-        ##        '00',
+        ##
+        #'00',
         '01',
         ##
         '02',
         '03',
-        '10','11','12',
-        ##'13',
+        '10','11',
+        '12',
+        ##
+        '13',
     ]
     particles = [ 'e', # for calibration
                   'p', # protons
@@ -466,6 +472,14 @@ def main(argv):
             calibOnly = True
         for TStag in TStags:
             region = 'TS' + TStag + particle
+
+            # based on chi2 / Npoints:
+            #if region == 'TS00p' or region == 'TS03p' or region == 'TS12p':
+            #    continue
+            #if region == 'TS12p':
+            #    continue
+            
+            
             print(f'Adding region {region}')
             momenta, grbeta, grbg, cans, pcans, projYs, projYcps, leg, legp = singleFit(sys.argv, rfiles, TStag, particle, calibOnly, calibCs)
             if not calibOnly:
@@ -567,13 +581,11 @@ def main(argv):
     fitter, result, npars, parNames = doTheFit(GrsBeta, nCalibCs, step, debug)
 
     # analyze the fitter parameters
-    canres, hres, hdEFitOverTheory = AnalyzeFitResults(fitter, result, nCalibCs, parNames)
-    cans.append(canres)
     # plot individual subfits over data in each region!
 
-
-    # ...
-
+    canres, cancmp, leg, hres, hdEFitOverTheory, hb, GrsFit = AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames)
+    cans.append(canres)
+    cans.append(cancmp)
 
     # End of multifit
     

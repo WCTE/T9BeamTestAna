@@ -9,6 +9,7 @@ from math import log, exp, pow, sqrt
 from ctypes import c_double
 from array import array
 
+from graphTools import *
 from tofUtil import ms
 from Losses import *
 #from Brems import *
@@ -419,8 +420,9 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
     return fitter, result, npars, parNames
 
 ##################################################################
+# June 2024
 
-def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
+def AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames):
 
     npars = len(parNames)
     bestPars = result.Parameters()
@@ -436,7 +438,9 @@ def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
     printMatrix(corr, npars)
     print('--- Covariance matrix:')
     printMatrix(cov, npars)
-            
+
+    ### print fitted parameters and correlation matrix, also to a TeX file
+    
     # https://root.cern/doc/v610/classROOT_1_1Fit_1_1FitResult.html
     print('*** FIT RESULTS ***')
     chi2 = result.MinFcnValue() # .Chi2()
@@ -464,7 +468,7 @@ def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
     printMatrixToFile(outtex, corr, npars, parNames)
     outtex.close()
 
-    # compute fit residuals:
+    ### compute fit residuals:
     rmax = 50.
     hname = 'FitResiduals'
     htitle = ';fit residuals [N_{p.e.}];data points'
@@ -473,6 +477,8 @@ def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
     hres.SetLineWidth(2)
     hres.SetLineColor(ROOT.kRed)
 
+    ### fill histograms of interest
+    
     hname = 'dEratio'
     htitle = ';#DeltaE^{fit}/#DeltaE^{theory};data points'
     hdEFitOverTheory = ROOT.TH1D(hname, htitle, 50, 0., 2.)
@@ -488,8 +494,8 @@ def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
 
         beta = dpoint.x
         debug = 1
-        fitVal, beta, dE, theorydE = getFitVal(region, beta, len(bestPars), bestPars, debug)
-        print(fitVal, beta, dE, theorydE)
+        fitVal, beta, dE, theorydE = getFitVal(region, beta, len(bestPars), bestPars, 0)
+        #print(fitVal, beta, dE, theorydE)
         #A, I, C, Krel, Conv = bestPars[0], bestPars[1], bestPars[2], bestPars[3], bestPars[4]
         dpoint.yfit = fitVal
         dpoint.dEfit = dE
@@ -509,10 +515,72 @@ def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
     hres.Draw()
     canres.cd(2)
     hdEFitOverTheory.Draw()
+    canres.Update()
 
+    ### Plot all data points and connect fit points in one canvas
+    GrsFit = {}
+    for region in gDataPoints:
+      xs = []
+      ys = []
+      for dpoint in gDataPoints[region]:
+        beta = dpoint.x
+        fitVal, newbeta, dE, theorydE = getFitVal(region, beta, len(bestPars), bestPars, 0)
+        xs.append(beta)
+        ys.append(fitVal)
+      GrsFit[region] = MakeGraphNoErrs(xs, ys, ROOT.kRed, 20, 0.)
+      GrsFit[region].SetLineStyle(1)
+      GrsFit[region].SetLineWidth(1)
 
-    ## TODO: plot all data points and connect fit points in one canvas!
+    scint1 = 60.
+    scint2 = 240.
+    hn = 'hbtmp_data_fit'
+    bmin = 0.4
+    bmax = 0.8
+    hb = ROOT.TH2D(hn, ';#beta;Rel. calib charge [N_{p.e.}]', 100, bmin, bmax, 100, scint1, scint2)
+    hb.SetStats(0)
+    
+    canname = 'DataFitCmp{}'.format(nCalibCs)
+    cancmp = ROOT.TCanvas(canname, canname, 200, 200, 1000, 900)
+    leg = ROOT.TLegend(0.5, 0.5, 0.88, 0.88)
+    leg.SetNColumns(2)
+    cancmp.cd()
+    hb.Draw()
+    
+    mstsf = [20, 21, 22, 23, 29, 33, 34, 45]
+    mstso = [24, 25, 26, 32, 30, 27, 28, 44]
+    ireg = -1
 
+    chi2s = {}
+    npts = {}
+    for region in GrsFit:
+      ireg = ireg+1
+      gr = GrsBeta[region]
+      grfit = GrsFit[region]
+      col = ROOT.kBlack
+      if region[-1] == 'D':
+        col = ROOT.kBlue
+      gr.SetMarkerColor(col)
+      gr.SetMarkerSize(1.5)
+      gr.SetLineColor(col)
+      grfit.SetLineColor(col)
+      mst = mstsf[ireg % 8]
+      lst = 1
+      if region[2] == '1':
+        mst = mstso[ireg % 8]
+        lst = 2
+      gr.SetMarkerStyle(mst)
+      grfit.SetLineStyle(lst)
+      chi2s[region], npts[region] = getGraphsChi2(gr, grfit)
+      chi2npts = 0.
+      if npts[region] > 0:
+        chi2npts =  chi2s[region] / npts[region] 
+      
+      leg.AddEntry(gr, region + ' data', 'P')
+      leg.AddEntry(grfit, 'fit #chi^{2}/N_{pts}=' + f'{chi2npts:2.1f}', 'L')
+      gr.Draw('P')
+      grfit.Draw('L')
+
+    leg.Draw()
     
     #pars = []
     #parerrs = []
@@ -531,7 +599,7 @@ def AnalyzeFitResults(fitter, result, nCalibCs, parNames):
     #        print('minimizeChi2 fit result: par {}: {} +/- {}'.format(parname, par, parerr))
     #else:
     #    print('minimizeLhood :: FAILED MINIMIZATION! :-(')
-    return canres, hres, hdEFitOverTheory
+    return canres, cancmp, leg, hres, hdEFitOverTheory, hb, GrsFit
 ##################################################################
 # support both 1D and 2D versions on demand
 def doTheFit(grs, nCalibCs, step = 0.001, debug = 0):
