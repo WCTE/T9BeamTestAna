@@ -6,8 +6,8 @@ from data_runs import *
 import os
 
 
-isDryRun = False
-#isDryRun = True
+#isDryRun = False
+isDryRun = True
 
 
 selection = 'f'
@@ -62,7 +62,13 @@ for xfname in os.popen('cd {} ; ls peakAnalysed_timeCorr_windInt_000???.root'.fo
     print(cmd)
     #if not isDryRun:
     #   os.system(cmd)
-    
+
+    #cmd = './python/quickPlots1d.py histos/' + outfile
+    cmd = './python/quickPlots2d.py histos/windowpe_analyzed/' + outfile + ' -b'
+    print(cmd)
+    #if not isDryRun:
+    #   os.system(cmd)
+
     cmd = './python/fitToF.py histos/windowpe_analyzed/' + outfile
     print(cmd)
     #if not isDryRun:

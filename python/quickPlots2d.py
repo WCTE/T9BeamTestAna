@@ -361,7 +361,7 @@ def main(argv):
             pnote.Draw()            
         can.Update()
         can.Print(pngdir + can.GetName() + '.png')
-        ###can.Print(pdfdir + can.GetName() + '.pdf')
+        can.Print(pdfdir + can.GetName() + '.pdf')
     
     if not gBatch:
         ROOT.gApplication.Run()
