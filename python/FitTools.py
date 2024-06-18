@@ -422,7 +422,7 @@ def minimizeChi2(npars, nCalibCs, step = 0.01, debug = 0):
 ##################################################################
 # June 2024
 
-def AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames):
+def AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames, extraTag):
 
     npars = len(parNames)
     bestPars = result.Parameters()
@@ -453,7 +453,7 @@ def AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames):
     print('Fit status {}, chi2/ndf={:1.3f}/{:}'.format(status, chi2, ndf))
     if ndf > 0:
         print('              chi2/ndf={:1.3f}'.format(chi2/ndf))
-    outtex = open('tex/fitpars_eRelCalib{}.tex'.format(nCalibCs), 'w')
+    outtex = open('tex/fitpars_eRelCalib{}{}.tex'.format(nCalibCs, extraTag), 'w')
     outtex.write(r'\begin{tabular}{l|ll}' + '\n')
     outtex.write(r'Parameter & value & uncertainty \\ \hline' + '\n')
     for ipar in range(0, result.NPar()):

@@ -434,6 +434,8 @@ def main(argv):
     ROOT.gStyle.SetPalette(ROOT.kRainBow)
     #ROOT.gStyle.SetPalette(1)
 
+    allTStags = [ '00', '01', '02', '03', '10', '11', '12', '13' ]
+    
     TStags = [
         # not supported anymore!
         #'0',
@@ -445,13 +447,19 @@ def main(argv):
         #'00',
         '01',
         ##
-        '02',
+        #'02',
         '03',
         '10','11',
         '12',
         ##
-        '13',
+        #'13',
     ]
+    extraTag = ''
+    if len(allTStags) != len(TStags):
+        extraTag = '_rm'
+        for atag in allTStags:
+            if not atag in TStags:
+                extraTag = extraTag + f'_{atag}'
     particles = [ 'e', # for calibration
                   'p', # protons
                   'D', # deuterons
@@ -583,12 +591,12 @@ def main(argv):
     # analyze the fitter parameters
     # plot individual subfits over data in each region!
 
-    canres, cancmp, leg, hres, hdEFitOverTheory, hb, GrsFit = AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames)
+    canres, cancmp, leg, hres, hdEFitOverTheory, hb, GrsFit = AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames, extraTag)
     cans.append(canres)
     cans.append(cancmp)
 
     # End of multifit
-    
+
     # And just print all canvases;)
     for cans in Cans:
         for can in cans:
@@ -597,8 +605,8 @@ def main(argv):
                 if 'vs' in can.GetName():
                     pnote.Draw()            
                 can.Update()
-                can.Print(pngdir + can.GetName() + '.png')
-                can.Print(pdfdir + can.GetName() + '.pdf')
+                can.Print(pngdir + can.GetName() + extraTag + '.png')
+                can.Print(pdfdir + can.GetName() + extraTag + '.pdf')
             except:
                 print('ERROR printing canvas!')
     
