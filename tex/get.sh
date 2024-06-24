@@ -1,6 +1,7 @@
 #!/bin/bash
 
-
+cp ../pdf_results/TheoryBethe_Polystyrene.pdf .
+cp ../pdf_results/TheoryBethe_Al.pdf .
 
 cp ../pdf_results/WCTEJuly2023_CalibTS_eRelCalib?.pdf .
 cp ../pdf_results/BetaGraph_?_TS??_eRelCalib?.pdf ./

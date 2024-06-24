@@ -17,8 +17,11 @@ print('***************************************************')
 ROOT.gStyle.SetPadLeftMargin(0.2)
 
 # material: dX in cm
-myMat = {'Polystyrene' : 0.6,
-          'Al' : 1.e-2
+myMat = {#'Polystyrene' : 0.6, # cm!
+         # 'Al' : 0.025 #1.e-2 @ cm!
+         'Plastics' : 1.2, # cm!
+          'Mylar' : 0.025 #1.e-2 @ cm!
+         
          }
 
 myParts = {
@@ -140,10 +143,11 @@ for mname,dX in myMat.items():
     opt = 'P'
     name = 'h2'
     title = ';p [MeV/c];'
-    h2dE = ROOT.TH2D(name + 'dE', title + '#DeltaE [MeV]', 100, ps[0], ps[-1], 100, 0.1, 30.)
-    h2dEdX = ROOT.TH2D(name + 'dEdX', title + 'dE/dX [MeV/cm]', 100, ps[0], ps[-1], 100, 0.1, 20.)
-    h2dP = ROOT.TH2D(name + 'dP', title + '#Deltap [MeV/c]', 100, ps[0], ps[-1], 100, 0.1, 20.)
-    h2dBeta = ROOT.TH2D(name + 'dBeta', title + '#Delta#beta', 100, ps[0], ps[-1], 100, 0.001, 0.05)
+    miny = 0.
+    h2dE = ROOT.TH2D(name + 'dE', title + '#DeltaE [MeV]', 100, ps[0], ps[-1], 100, miny, 30.)
+    h2dEdX = ROOT.TH2D(name + 'dEdX', title + 'dE/dX [MeV/cm]', 100, ps[0], ps[-1], 100, miny, 20.)
+    h2dP = ROOT.TH2D(name + 'dP', title + '#Deltap [MeV/c]', 100, ps[0], ps[-1], 100, miny, 20.)
+    h2dBeta = ROOT.TH2D(name + 'dBeta', title + '#Delta#beta', 100, ps[0], ps[-1], 100, 0.0, 0.05)
     hs = [h2dE, h2dEdX, h2dP, h2dBeta]
     N = len(hs)
     hcps = []
@@ -157,7 +161,10 @@ for mname,dX in myMat.items():
         ipart = ipart + 1
         if ipart == 0:
             legs[mname] = ROOT.TLegend(0.60, 0.55, 0.88, 0.88)
-            legs[mname].SetHeader('{:} dX={:1.2f}cm'.format(mname,dX))
+            if dX < 1.:
+                legs[mname].SetHeader('{:} dX={:1.3f}cm'.format(mname,dX))
+            else:
+                legs[mname].SetHeader('{:} dX={:1.2f}cm'.format(mname,dX))
             legs[mname].SetBorderSize(0)
         legs[mname].AddEntry(GrsdE[mname][pname], pname, "L")
         print(pname, mname)

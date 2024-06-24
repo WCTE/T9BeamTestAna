@@ -36,16 +36,25 @@ This section describes the possibility to fit the ionization losses of protons a
 
 We analyze runs 403, 396, 394, 393, 392, 398, 399, 402, 449, 436 and 435 corresponding to positively charged particle setups with momenta ranging from 1200~MeV$/$c down to 500~MeV$/c$.
 
-Assuming TS material of polystyrene of thickness 0.6~cm, theoretical losses for different particle species are plotted in Figure~\ref{fig_dEdx_theory}.
-For example, for $p=540\,$MeV$/c$ the proton and deuteron expected ionization energy losses are 3.48~MeV and 9.66~MeV, respectively. Losses in 0.01cm of Aluminum, which is the beam window at the end of the T9 beam pipe, are negligible (0.3~MeV for deuterons at the same reference momentum).
+Assuming TS material of polystyrene of thickness 0.6~cm, theoretical losses for different particle species are plotted in Figure~\ref{fig_dEdx_theory_PST}, and for the Aluminium beam window of 0.25mm in Figure~\ref{fig_dEdx_theory_Alu}.
+For example, for $p=540\,$MeV$/c$ the proton and deuteron expected ionization energy losses are 3.48~MeV and 9.66~MeV, respectively. Losses in 0.025cm of Aluminum, which is the beam window at the end of the T9 beam pipe, are negligible (0.3~MeV for deuterons at the same reference momentum).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[!h]
+\begin{figure}[!p]
     \centering
   %\setlength{\tabcolsep}{-4pt}
     \includegraphics[width=0.75\textwidth]{TheoryBethe_Polystyrene.pdf}
   \caption{Theoretical ionization energy losses (top left) for for 0.6~cm of polystyrene for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
-  \label{fig_dEdx_theory}
+  \label{fig_dEdx_theory_PST}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[!p]
+    \centering
+  %\setlength{\tabcolsep}{-4pt}
+    \includegraphics[width=0.75\textwidth]{TheoryBethe_Al.pdf}
+  \caption{Theoretical ionization energy losses (top left) for for 0.25~mm of Aluminium for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
+  \label{fig_dEdx_theory_Alu}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -70,6 +70,10 @@ python/photoelCalibFit.py histos/windowpe_analyzed/peakAnalysed_timeCorr_windInt
 Study of slit varied runs:
 ./python/run_SlitRuns_window.py
 
+18.6.2024
+Plot heatmap of teh lead glass waveforms:
+scripts/runAllSlitHeatMaps.sh
+
 2023
 ## Quick and dirty start:
 
