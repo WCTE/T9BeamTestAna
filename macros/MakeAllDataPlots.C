@@ -155,7 +155,7 @@ void MakeAllDataPlots::Init(bool noAct1Cuts)
   _PbGAmplitudeMax =  2.;     // 2.
 
   _PbGChargeMin =  0.;        // 2.
-  _PbGChargeMax =  2*PEsfPbG; // 2. // 1.4
+  _PbGChargeMax =  2*PEsfPbG / 15.; // 2. // 1.4 // moved to IntPE ;-)
 
   _trigScintChargeMin = 0.;
   _trigScintChargeMax = 2.*PEsfTOF;
@@ -1022,10 +1022,10 @@ void MakeAllDataPlots::ReadChannels()
       if ( ipeak >= 0 && ipeak < _readerMap[chname] -> nPeaks) {
 	if (_useWindowIntCharge) { // && !chname.Contains("TOF"))
 	  // preferred, to compare PMTs
-	  if (chname != "PbGlass")
-	    _Charges[chname]     = _readerMap[chname] -> WindowIntPE[ipeak];// ?!?!?!
-	  else
-	    _Charges[chname]     = _readerMap[chname] -> WholeWaveformInt;// ?!?!?!
+	  //if (chname != "PbGlass")
+	  _Charges[chname]     = _readerMap[chname] -> WindowIntPE[ipeak];// ?!?!?!
+	  //else
+	  //  _Charges[chname]     = _readerMap[chname] -> WholeWaveformInt;// ?!?!?!
 	  // NOT preferred!:
 	  // _Charges[chname]     = _readerMap[chname] -> WindowIntCharge[ipeak]; 
 	  _SignalTimes[chname] = _readerMap[chname] -> SignalTimeCorrected[ipeak];

@@ -447,12 +447,12 @@ def main(argv):
         #'00',
         '01',
         ##
-        #'02',
+        '02',
         '03',
         '10','11',
         '12',
         ##
-        #'13',
+        '13',
     ]
     extraTag = ''
     if len(allTStags) != len(TStags):

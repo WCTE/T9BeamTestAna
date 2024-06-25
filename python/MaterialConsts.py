@@ -138,6 +138,13 @@ gElement = [
 ['U',  92, 0.387, 890.0, 18.95, 77.99, 0.226, 3.372, 0.197, 2.817, 0.14],
 ]
 
+# Data are from [Sternheimer, Berger and Seltzer, (1984)]
+# The Density Effect for the Ionization Loss in Various Materials
+# R. M. Sternheimer
+# Phys. Rev. 88, 851 – Published 15 November 1952; Erratum Phys. Rev. 89, 1309 (1953)
+# BUT MOSTLY:
+# https://www.sciencedirect.com/science/article/pii/0092640X84900020?via%3Dihub
+
 # other specific:
 # 24.6.2024
 # https://pdg.lbl.gov/2023/AtomicNuclearProperties/HTML/polyethylene_terephthalate_Mylar.html
@@ -157,10 +164,8 @@ gCompound = [
 ['Methane',                           -1,  0.623, 41.7, 6.67e-4, 0.59, 1.626, 3.972, 0.093, 3.626, -1],
 ['Methanol',                          -1,  0.562, 67.6, 0.79, 19.21, 0.253, 2.764, 0.090, 3.548, -1],
 ['Plastics',                          -1,  0.541, 64.7, 1.03, 21.54, 0.146, 2.486, 0.161, 3.239, -1], # Plastic scint. vinyltoluene
-
-# 24.6.
-['Mylar',                             -1,  0.52037, 78.7,1.4, 24.60, -1, -1, -1, -1, -1], # Plastic scint. vinyltoluene
-
+# 24.6.2024
+['Mylar',                             -1,  0.52037,78.7,1.4, 24.60, 0.1562, 2.6507, 0.12679, 3.3076, -1],
 ['Polyethylene',                      -1,  0.570, 57.4, 0.94, 21.10, 0.137, 2.518, 0.121, 3.429, -1],
 ['Propane',                           -1,  0.590, 47.1, 1.88e-3, 0.96, 1.433, 3.800, 0.099, 3.592, -1],
 ['Lucite',                            -1,  0.539, 74.0, 1.19, 23.09, 0.182, 2.668, 0.114, 3.384, -1],
@@ -173,8 +178,6 @@ gCompound = [
 ['Polystyrene',                       -1,  0.53768, 68.7, 1.06, 68.7, 0, 0, 0, 0, -1]
 
 ]
-
-# data are from [Sternheimer, Berger and Seltzer, (1984)]
 
 gMaterials = {}
 def MakeMaterials():

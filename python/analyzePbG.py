@@ -42,8 +42,8 @@ class cFitPeak:
 def readInputFiles():
     dirname = 'histos/windowpe_analyzed/'
     filenames = [
-        'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
-        'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
+       'peakAnalysed_timeCorr_windInt_000403_plots_f.root',
+       'peakAnalysed_timeCorr_windInt_000396_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000394_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000393_plots_f.root',
         'peakAnalysed_timeCorr_windInt_000392_plots_f.root',
@@ -80,8 +80,8 @@ def main(argv):
 
     pngdir = 'png_results/'
     pdfdir = 'pdf_results/'
-    os.system(f'mkdir {pngdir}')
-    os.system(f'mkdir {pdfdir}')
+    os.system(f'mkdir -p {pngdir}')
+    os.system(f'mkdir -p {pdfdir}')
 
     opt2d = 'colz'
 
@@ -267,12 +267,19 @@ def main(argv):
                 stuff.append(projXcp)
                 #ca.cd()
                 can.cd(ican+1)
+                ChargeCenter = 40. # some dummy val
                 if particle == 'e':
-                    chmin = 90.# + (abs(momentum) - 500)*25.
-                    if abs(momentum) < 600:
-                        chmin = 50.
-                    print(f'momentum: {momentum}, chmin={chmin}')
-                    projX.GetXaxis().SetRangeUser(chmin,projX.GetXaxis().GetXmax())
+                    # a*500 + b = 7
+                    # a*1200 + b = 20
+                    # ==>
+                    # a*700 = 13 ==>
+                    a = 13./700.
+                    b = 20 - 1200*a
+                    ChargeCenter = abs(momentum)*a + b
+                    #if abs(momentum) < 600:
+                    #    ChargeCenter = 5.
+                    print(f'momentum: {momentum}, ChargeCenter={ChargeCenter}')
+                    #projX.GetXaxis().SetRangeUser(ChargeCenter,projX.GetXaxis().GetXmax())
                 if particle == 'p':
                     projX.GetXaxis().SetRangeUser(0., 200.)
                 ibx = projX.GetMaximumBin()
@@ -280,9 +287,11 @@ def main(argv):
                     projX.GetXaxis().SetRangeUser(0.,projX.GetXaxis().GetXmax())
                 print(ibx)
                 xmax = projX.GetBinCenter(ibx)
-                rms = projX.GetStdDev()
-                x1 = xmax - rms/5.
-                x2 = xmax + rms/5.
+                #rms = projX.GetStdDev()
+                rms = 4.
+                x1 = ChargeCenter - rms
+                x2 = ChargeCenter + rms
+                print(f'INIT Charge limits: {x1} {ChargeCenter} {x2}')
                 fitname = 'fit_{}_{}_{}_{}'.format(srun, momentum, hname, suff)
                 fun = ROOT.TF1(fitname, '[0]*exp(-(x-[1])^2/(2*[2]^2))', projX.GetXaxis().GetXmin(), projX.GetXaxis().GetXmax())
                 fun.SetNpx(1000)
@@ -381,7 +390,7 @@ def main(argv):
         helphs[particle] = []
 
         canreso.cd(1)
-        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];#sigma_{Charge} [N_{p.e.}]', 100, p1, p2, 100, 0, 25.))
+        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];#sigma_{Charge} [N_{p.e.}]', 100, p1, p2, 100, 0, 25./10.))
         helphs[particle][-1].SetStats(0)
         helphs[particle][-1].Draw()
         grsReso[particle].Draw(opt)
@@ -393,7 +402,7 @@ def main(argv):
         grsResoRel[particle].Draw(opt)
 
         canreso.cd(3)        
-        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];Fitted mean charge [N_{p.e.}]', 100, p1, p2, 100, 0., 400))
+        helphs[particle].append(ROOT.TH2D('reso_h2_' + particle,';p [MeV/c];Fitted mean charge [N_{p.e.}]', 100, p1, p2, 100, 0., 400/10.))
         helphs[particle][-1].SetStats(0)
         helphs[particle][-1].Draw()
         grsE[particle].Draw(opt)

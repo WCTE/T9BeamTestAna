@@ -19,7 +19,7 @@ ROOT.gStyle.SetPadLeftMargin(0.2)
 # material: dX in cm
 myMat = {#'Polystyrene' : 0.6, # cm!
          # 'Al' : 0.025 #1.e-2 @ cm!
-         'Plastics' : 1.2, # cm!
+         'Plastics' : 0.630 + 0.25, # cm!
           'Mylar' : 0.025 #1.e-2 @ cm!
          
          }

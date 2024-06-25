@@ -30,7 +30,8 @@ gFitMeanLosses = True
 kBadP0 = -1
 kEpsilon = 1.e-5
 gme = 0.511e6 # eV!
-gScintiThicknes = 0.6 # cm!
+gScintiThicknes = 0.630 + 0.25 # cm!
+gMylarThicknes = 0.025 # cm!
 gj = 0.200 # Landau most probable losses constant
 
 #gPars = []
@@ -88,11 +89,11 @@ def printMatrixToFile(outfile, corr, npars, parNames):
 
 ##################################################################
 def initGlobalPars():
-    gInitPars['A'] = [1., 50.,]
+    gInitPars['A'] = [1., 10.,]
     gInitPars['I'] = [20., 10e3]
-    gInitPars['C'] = [-50., 50.]
+    gInitPars['C'] = [-25., 25.]
     #gInitPars['dXScale'] = [1., 2.]
-    gInitPars['Krel'] = [1., 10.]
+    gInitPars['Krel'] = [1., 1.5]
     gInitPars['Conv'] = [1e-6, 1. ] #1.e-1]
     return
 
@@ -179,9 +180,10 @@ def getFitVal(region, x, npars, pars, debug = 0):
 
     # names: Trigger Scintillator TS 0 or 1
     # particles p, D, T:
-    if npars > 3 and 'TS1' in region:
-        # constant to shift charges between TS1 to TS0
-        Krel = pars[3]
+    if npars > 3:
+        if 'TS1' in region:
+          # constant to shift charges between TS1 to TS0
+          Krel = pars[3]
         # conversion from integrated charge in p.e. to MeV using the fitted dE/dx
         # print('converting')
         Conv = pars[4]
@@ -199,9 +201,21 @@ def getFitVal(region, x, npars, pars, debug = 0):
             print('Failed getting particle mass and correct the beta!')
         if debug: print(f'  m={m:1.1f} A={A:1.1f} I={I:1.1f} Krel={Krel:1.3f} C={C:1.4f} Conv={Conv:1.4f}')
         if m > 0.:
-            dX = dXScale*gScintiThicknes
+            dXScinti = dXScale*gScintiThicknes
+            dXMylar = dXScale*gMylarThicknes
             # evaluate the fitted lossed in TS0
-            dE = dX * Conv * getBaseMeanLossesFitVal(beta, A, I, C, debug) # ??? was NONSENSE???: / 2. # dividing by 2 to account for half material in TS0 compared to TS0+TS1!
+            dE = -999.
+            if 'TS1' in region:
+              # beam window AND the TS0 passage:
+              # assume losses will be similar, after all
+              # let's avoid fitting I in plastics and Mylar as I has a high unc. anyway
+              dE = (dXScinti + dXMylar) * Conv * getBaseMeanLossesFitVal(beta, A, I, C, debug)
+              #dE = dXScinti * Conv * getBaseMeanLossesFitVal(beta, A, I, C, debug)
+            else:
+              # just the beam window;-)
+              dE = dXMylar * Conv * getBaseMeanLossesFitVal(beta, A, I, C, debug)
+              pass
+            
             if dE > 0 and beta > 0. and beta < 1.:
                 gamma0 = 1./sqrt(1. - pow(beta,2))
                 E0 = m*gamma0
@@ -210,8 +224,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 fitFracEloss = dE / E0
                 
                 useHigherCorrs = False
-                material = gMaterials['Polystyrene']
-                #print(beta, particle, material, useHigherCorrs)
+                # ADD ALSO BEAM WINDOW FOR BOTH TS0 AND TS1!
                 fullName = 'e'
                 if particle == 'p':
                     fullName = 'Proton'
@@ -220,10 +233,20 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 if particle == 'T':
                     fullName = 'Tritium'
 
-                # theory losses:
-                theorydEdX, halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
+                # i) theory losses, mylar window
+                material = gMaterials['Mylar'] # Al
+                #print(beta, particle, material, useHigherCorrs)
+                theorydEdXMylar, halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
+
+                theorydEdXScinti = 0.
+                if 'TS1' in region:
+                  # ii) theory losses, scintillator
+                  material = gMaterials['Plastics'] # Polystyrene']
+                  #print(beta, particle, material, useHigherCorrs)
+                  theorydEdXScinti, halflog = dEdX(beta, gParticles[fullName], material, useHigherCorrs)
                 
-                theorydE = theorydEdX*gScintiThicknes*dXScale
+                
+                theorydE = theorydEdXScinti*gScintiThicknes*dXScale + theorydEdXMylar*gMylarThicknes*dXScale
                 #print(theorydE)
                 newE = E0 - theorydE
                 #newp = sqrt(newE*newE - m*m)
@@ -234,7 +257,7 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 newbeta = sqrt( 1. - 1./pow(newgamma,2))
                 
                 if debug:
-                    print(f'  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV; using dX={dX:1.2f}cm theorydE={theorydE:1.2f} MeV, actual dE={dE:1.2f} MeV, dE/theorydE ratio: {dE/theorydE:1.3f}; beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
+                    print(f'{region}  beta0={x:1.4} p0={p0:1.1f} E0={E0:1.1f} MeV; using dX={dXScinti:1.2f}cm theorydE={theorydE:1.2f} MeV, actual dE={dE:1.2f} MeV, dE/theorydE ratio: {dE/theorydE:1.3f}; beta={beta:1.3f} gamma0={gamma0:1.3f} gamma1={gamma1:1.3f}')
                 if gamma1 > 1.:
                     # HERE WE CHANGE THE BETA to adjust for energy losses after passing through T0!
                     # we use the new energy after fitted losses, which then define the new gamma factor at T1, therefore called gamma1
@@ -242,8 +265,8 @@ def getFitVal(region, x, npars, pars, debug = 0):
                 else:
                     print('ERROR, negative gamma0!')
                 if debug:
-                    print(f'  beta1={beta:1.4f} theory dbeta = {x - newbeta:1.4f}, actual dbeta = {x-beta:1.4f}')
-                    print(f'  fracEloss theory: {theoryFracEloss:1.5f}, actually fitted: {fitFracEloss:1.5f}')
+                    print(f'{region}  beta1={beta:1.4f} theory dbeta = {x - newbeta:1.4f}, actual dbeta = {x-beta:1.4f}')
+                    print(f'{region}  fracEloss theory: {theoryFracEloss:1.5f}, actually fitted: {fitFracEloss:1.5f}')
             else:
                 if debug:
                     print('ERROR, negative energy correction!')
@@ -480,7 +503,7 @@ def AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames, extraTag):
     ### fill histograms of interest
     
     hname = 'dEratio'
-    htitle = ';#DeltaE^{fit}/#DeltaE^{theory};data points'
+    htitle = ';TS #DeltaE_{fit} / #DeltaE_{theory};data points'
     hdEFitOverTheory = ROOT.TH1D(hname, htitle, 50, 0., 2.)
     hdEFitOverTheory.SetLineWidth(2)
     hdEFitOverTheory.SetLineColor(ROOT.kBlue)
@@ -490,8 +513,9 @@ def AnalyzeFitResults(GrsBeta, fitter, result, nCalibCs, parNames, extraTag):
     canres.Divide(2,1)
     
     for region in gDataPoints:
+      if not 'TS1' in region:
+        continue
       for dpoint in gDataPoints[region]:
-
         beta = dpoint.x
         debug = 1
         fitVal, beta, dE, theorydE = getFitVal(region, beta, len(bestPars), bestPars, 0)
