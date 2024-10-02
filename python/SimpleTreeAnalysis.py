@@ -1,4 +1,6 @@
-#!/snap/bin/pyroot
+#!/usr/bin/python
+
+#/snap/bin/pyroot
 # was: #!/usr/bin/python3
 # jk Út 30. ledna 2024, 14:16:31 CET
 

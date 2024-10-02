@@ -1,5 +1,6 @@
-#!/snap/bin/pyroot
+#!/usr/bin/python
 
+#/snap/bin/pyroot
 #/usr/bin/python3
 
 # jk

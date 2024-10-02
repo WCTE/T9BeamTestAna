@@ -1,11 +1,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-% JK 3.5.2024, 4.6.2024
+% JK 3.5.2024, 4.6.2024, 30.7.2024
 
 \documentclass{article}[a4paper,12pt]
 
 % \usepackage[utf8]{inputenc}
 % \usepackage[latin2,utf8]{inputenc}
 \usepackage{hyperref}
+
+\usepackage{xcolor}
 
 \textwidth 155mm
 \textheight 23cm
@@ -33,28 +35,29 @@
 This section describes the possibility to fit the ionization losses of protons and deuterons in trigger scintillators T0 and T1 using the test beam data of 2023 from CERN's T9 beam line test measurements in the East Hall for the WCTE experiment.
 
 \subsection{The method}
+\label{sec_fit_method}
 
 We analyze runs 403, 396, 394, 393, 392, 398, 399, 402, 449, 436 and 435 corresponding to positively charged particle setups with momenta ranging from 1200~MeV$/$c down to 500~MeV$/c$.
 
-Assuming TS material of polystyrene of thickness 0.6~cm, theoretical losses for different particle species are plotted in Figure~\ref{fig_dEdx_theory_PST}, and for the Aluminium beam window of 0.25mm in Figure~\ref{fig_dEdx_theory_Alu}.
-For example, for $p=540\,$MeV$/c$ the proton and deuteron expected ionization energy losses are 3.48~MeV and 9.66~MeV, respectively. Losses in 0.025cm of Aluminum, which is the beam window at the end of the T9 beam pipe, are negligible (0.3~MeV for deuterons at the same reference momentum).
+Assuming TS material of plastics of thickness 0.63~cm, theoretical losses for different particle species are plotted in Figure~\ref{fig_dEdx_theory_Plastics}, and for the mylar beam window of thickness of 0.25mm in Figure~\ref{fig_dEdx_theory_Mylar}.
+For example, for $p=540\,$MeV$/c$ the proton and deuteron expected ionization energy losses are 3.6~MeV and 10~MeV, respectively. Losses in 0.025cm of mylar, which is the beam window at the end of the T9 beam pipe, are negligible being at the per-mill level (0.5~MeV for deuterons at the same reference momentum).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[!p]
     \centering
   %\setlength{\tabcolsep}{-4pt}
-    \includegraphics[width=0.75\textwidth]{TheoryBethe_Polystyrene.pdf}
-  \caption{Theoretical ionization energy losses (top left) for for 0.6~cm of polystyrene for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
-  \label{fig_dEdx_theory_PST}
+    \includegraphics[width=0.75\textwidth]{fit_dEdx/TheoryBethe_Plastics.pdf}
+  \caption{Theoretical ionization energy losses (top left) for for 0.63~cm of plastics for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
+  \label{fig_dEdx_theory_Plastics}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[!p]
     \centering
   %\setlength{\tabcolsep}{-4pt}
-    \includegraphics[width=0.75\textwidth]{TheoryBethe_Al.pdf}
-  \caption{Theoretical ionization energy losses (top left) for for 0.25~mm of Aluminium for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
-  \label{fig_dEdx_theory_Alu}
+    \includegraphics[width=0.75\textwidth]{fit_dEdx/TheoryBethe_Mylar.pdf}
+  \caption{Theoretical ionization energy losses (top left) for for 0.25~mm of mylar for various particle species; followed clockwise by the $\dedx$ and expected changes in momentum and $\beta$.}
+  \label{fig_dEdx_theory_Mylar}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,13 +65,13 @@ For example, for $p=540\,$MeV$/c$ the proton and deuteron expected ionization en
 The general fit formula stemming from the Bethe-Bloch ansatz without relativistic corrections is
 $$ f(\beta|A,I,C) = \frac{A}{\beta^2} \left( \log \frac{2 m_e c^2 \beta^2}{I(1-\beta^2)} - \beta^2 \right) + C \,.$$
 
-
-We assume T0 and T1 deposited charge (in the analysis framework, using the \texttt{WindowIntPE} variable) reflects the event-by-event $\dedx$.
-Issues with this assumption are the following:
+We assume T0 and T1 deposited charge (in the analysis framework using the \texttt{WindowIntPE} variable) reflects the event-by-event $\dedx$.
+Limitations of this assumption are as follows:
 \begin{itemize}
   \item The distributions in individual PMTs do not have the same shape, some have tails towards larger charges as one would expect from the Landau profile, but some distributions have tails to smaller charges.
   \item We know that the circular scintillator had to be manually polished and the surface non-uniformity in reflectivity and transparency is of a question.
   \item Non-centered beam and asymmetric beam profile will also affect the observed charge profile.
+    \item Birks' effect is neglected.
 \end{itemize}
 
 Events were selected to contain exactly one peak in all waveforms in all trigger scintillator PMTs.
@@ -78,18 +81,21 @@ The charge versus the measured time-of-flight across the distance between T0 and
 We extract the mean of the charge distribution as the Bethe-Bloch formula predicts the mean ionization losses. We neglect other mechanisms of energy losses of protons and deuterons.
 
 We start with $\beta$ based on the nominal beam momentum to evaluate Bethe-Bloch ansatz in T0 over runs with different $\beta$’s.
-Electrons charge distributions means across the runs are used for an additional relative calibration of the 8 PMTs on both T0 and T1, see Fig.~\ref{fig_el_relative} for the graph of the relative calibration constants across the momenta.
+
+Positrons charge distributions means across the runs are used for an additional relative calibration of all the 8 PMTs on both T0 and T1, see Fig.~\ref{fig_el_relative} for the graph of the relative calibration constants across the momenta.
+This relative correction aims to make the PMTs response uniform, accounting for differences in gain, surface effects etc.
+As heavy particles undergo energy losses in T0, they are expected to exhibit, on average, larger losses in T1. This is later accounted in the fit by a relative response constant $K_\mathrm{rel}$, see below.
 
 The simultaneous fit parameters are as follows:
 \begin{itemize}
-  \item $A$ -- Bethe-Bloch formula constant which also includes the density of the material.
-  \item $I$ -- them mean ionization energy
+  \item $A$ -- Bethe-Bloch formula constant which also includes the density of the material;
+  \item $I$ -- the mean ionization energy;
   \item $C$ -- an additive constant is not in the physics formula but was introduced to possibly account for artifacts or miscallibration.
-  \item $K_\mathrm{rel}$: 	relative shift of mean charge in T1 w.r.t. T0; expected to be $> 1$.
-  \item Conv: a conversion constant, to translate from the observed charge in $N_\mathrm{p.e.}$ units (and after the electrons-based relative calibration) in T0 to the MeV level. This is needed in order to compute the average energy loss in T0 and average change in $\beta$ after passing through T0 in order to evaluate Bethe-Bloch ansatz in T1 at the smaller average $\beta$.
+  \item $K_\mathrm{rel}$: 	relative shift of mean charge in T1 w.r.t. T0; expected to be $> 1$; this constant is required due to the application of positron-based relative calibration using all the PMTs;
+  \item Conv: a conversion constant, to translate the observed charge collected by the PMTs in $N_\mathrm{p.e.}$ units (and after the positrons-based relative calibration) in T0 to the MeV level of the energy loss of the particle. This is needed in order to compute the average energy loss in T0 and average change in $\beta$ after passing through T0 in order to evaluate Bethe-Bloch ansatz in T1 at the expected smaller average $\beta$.
 \end{itemize}
 
-The multi-fit has been performed in following fit scenarios
+The multi-fit has been performed in following fit scenarios:
 \begin{itemize}
  \item[(a)] using all 8 PMTs;
  \item[(b)] excluding PMT T00 with a bad fit result;
@@ -97,21 +103,6 @@ The multi-fit has been performed in following fit scenarios
  \item[(d)] excluding PMTs T00, T13 and T02 with a problematic charge deposit shape.
 \end{itemize}
 The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[p]
-    \centering
-  %\setlength{\tabcolsep}{-4pt}
-  \begin{tabular}{cc}
-    \includegraphics[width=0.49\textwidth]{WCTEJuly2023_CalibTS_eRelCalib8.pdf} &
-    \includegraphics[width=0.49\textwidth]{WCTEJuly2023_CalibTS_eRelCalib7_rm_00.pdf} \\
-    \includegraphics[width=0.49\textwidth]{WCTEJuly2023_CalibTS_eRelCalib6_rm_00_13.pdf} &
-    \includegraphics[width=0.49\textwidth]{WCTEJuly2023_CalibTS_eRelCalib5_rm_00_02_13.pdf} \\
- \end{tabular}
-  \caption{Derived using the mean charge of the electron peak, the relative calibration constants are plotted as function of the positive beam momenta for different number of PMTs included in the fit, corresponding to fit scenarios (a)--(d), see text.}
-  \label{fig_el_relative}
-\end{figure}
-%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %\clearpage
@@ -123,14 +114,14 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
     \centering
   \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{ccc}
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS00.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS01.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS02.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS03.pdf} &
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS10.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS11.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS12.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_p_TS13.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_p_TS13.pdf} &
   \end{tabular}
   \caption{Normalized profiles of the protons charge distribution in individual PMTs of the T0 and T1 scintillators.}
   \label{fig_p_Landau}
@@ -140,14 +131,14 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 \begin{figure}[p]
   \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{ccc}
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS00.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS01.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS02.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS03.pdf} &
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS10.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS11.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS12.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_LandauProfiles_D_TS13.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_LandauProfiles_D_TS13.pdf} &
   \end{tabular}
   \caption{Normalized profiles of the deuterons charge distribution in individual PMTs of the T0 and T1 scintillators.}
   \label{fig_D_Landau}
@@ -161,14 +152,14 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
     \centering
   \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{ccc}
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS00.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS01.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS02.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS03.pdf} &
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS10.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS11.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS12.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_p_TS13.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_p_TS13.pdf} &
   \end{tabular}
   \caption{Protons deposited charge in individual trigger scintillators PMTs versus $t_\mathrm{TOF}$ for various momenta.}
   \label{fig_tof_p}
@@ -179,23 +170,46 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
   \centering
     \setlength{\tabcolsep}{-4pt}
   \begin{tabular}{ccc}
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS00.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS01.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS02.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS03.pdf} &
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS10.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS11.pdf} \\ 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS12.pdf} & 
-\includegraphics[width=0.33\textwidth]{WCTEJuly2023_BetheBloch_SingleFit_D_TS13.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS00.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS01.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS02.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS03.pdf} &
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS10.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS11.pdf} \\ 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS12.pdf} & 
+\includegraphics[width=0.33\textwidth]{fit_dEdx/WCTEJuly2023_BetheBloch_SingleFit_D_TS13.pdf} &
   \end{tabular}
   \caption{Deuterons deposited charge in individual trigger scintillators PMTs versus $t_\mathrm{TOF}$ for various momenta.}
   \label{fig_tof_D}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[p]
+    \centering
+  %\setlength{\tabcolsep}{-4pt}
+  \begin{tabular}{cc}
+    \includegraphics[width=0.49\textwidth]{fit_dEdx/WCTEJuly2023_CalibTS_eRelCalib8.pdf} &
+    \includegraphics[width=0.49\textwidth]{fit_dEdx/WCTEJuly2023_CalibTS_eRelCalib7_rm_00.pdf} \\
+    \includegraphics[width=0.49\textwidth]{fit_dEdx/WCTEJuly2023_CalibTS_eRelCalib6_rm_00_13.pdf} &
+    \includegraphics[width=0.49\textwidth]{fit_dEdx/WCTEJuly2023_CalibTS_eRelCalib5_rm_00_02_13.pdf} \\
+ \end{tabular}
+  \caption{Derived using the mean charge of the positrons peak, the relative calibration constants are plotted as function of the positive beam momenta for different number of PMTs included in the fit, corresponding to fit scenarios (a)--(d), see text.}
+  \label{fig_el_relative}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
 \subsection{Simultaneous fit results}
 
+Figures~\ref{fig_fit_8}--\ref{fig_fit_5} and Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5} document the simultaneous fit results using different sets of PMTs used in the fit.
+
+Shown are the fit residuals of individual data points w.r.t. to the final fit, histogram of the ratio of the fitted and expected ionization energy losses (assuming materials as discussed in Section~\ref{sec_fit_method}); and the two fit lines of the global fit corresponding to the charges description in T0 and T1 PMTs.
+Also quoted are the na\"{\i}ve $\chi^2/N_\mathrm{points}$ figures, indicating the fit quality in individual fit regions (being a given PMT, over various data runs of different momenta) and allowing to see fit quality.
+
+Tables quote individual fit parameters, their uncertainties, the global $\chi^2$ as well as parameters correlation matrix.
+The correlation among the fit parameters are large as the fitted form is a combination of a $1/\beta^2$ term and a logarithmic term. However, the data $\beta$ range does not have enough power to constrain this logarithmic term, as here it merely slows down the $\beta^{-2}$ decrease and is not at a rise yet; this translates to a large uncertainty in the fitted mean ionization potential $\mathcal{I}$. Also, additional constant $\mathcal{C}$ is in large correlation to $\mathcal{A}$ and $\mathcal{I}$, again due to only a modest variation of the losses in the range of approximately $\beta \in [0.4, \, 0.8]$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
@@ -204,10 +218,10 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
     \centering
   %\setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cc}
-    \includegraphics[width=0.650\textwidth]{FitAnalysis8.pdf} &
-    \includegraphics[width=0.453\textwidth]{DataFitCmp8.pdf} \\
+    \includegraphics[width=0.650\textwidth]{fit_dEdx/FitAnalysis8.pdf} &
+    \includegraphics[width=0.453\textwidth]{fit_dEdx/DataFitCmp8.pdf} \\
  \end{tabular}
-  \caption{Fit results using 8 PMTs in the fit, using both protons and deuterons.}
+  \caption{Fit results using 8 PMTs in the fit, using both protons and deuterons. Shown are the fit residuals of individual data points w.r.t. to the final fit, histogram of the ratio of the fitted and expected ionization energy losses; and the two fit lines of the global fit corresponding to the charges description in T0 and T1 PMTs. Also quoted are the na\"{\i}ve $\chi^2/N_\mathrm{points}$ figures, indicating the fit quality in individual fit regions.}
   \label{fig_fit_8}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -226,10 +240,10 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
     \centering
   %\setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cc}
-    \includegraphics[width=0.650\textwidth]{FitAnalysis7_rm_00.pdf} &
-    \includegraphics[width=0.453\textwidth]{DataFitCmp7_rm_00.pdf} \\
+    \includegraphics[width=0.650\textwidth]{fit_dEdx/FitAnalysis7_rm_00.pdf} &
+    \includegraphics[width=0.453\textwidth]{fit_dEdx/DataFitCmp7_rm_00.pdf} \\
  \end{tabular}
-  \caption{Fit results using 7 PMTs in the fit, using both protons and deuterons.}
+  \caption{Fit results using 7 PMTs in the fit, using both protons and deuterons. Shown are the fit residuals of individual data points w.r.t. to the final fit, histogram of the ratio of the fitted and expected ionization energy losses; and the two fit lines of the global fit corresponding to the charges description in T0 and T1 PMTs. Also quoted are the na\"{\i}ve $\chi^2/N_\mathrm{points}$ figures, indicating the fit quality in individual fit regions.}
   \label{fig_fit_7}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -248,10 +262,10 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
     \centering
   %\setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cc}
-    \includegraphics[width=0.650\textwidth]{FitAnalysis6_rm_00_13.pdf} &
-    \includegraphics[width=0.453\textwidth]{DataFitCmp6_rm_00_13.pdf} \\
+    \includegraphics[width=0.650\textwidth]{fit_dEdx/FitAnalysis6_rm_00_13.pdf} &
+    \includegraphics[width=0.453\textwidth]{fit_dEdx/DataFitCmp6_rm_00_13.pdf} \\
  \end{tabular}
-  \caption{Fit results using 6 PMTs in the fit, using both protons and deuterons.}
+  \caption{Fit results using 6 PMTs in the fit, using both protons and deuterons. Shown are the fit residuals of individual data points w.r.t. to the final fit, histogram of the ratio of the fitted and expected ionization energy losses; and the two fit lines of the global fit corresponding to the charges description in T0 and T1 PMTs. Also quoted are the na\"{\i}ve $\chi^2/N_\mathrm{points}$ figures, indicating the fit quality in individual fit regions.}
   \label{fig_fit_6}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -270,10 +284,10 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
     \centering
   %\setlength{\tabcolsep}{-4pt}
   \begin{tabular}{cc}
-    \includegraphics[width=0.650\textwidth]{FitAnalysis5_rm_00_02_13.pdf} &
-    \includegraphics[width=0.453\textwidth]{DataFitCmp5_rm_00_02_13.pdf} \\
+    \includegraphics[width=0.650\textwidth]{fit_dEdx/FitAnalysis5_rm_00_02_13.pdf} &
+    \includegraphics[width=0.453\textwidth]{fit_dEdx/DataFitCmp5_rm_00_02_13.pdf} \\
  \end{tabular}
-  \caption{Fit results using 5 PMTs in the fit, using both protons and deuterons.}
+  \caption{Fit results using 5 PMTs in the fit, using both protons and deuterons. Shown are the fit residuals of individual data points w.r.t. to the final fit, histogram of the ratio of the fitted and expected ionization energy losses; and the two fit lines of the global fit corresponding to the charges description in T0 and T1 PMTs. Also quoted are the na\"{\i}ve $\chi^2/N_\mathrm{points}$ figures, indicating the fit quality in individual fit regions.}
   \label{fig_fit_5}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -289,8 +303,18 @@ The results are compared in Tables~\ref{tab_fitres_8}--\ref{tab_fitres_5}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Charge vs. time-of-flight 2D distributions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Ionization Losses Conclusions}
+
+The ration of the fitted to expected losses ranges from 0.62 to 0.88, depending on the set of PMTs used in the global fit. One can assume the different PMTs set choice for the fit as a systematic variation.
+We conclude that given the quality and non-uniformity of the charge shape from the individual scintillators, results are consistent with the fitted losses being at the level of~65\% of the expected losses base on the evaluation of the Bethe-Bloch formula.
+Losses in air is neglected, as well as additional material in terms of black foils covering the trigger scintillators, both of which, however, probably cannot account for the 35\% energy losses, and therefore material, estimate difference.
+
+\subsection{Additional charge vs. time-of-flight 2D distributions}
+Additional charge vs. time-of-flight 2D distributions are shown in Figures~\ref{fig:2d:403}--\ref{fig:2d:435}.
 \input{plots2D}
+
 
 \end{document}
 

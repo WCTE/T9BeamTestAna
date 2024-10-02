@@ -1,6 +1,7 @@
-#!/snap/bin/pyroot
+#!/usr/bin/python
 
-#/usr/bin/python3
+#/snap/bin/pyroot
+
 
 # jk
 # 20/09/2022

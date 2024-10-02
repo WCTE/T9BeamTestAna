@@ -2,6 +2,7 @@
 
 # jk 26.4.2018
 # jk  3.4.2024
+# jk 30.7.2024
 
 from Losses import *
 #from Brems import *
@@ -16,10 +17,12 @@ PrintMaterials()
 print('***************************************************')
 ROOT.gStyle.SetPadLeftMargin(0.2)
 
+
+
 # material: dX in cm
 myMat = {#'Polystyrene' : 0.6, # cm!
          # 'Al' : 0.025 #1.e-2 @ cm!
-         'Plastics' : 0.630 + 0.25, # cm!
+         'Plastics' : 0.630, # + 0.25, # cm!
           'Mylar' : 0.025 #1.e-2 @ cm!
          
          }
@@ -38,7 +41,10 @@ p1 = 200.
 p2 = 1200.
 N = 200
 dp = (p2-p1) / N
+
 ps = [ p1 + i*dp for i in range(0,N+1) ]
+# HACK
+# ps = [540] # MeV/c
 
 GrsdE = {}
 GrsdEdX = {}
@@ -103,7 +109,7 @@ for mname,dX in myMat.items():
                 Ps.append(p)
 
                 print('    AFTER dX={:}cm: T={:3.1f} MeV p={:3.1f} MeV, E={:3.1f}, beta={:1.4f}, gamma = {:3.3f}, beta*gamma={:3.3f}'.format(dX, newT, newp, newE, newbeta, newgamma, newbeta*newgamma))
-                print('    Ionization losses                                      : {:1.3f} MeV/cm'.format(dedx))
+                print('    Stopping power                                         : {:1.3f} MeV/cm'.format(dedx))
                 print('    Ionization losses                                      : {:1.3f} MeV'.format(dE))
                 #print('    New momentum after 1cm of the material                 : {:3.1f}'.format(newp))
                 #print('    New energy after 1cm of the material                   : {:3.1f}'.format(newE))
