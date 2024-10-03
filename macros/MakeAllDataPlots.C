@@ -622,7 +622,7 @@ void MakeAllDataPlots::InitPIDHistos(TString dirname, TString selTag, TString se
   _histos2d["hACT3CACT2C" + selTag] = new TH2D("hRef_ACT3CACT2C" + selTag, ";" + selTit + " ACT3 Charge; " + selTit + "ACT2 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
   _histos2d["hACT1CACT3C" + selTag] = new TH2D("hRef_ACT1CACT3C" + selTag, ";" + selTit + " ACT1 Charge; " + selTit + "ACT3 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
   // 5.4.2024:
-  _histos2d["hACT1CACT23C" + selTag] = new TH2D("hRef_ACT1CACT23C" + selTag, ";" + selTit + " ACT1 Charge; " + selTit + "(ACT2+ACT3)/2 Charge", 200, _actChargeMin, _actChargeMax, 200, _actChargeMin, _actChargeMax);
+  _histos2d["hACT1CACT23C" + selTag] = new TH2D("hRef_ACT1CACT23C" + selTag, ";" + selTit + " ACT1 Charge; " + selTit + "(ACT2+ACT3)/2 Charge", 500, _actChargeMin, _actChargeMax, 400, _actChargeMin, _actChargeMax);
 
 
   _outFile -> cd("../");
