@@ -33,6 +33,7 @@ def DivideCan(can, N):
     elif N < 10:             can.Divide(3,3)
     elif N < 13:             can.Divide(4,3)
     elif N < 17:             can.Divide(4,4)
+    elif N < 21:             can.Divide(5,4)
     else:
         n = int(sqrt(N)) + 1
         can.Divide(n,n)

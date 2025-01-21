@@ -153,7 +153,7 @@ def main(argv):
             h.GetXaxis().SetRangeUser(0., 20)
             h.GetYaxis().SetRangeUser(0., 60)            
         if 'hRef_ACT1CACT23C_nonp-like' in h.GetName():
-            h.GetXaxis().SetRangeUser(0., 40)
+            h.GetXaxis().SetRangeUser(0., 20)
             h.GetYaxis().SetRangeUser(0., 50)
 
             

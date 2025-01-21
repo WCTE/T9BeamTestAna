@@ -14,7 +14,7 @@ def main(argv):
     n = runsRefractionIndexDict[irun]
     target = getTargetFullName(irun)
     slit = getSlitPerc(srun)
-    print('Run: {}, momentum: {} MeV/c, n: {}, target: {}'.format(srun, momentum, n, target))
+    print('Run: {}, momentum: {} MeV/c, n: {}, target: {} slit: {}%'.format(srun, momentum, n, target, slit))
 
 
 
